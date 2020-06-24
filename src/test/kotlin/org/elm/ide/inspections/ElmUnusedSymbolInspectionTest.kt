@@ -198,4 +198,33 @@ a =
 
             """.trimIndent())
 
+    fun `test delete unused value with annotation`() = checkFixByText("Delete",
+            """import Html exposing (text)
+
+
+main = text <| String.fromInt a
+
+a : Int
+a =
+    123
+
+b : Int
+<warning descr="'b' is never used">b{-caret-}</warning> =
+    456
+""".trimIndent(),
+            """
+import Html exposing (text)
+
+
+main = text <| String.fromInt a
+
+a : Int
+a =
+    123
+
+
+
+
+            """.trimIndent())
+
 }

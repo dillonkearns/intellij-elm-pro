@@ -83,7 +83,10 @@ private class RenameToWildcardFix : NamedQuickFix("Rename to _") {
 
 private class RemoveUnusedFix : NamedQuickFix("Delete") {
     override fun applyFix(element: PsiElement, project: Project) {
-        element.parent.parent.delete()
+        if (element.outermostDeclaration(true)?.prevSibling?.prevSibling is ElmTypeAnnotation) {
+            element.outermostDeclaration(true)?.prevSibling?.prevSibling?.delete()
+        }
+        element.outermostDeclaration(true)?.delete()
     }
 }
 
