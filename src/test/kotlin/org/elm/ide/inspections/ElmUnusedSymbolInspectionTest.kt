@@ -171,4 +171,31 @@ class ElmUnusedSymbolInspectionTest : ElmInspectionsTestBase(ElmUnusedSymbolInsp
         module FooBar exposing (..)
         """.trimIndent())
 
+    // REMOVE FIX
+
+    fun `test deletes unused`() = checkFixByText("Delete",
+            """import Html exposing (text)
+
+
+main = text <| String.fromInt a
+
+a =
+    123
+
+<warning descr="'b' is never used">b{-caret-}</warning> =
+    456
+""".trimIndent(),
+            """
+import Html exposing (text)
+
+
+main = text <| String.fromInt a
+
+a =
+    123
+
+
+
+            """.trimIndent())
+
 }

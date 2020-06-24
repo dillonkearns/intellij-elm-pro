@@ -62,7 +62,7 @@ class ElmUnusedSymbolInspection : ElmLocalInspection() {
     private fun markAsUnused(holder: ProblemsHolder, element: ElmNameIdentifierOwner, name: String) {
         val fixes = when (element) {
             is ElmLowerPattern -> arrayOf(RenameToWildcardFix())
-            else -> emptyArray()
+            else -> arrayOf(RemoveUnusedFix())
         }
         holder.registerProblem(
                 element.nameIdentifier,
@@ -77,6 +77,13 @@ private class RenameToWildcardFix : NamedQuickFix("Rename to _") {
     override fun applyFix(element: PsiElement, project: Project) {
         (element.parent as? ElmLowerPattern)
                 ?.replace(ElmPsiFactory(project).createAnythingPattern())
+    }
+}
+
+
+private class RemoveUnusedFix : NamedQuickFix("Delete") {
+    override fun applyFix(element: PsiElement, project: Project) {
+        element.parent.parent.delete()
     }
 }
 
