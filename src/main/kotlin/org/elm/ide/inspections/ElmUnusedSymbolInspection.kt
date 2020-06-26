@@ -10,6 +10,7 @@ import com.intellij.psi.search.PsiSearchHelper.SearchCostResult.TOO_MANY_OCCURRE
 import com.intellij.psi.search.searches.ReferencesSearch
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
+import org.elm.lang.core.psi.elements.ElmTypeAnnotation as ElmTypeAnnotation1
 
 /**
  * Find unused functions, parameters, etc.
@@ -43,7 +44,7 @@ class ElmUnusedSymbolInspection : ElmLocalInspection() {
 
         // perform Find Usages
         val usages = ReferencesSearch.search(element).findAll()
-                .filterNot { it.element is ElmTypeAnnotation || it.element is ElmExposedItemTag }
+                .filterNot { it.element is ElmTypeAnnotation1 || it.element is ElmExposedItemTag }
 
         if (usages.isEmpty()) {
             markAsUnused(holder, element, name)
@@ -83,10 +84,13 @@ private class RenameToWildcardFix : NamedQuickFix("Rename to _") {
 
 private class RemoveUnusedFix : NamedQuickFix("Delete") {
     override fun applyFix(element: PsiElement, project: Project) {
-        if (element.outermostDeclaration(true)?.prevSibling?.prevSibling is ElmTypeAnnotation) {
-            element.outermostDeclaration(true)?.prevSibling?.prevSibling?.delete()
-        }
-        element.outermostDeclaration(true)?.delete()
+//        val container = element.outermostDeclaration((true))
+//        val outermostDeclaration =
+                element.containingDeclaration().forEach { it.delete() }
+//        if (outermostDeclaration?.prevSibling?.prevSibling is ElmTypeAnnotation1) {
+//            outermostDeclaration?.prevSibling?.prevSibling?.delete()
+//        }
+//        outermostDeclaration?.delete()
     }
 }
 

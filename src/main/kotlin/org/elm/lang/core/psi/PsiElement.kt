@@ -40,9 +40,11 @@ import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilCore
+import com.intellij.psi.util.siblings
 import com.intellij.util.SmartList
 import org.elm.lang.core.lexer.ElmLayoutLexer
 import org.elm.lang.core.psi.ElmTypes.VIRTUAL_END_DECL
+import org.elm.lang.core.psi.elements.ElmTypeAnnotation
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.stubs.ElmFileStub
 
@@ -227,6 +229,21 @@ fun PsiElement.outermostDeclaration(strict: Boolean): ElmValueDeclaration? =
                 .filterIsInstance<ElmValueDeclaration>()
                 .firstOrNull { it.isTopLevel }
 
+/** Return the top level value declaration from this element's ancestors */
+fun PsiElement.containingDeclaration(): Sequence<PsiElement>
+{
+    val declaration = ancestors.takeWhile { it !is ElmValueDeclaration }
+            .last()
+            .parent
+
+    return declaration
+            .prevSiblings
+            .withoutWsOrComments
+            .takeWhile { it is ElmTypeAnnotation }
+            .plus(declaration)
+//            .takeWhile { it !is PsiWhiteSpace && it !is ElmTypeAnnotation && it !is PsiElement }
+}
+//                .filterIsInstance<ElmValueDeclaration>()
 /**
  * Return the name from module declaration of the file containing this element, or the empty string
  * if there isn't one.
