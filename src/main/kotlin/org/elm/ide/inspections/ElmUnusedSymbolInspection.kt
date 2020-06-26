@@ -86,7 +86,7 @@ private class RemoveUnusedFix : NamedQuickFix("Delete") {
     override fun applyFix(element: PsiElement, project: Project) {
 //        val container = element.outermostDeclaration((true))
 //        val outermostDeclaration =
-                element.containingDeclaration().forEach { it.delete() }
+                element.containingDeclaration()
 //        if (outermostDeclaration?.prevSibling?.prevSibling is ElmTypeAnnotation1) {
 //            outermostDeclaration?.prevSibling?.prevSibling?.delete()
 //        }

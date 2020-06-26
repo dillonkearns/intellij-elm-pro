@@ -44,6 +44,7 @@ import com.intellij.psi.util.siblings
 import com.intellij.util.SmartList
 import org.elm.lang.core.lexer.ElmLayoutLexer
 import org.elm.lang.core.psi.ElmTypes.VIRTUAL_END_DECL
+import org.elm.lang.core.psi.elements.ElmLetInExpr
 import org.elm.lang.core.psi.elements.ElmTypeAnnotation
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.stubs.ElmFileStub
@@ -230,20 +231,28 @@ fun PsiElement.outermostDeclaration(strict: Boolean): ElmValueDeclaration? =
                 .firstOrNull { it.isTopLevel }
 
 /** Return the top level value declaration from this element's ancestors */
-fun PsiElement.containingDeclaration(): Sequence<PsiElement>
+fun PsiElement.containingDeclaration()
 {
     val declaration = ancestors.takeWhile { it !is ElmValueDeclaration }
             .last()
             .parent
+    when (val parentThing = declaration.parent) {
+       is ElmLetInExpr -> {
+           if (parentThing.valueDeclarationList.size == 1) {
+               val thingy = parentThing.expression as PsiElement
+                   parentThing.replace(thingy)
+           }
+       }
+    }
 
-    return declaration
+    declaration
             .prevSiblings
             .withoutWsOrComments
             .takeWhile { it is ElmTypeAnnotation }
             .plus(declaration)
-//            .takeWhile { it !is PsiWhiteSpace && it !is ElmTypeAnnotation && it !is PsiElement }
+            .forEach {it.delete()}
 }
-//                .filterIsInstance<ElmValueDeclaration>()
+
 /**
  * Return the name from module declaration of the file containing this element, or the empty string
  * if there isn't one.

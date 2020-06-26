@@ -257,4 +257,29 @@ a =
     in
     c
             """.trimIndent())
+
+    fun `test delete unused let binding with no other bindings left`() = checkFixByText("Delete",
+            """import Html exposing (text)
+
+
+main = text <| String.fromInt a
+
+a : Int
+a =
+    let
+        b : Int
+        <warning descr="'b' is never used">b{-caret-}</warning> =
+            456
+    in
+    789
+""".trimIndent(),
+            """import Html exposing (text)
+
+
+main = text <| String.fromInt a
+
+a : Int
+a =
+    789
+""".trimIndent())
 }
