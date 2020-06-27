@@ -10,7 +10,7 @@ import com.intellij.psi.search.PsiSearchHelper.SearchCostResult.TOO_MANY_OCCURRE
 import com.intellij.psi.search.searches.ReferencesSearch
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
-import org.elm.lang.core.psi.elements.ElmTypeAnnotation as ElmTypeAnnotation1
+import org.elm.lang.core.psi.elements.ElmTypeAnnotation
 
 /**
  * Find unused functions, parameters, etc.
@@ -44,7 +44,7 @@ class ElmUnusedSymbolInspection : ElmLocalInspection() {
 
         // perform Find Usages
         val usages = ReferencesSearch.search(element).findAll()
-                .filterNot { it.element is ElmTypeAnnotation1 || it.element is ElmExposedItemTag }
+                .filterNot { it.element is ElmTypeAnnotation || it.element is ElmExposedItemTag }
 
         if (usages.isEmpty()) {
             markAsUnused(holder, element, name)
@@ -84,13 +84,23 @@ private class RenameToWildcardFix : NamedQuickFix("Rename to _") {
 
 private class RemoveUnusedFix : NamedQuickFix("Delete") {
     override fun applyFix(element: PsiElement, project: Project) {
-//        val container = element.outermostDeclaration((true))
-//        val outermostDeclaration =
-                element.containingDeclaration()
-//        if (outermostDeclaration?.prevSibling?.prevSibling is ElmTypeAnnotation1) {
-//            outermostDeclaration?.prevSibling?.prevSibling?.delete()
-//        }
-//        outermostDeclaration?.delete()
+        val declaration = element.ancestors.takeWhile { it !is ElmValueDeclaration }
+                .last()
+                .parent
+        when (val parentThing = declaration.parent) {
+           is ElmLetInExpr -> {
+               if (parentThing.valueDeclarationList.size == 1) {
+                   val thingy = parentThing.expression as PsiElement
+                       parentThing.replace(thingy)
+               }
+           }
+        }
+        declaration
+                .prevSiblings
+                .withoutWsOrComments
+                .takeWhile { it is ElmTypeAnnotation }
+                .plus(declaration)
+                .forEach {it.delete()}
     }
 }
 

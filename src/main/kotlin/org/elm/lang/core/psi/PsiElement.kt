@@ -230,29 +230,6 @@ fun PsiElement.outermostDeclaration(strict: Boolean): ElmValueDeclaration? =
                 .filterIsInstance<ElmValueDeclaration>()
                 .firstOrNull { it.isTopLevel }
 
-/** Return the top level value declaration from this element's ancestors */
-fun PsiElement.containingDeclaration()
-{
-    val declaration = ancestors.takeWhile { it !is ElmValueDeclaration }
-            .last()
-            .parent
-    when (val parentThing = declaration.parent) {
-       is ElmLetInExpr -> {
-           if (parentThing.valueDeclarationList.size == 1) {
-               val thingy = parentThing.expression as PsiElement
-                   parentThing.replace(thingy)
-           }
-       }
-    }
-
-    declaration
-            .prevSiblings
-            .withoutWsOrComments
-            .takeWhile { it is ElmTypeAnnotation }
-            .plus(declaration)
-            .forEach {it.delete()}
-}
-
 /**
  * Return the name from module declaration of the file containing this element, or the empty string
  * if there isn't one.
