@@ -102,7 +102,7 @@ class ElmInlineFunctionProcessor(
 //    }
 
     override fun performRefactoring(usages: Array<out UsageInfo>) {
-        usages.asIterable().forEach loop@{
+        usages.asIterable().forEach loop@{ it ->
 //            val reference = it.reference as? ElmReference ?: return@loop
 //            inlineWithLetBindingsAdded(reference, function)
             when (val reference = it.reference) {
@@ -110,7 +110,34 @@ class ElmInlineFunctionProcessor(
                     if (reference.element is ElmTypeAnnotation) {
 
                     } else {
-                        replaceCallerWithRetExpr(function.originalElement, reference.element)
+                        val prevSiblings = reference.element.parent.prevSiblings.withoutWsOrComments
+                        if (prevSiblings.toList().size == 2) {
+                            val prev = prevSiblings.toList()[0]
+                            val prev2 = prevSiblings.toList()[1]
+                            if (prev is ElmOperator && prev.referenceName.equals("|>")) {
+                                val realCaller = containingFunctionCall(reference.element)
+                                val arguments =  realCaller.arguments.plus(prev2).toList()
+                                val realBody = (function.originalElement.parent as ElmValueDeclaration)
+                                val bodyExpression = realBody.expression?.originalElement
+                                realBody.functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
+                                    ReferencesSearch.search(namedParameter).findAll().forEach { parameterReference ->
+                                        if (parameterReference.canonicalText.equals(namedParameter.name)) {
+                                            parameterReference.element.replace(arguments[parameterIndex])
+                                        }
+                                    }
+                                }
+                                if (bodyExpression != null) {
+                                    realCaller.replace(bodyExpression)
+                                }
+//                                reference.element.parent.prevSiblings.forEach { sibling -> sibling.delete() }
+                                prev.delete()
+                                prev2.delete()
+                                deleteDeclaration(function.originalElement)
+                            }
+
+                        } else {
+                            replaceCallerWithRetExpr(function.originalElement, reference.element)
+                        }
                     }
                 }
             }
