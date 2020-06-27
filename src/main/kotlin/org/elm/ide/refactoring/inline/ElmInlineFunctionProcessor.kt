@@ -277,6 +277,11 @@ class ElmInlineFunctionProcessor(
         val realBody = (body.parent as ElmValueDeclaration)
         val bodyExpression = realBody.expression?.originalElement
         val realCaller = containingFunctionCall(caller)
+        realBody.functionDeclarationLeft?.namedParameters?.forEach { namedParameter ->
+            ReferencesSearch.search(namedParameter).findAll().withIndex().forEach { parameterReference ->
+                parameterReference.value.element.replace(realCaller.arguments.first())
+            }
+        }
         if (bodyExpression != null) {
             realCaller.replace(bodyExpression)
         }
