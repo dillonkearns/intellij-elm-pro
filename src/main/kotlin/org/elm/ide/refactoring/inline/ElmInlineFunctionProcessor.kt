@@ -16,6 +16,7 @@ import com.intellij.usageView.UsageViewDescriptor
 import com.intellij.util.containers.MultiMap
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.elements.ElmFunctionDeclarationLeft
+import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.resolve.reference.ElmReference
 
 //import org.rust.ide.surroundWith.addStatements
@@ -101,6 +102,8 @@ class ElmInlineFunctionProcessor(
         usages.asIterable().forEach loop@{
             val reference = it.reference as? ElmReference ?: return@loop
 //            inlineWithLetBindingsAdded(reference, function)
+
+            replaceCallerWithRetExpr(function.originalElement, reference.element)
         }
         if (removeDefinition) {
             function.delete()
@@ -236,36 +239,32 @@ class ElmInlineFunctionProcessor(
 //        }
 //    }
 
-//    private fun replaceCallerWithRetExpr(body: RsBlock, caller: PsiElement) {
-//        val retExpr = body.descendantsOfType<RsRetExpr>().firstOrNull()
-//        if (retExpr != null) {
-//            val retExprInside = retExpr.expr
-//            if (retExprInside != null) {
-//
-//
-//                // Covering a case in which ; isn't included in the expression, and parent is too wide.
-//                // e.g. if RsExpr is surrounded by RsBlock going to the RsBlock won't help.
-//                val actualRetExpr: PsiElement = if (retExpr.parent.text == retExpr.text + ";") {
-//                    retExpr.parent
-//                } else {
-//                    retExpr
-//                }
-//                if (caller.parent !is RsBlock && caller.parent.text != caller.text + ";") {
-//                    caller.replace(retExprInside)
-//                    retExpr.delete()
-//                } else {
-//                    actualRetExpr.replace(retExprInside)
-//                    if (caller.parent.text == caller.text + ";") {
-//                        caller.parent.delete()
-//                    } else {
-//                        caller.delete()
-//                    }
-//                }
-//            }
+    private fun replaceCallerWithRetExpr(body: PsiElement, caller: PsiElement) {
+        // Covering a case in which ; isn't included in the expression, and parent is too wide.
+        // e.g. if RsExpr is surrounded by RsBlock going to the RsBlock won't help.
+        val realBody = (body.parent as ElmValueDeclaration)
+        val bodyExpression = realBody.expression?.originalElement
+        if (bodyExpression != null) {
+            caller.replace(bodyExpression)
+        }
+        realBody.delete()
+//        val actualRetExpr: PsiElement = if (body.parent.text == body.text + ";") {
+//            body.parent
 //        } else {
-//            caller.delete()
+//            body
 //        }
-//    }
+//        if (caller.parent !is RsBlock && caller.parent.text != caller.text + ";") {
+//            caller.replace(body)
+//            body.delete()
+//        } else {
+//            actualRetExpr.replace(body)
+//            if (caller.parent.text == caller.text + ";") {
+//                caller.parent.delete()
+//            } else {
+//                caller.delete()
+//            }
+//        }
+    }
 
 //    private fun replaceSelfParamWithExpr(selfParam: RsSelfParameter?, caller: PsiElement, funcScope: LocalSearchScope) {
 //        if (selfParam != null) {
