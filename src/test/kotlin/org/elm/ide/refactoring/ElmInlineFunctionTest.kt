@@ -17,9 +17,9 @@ value =
 message =
     "Hello, " ++ value ++ "!"
                   --^
+
 """,
                     """
-
 
 
 message =
@@ -32,6 +32,6 @@ message =
     private fun doTest(@Language("Elm") before: String, @Language("Elm") after: String) {
         configureByFileTree(before)
         myFixture.performEditorAction("Inline")
-        myFixture.checkResult(after.trimStart())
+        myFixture.checkResult(after)
     }
 }
