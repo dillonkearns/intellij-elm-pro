@@ -48,6 +48,28 @@ message =
                   --^
 """)
 
+    fun `test inline function with two arguments`() =
+            doTest(
+                    """
+--@ Main.elm
+
+greet first last =
+    "Hello " ++ first ++ " " ++ last
+
+
+exclaimGreeting =
+    greet "Dillon" "Kearns" ++ "!"
+    --^
+
+""",
+                    """
+
+
+exclaimGreeting =
+    "Hello " ++ "Dillon" ++ " " ++ "Kearns" ++ "!"
+    --^
+""")
+
 
 
     private fun doTest(@Language("Elm") before: String, @Language("Elm") after: String) {
