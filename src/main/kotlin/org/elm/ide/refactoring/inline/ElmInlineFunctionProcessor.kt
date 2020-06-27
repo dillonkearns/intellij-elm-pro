@@ -15,8 +15,13 @@ import com.intellij.usageView.UsageViewBundle
 import com.intellij.usageView.UsageViewDescriptor
 import com.intellij.util.containers.MultiMap
 import org.elm.lang.core.psi.ElmPsiFactory
+import org.elm.lang.core.psi.ancestors
 import org.elm.lang.core.psi.elements.ElmFunctionDeclarationLeft
+import org.elm.lang.core.psi.elements.ElmLetInExpr
+import org.elm.lang.core.psi.elements.ElmTypeAnnotation
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
+import org.elm.lang.core.psi.prevSiblings
+import org.elm.lang.core.psi.withoutWsOrComments
 import org.elm.lang.core.resolve.reference.ElmReference
 
 //import org.rust.ide.surroundWith.addStatements
@@ -239,6 +244,27 @@ class ElmInlineFunctionProcessor(
 //        }
 //    }
 
+    private fun deleteDeclaration(element: PsiElement) {
+        val declaration = element.ancestors.takeWhile { it !is ElmValueDeclaration }
+                .last()
+                .parent
+        when (val parentThing = declaration.parent) {
+            is ElmLetInExpr -> {
+                if (parentThing.valueDeclarationList.size == 1) {
+                    val thingy = parentThing.expression as PsiElement
+                    parentThing.replace(thingy)
+                }
+            }
+        }
+        declaration
+                .prevSiblings
+                .withoutWsOrComments
+                .takeWhile { it is ElmTypeAnnotation }
+                .plus(declaration)
+                .forEach { it.delete() }
+    }
+
+
     private fun replaceCallerWithRetExpr(body: PsiElement, caller: PsiElement) {
         // Covering a case in which ; isn't included in the expression, and parent is too wide.
         // e.g. if RsExpr is surrounded by RsBlock going to the RsBlock won't help.
@@ -247,7 +273,7 @@ class ElmInlineFunctionProcessor(
         if (bodyExpression != null) {
             caller.replace(bodyExpression)
         }
-        realBody.delete()
+        deleteDeclaration(body)
 //        val actualRetExpr: PsiElement = if (body.parent.text == body.text + ";") {
 //            body.parent
 //        } else {
