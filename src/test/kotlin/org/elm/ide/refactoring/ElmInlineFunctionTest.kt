@@ -27,6 +27,27 @@ message =
                   --^
 """)
 
+    fun `test inline function with argument`() =
+            doTest(
+                    """
+--@ Main.elm
+value append =
+    "World" ++ append
+
+
+message =
+    "Hello, " ++ value "!"
+                  --^
+
+""",
+                    """
+
+
+message =
+    "Hello, " ++ "World" ++ "!"
+                  --^
+""")
+
 
 
     private fun doTest(@Language("Elm") before: String, @Language("Elm") after: String) {

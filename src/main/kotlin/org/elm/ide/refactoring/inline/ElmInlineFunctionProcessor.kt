@@ -16,13 +16,11 @@ import com.intellij.usageView.UsageViewDescriptor
 import com.intellij.util.containers.MultiMap
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.ancestors
-import org.elm.lang.core.psi.elements.ElmFunctionDeclarationLeft
-import org.elm.lang.core.psi.elements.ElmLetInExpr
-import org.elm.lang.core.psi.elements.ElmTypeAnnotation
-import org.elm.lang.core.psi.elements.ElmValueDeclaration
+import org.elm.lang.core.psi.elements.*
 import org.elm.lang.core.psi.prevSiblings
 import org.elm.lang.core.psi.withoutWsOrComments
 import org.elm.lang.core.resolve.reference.ElmReference
+import kotlin.reflect.typeOf
 
 //import org.rust.ide.surroundWith.addStatements
 //import org.rust.lang.core.cfg.ExitPoint
@@ -264,14 +262,23 @@ class ElmInlineFunctionProcessor(
                 .forEach { it.delete() }
     }
 
+    private fun containingFunctionCall(caller: PsiElement): ElmFunctionCallExpr {
+        return if (caller is ElmFunctionCallExpr) {
+            caller
+        } else {
+            containingFunctionCall(caller.parent)
+        }
+    }
+
 
     private fun replaceCallerWithRetExpr(body: PsiElement, caller: PsiElement) {
         // Covering a case in which ; isn't included in the expression, and parent is too wide.
         // e.g. if RsExpr is surrounded by RsBlock going to the RsBlock won't help.
         val realBody = (body.parent as ElmValueDeclaration)
         val bodyExpression = realBody.expression?.originalElement
+        val realCaller = containingFunctionCall(caller)
         if (bodyExpression != null) {
-            caller.replace(bodyExpression)
+            realCaller.replace(bodyExpression)
         }
         deleteDeclaration(body)
 //        val actualRetExpr: PsiElement = if (body.parent.text == body.text + ";") {
