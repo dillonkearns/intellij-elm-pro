@@ -20,6 +20,7 @@ import org.elm.lang.core.psi.elements.*
 import org.elm.lang.core.psi.prevSiblings
 import org.elm.lang.core.psi.withoutWsOrComments
 import org.elm.lang.core.resolve.reference.ElmReference
+import org.jaxen.FunctionCallException
 import kotlin.reflect.typeOf
 
 //import org.rust.ide.surroundWith.addStatements
@@ -115,7 +116,7 @@ class ElmInlineFunctionProcessor(
                             val prev = prevSiblings.toList()[0]
                             val prev2 = prevSiblings.toList()[1]
                             if (prev is ElmOperator && prev.referenceName.equals("|>")) {
-                                val realCaller = containingFunctionCall(reference.element)
+                                val realCaller = containingFunctionCall(reference.element) as ElmFunctionCallExpr
                                 val arguments =  realCaller.arguments.plus(prev2).toList()
                                 val realBody = (function.originalElement.parent as ElmValueDeclaration)
                                 val bodyExpression = realBody.expression?.originalElement
@@ -132,7 +133,10 @@ class ElmInlineFunctionProcessor(
 //                                reference.element.parent.prevSiblings.forEach { sibling -> sibling.delete() }
                                 prev.delete()
                                 prev2.delete()
-                                deleteDeclaration(function.originalElement)
+//                                deleteDeclaration(function.originalElement)
+                            } else {
+
+                                replaceCallerWithRetExpr(function.originalElement, reference.element)
                             }
 
                         } else {
@@ -144,7 +148,9 @@ class ElmInlineFunctionProcessor(
 
         }
         if (removeDefinition) {
-            function.delete()
+//            function.delete()
+
+            deleteDeclaration(function.originalElement)
         }
     }
 
@@ -297,8 +303,10 @@ class ElmInlineFunctionProcessor(
                 .forEach { it.delete() }
     }
 
-    private fun containingFunctionCall(caller: PsiElement): ElmFunctionCallExpr {
-        return if (caller is ElmFunctionCallExpr) {
+    private fun containingFunctionCall(caller: PsiElement): PsiElement {
+        return if (caller.parent is ElmFunctionCallExpr) {
+            caller.parent
+        } else if (caller is ElmFunctionCallExpr || caller is ElmValueExpr) {
             caller
         } else {
             containingFunctionCall(caller.parent)
@@ -311,18 +319,29 @@ class ElmInlineFunctionProcessor(
         // e.g. if RsExpr is surrounded by RsBlock going to the RsBlock won't help.
         val realBody = (body.parent as ElmValueDeclaration)
         val bodyExpression = realBody.expression?.originalElement
-        val realCaller = containingFunctionCall(caller)
-        realBody.functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
-            ReferencesSearch.search(namedParameter).findAll().forEach { parameterReference ->
-                if (parameterReference.canonicalText.equals(namedParameter.name)) {
-                    parameterReference.element.replace(realCaller.arguments.toList()[parameterIndex])
+        when (val realCaller = containingFunctionCall(caller)) {
+            is ElmFunctionCallExpr -> {
+                realBody.functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
+                    ReferencesSearch.search(namedParameter).findAll().forEach { parameterReference ->
+                        if (parameterReference.canonicalText.equals(namedParameter.name)) {
+                            parameterReference.element.replace(realCaller.arguments.toList()[parameterIndex])
+                        }
+                    }
+                }
+                if (bodyExpression != null) {
+                    realCaller.replace(bodyExpression)
                 }
             }
+            is ElmValueExpr -> {
+                if (bodyExpression != null) {
+                    realCaller.replace(bodyExpression)
+                }
+            }
+
+
         }
-        if (bodyExpression != null) {
-            realCaller.replace(bodyExpression)
-        }
-        deleteDeclaration(body)
+//        deleteDeclaration(body)
+
 //        val actualRetExpr: PsiElement = if (body.parent.text == body.text + ";") {
 //            body.parent
 //        } else {
