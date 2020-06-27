@@ -103,10 +103,18 @@ class ElmInlineFunctionProcessor(
 
     override fun performRefactoring(usages: Array<out UsageInfo>) {
         usages.asIterable().forEach loop@{
-            val reference = it.reference as? ElmReference ?: return@loop
+//            val reference = it.reference as? ElmReference ?: return@loop
 //            inlineWithLetBindingsAdded(reference, function)
+            when (val reference = it.reference) {
+                is ElmReference -> {
+                    if (reference.element is ElmTypeAnnotation) {
 
-            replaceCallerWithRetExpr(function.originalElement, reference.element)
+                    } else {
+                        replaceCallerWithRetExpr(function.originalElement, reference.element)
+                    }
+                }
+            }
+
         }
         if (removeDefinition) {
             function.delete()

@@ -71,6 +71,29 @@ exclaimGreeting =
 """)
 
 
+    fun `test inline function with two arguments and type annotation`() =
+            doTest(
+                    """
+--@ Main.elm
+
+greet : String -> String -> String
+greet first last =
+    "Hello " ++ first ++ " " ++ last
+
+
+exclaimGreeting =
+    greet "Dillon" "Kearns" ++ "!"
+    --^
+
+""",
+                    """
+
+
+
+exclaimGreeting =
+    "Hello " ++ "Dillon" ++ " " ++ "Kearns" ++ "!"
+    --^
+""")
 
     private fun doTest(@Language("Elm") before: String, @Language("Elm") after: String) {
         configureByFileTree(before)
