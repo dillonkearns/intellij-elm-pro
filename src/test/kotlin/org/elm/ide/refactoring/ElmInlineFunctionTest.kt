@@ -127,6 +127,48 @@ exclaimGreeting =
 """)
 
 
+    fun `skip test multiple inlines`() =
+            doTest(
+                    """
+--@ Main.elm
+
+
+greet : String -> String -> String
+greet first last =
+    "Hello " ++ first ++ " " ++ last
+
+
+exclaimGreeting =
+    ("Kearns"
+        |> greet "Dillon"
+    )
+        ++ "!"
+
+
+anotherExclaimGreeting =
+    greet "John" "Doe"
+    --^
+        ++ "!"
+
+""",
+                    """
+
+
+
+exclaimGreeting =
+    (
+         "Hello " ++ "Dillon" ++ " " ++ "Kearns"
+    )
+        ++ "!"
+
+
+anotherExclaimGreeting =
+    "Hello " ++ "John" ++ " " ++ "Doe"
+    --^
+        ++ "!"
+""")
+
+
     private fun doTest(@Language("Elm") before: String, @Language("Elm") after: String) {
         configureByFileTree(before)
         myFixture.performEditorAction("Inline")
