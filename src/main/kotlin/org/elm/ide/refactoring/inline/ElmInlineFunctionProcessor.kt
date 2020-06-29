@@ -4,6 +4,7 @@ package org.elm.ide.refactoring.inline
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Ref
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
 import com.intellij.psi.search.GlobalSearchScope
@@ -319,12 +320,12 @@ class ElmInlineFunctionProcessor(
     private fun replaceCallerWithRetExpr(body: PsiElement, caller: PsiElement) {
         // Covering a case in which ; isn't included in the expression, and parent is too wide.
         // e.g. if RsExpr is surrounded by RsBlock going to the RsBlock won't help.
-        val realBody = (body.parent as ElmValueDeclaration)
+        val realBody = ElmPsiFactory(project).createDeclaration(body.parent.text)
         val bodyExpression = realBody.expression?.originalElement
         when (val realCaller = containingFunctionCall(caller)) {
             is ElmFunctionCallExpr -> {
                 realBody.functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
-                    ReferencesSearch.search(namedParameter).findAll().forEach { parameterReference ->
+                    ReferencesSearch.search(namedParameter, LocalSearchScope(realBody)).findAll().forEach { parameterReference ->
                         if (parameterReference.canonicalText.equals(namedParameter.name)) {
                             parameterReference.element.replace(realCaller.arguments.toList()[parameterIndex])
                         }
