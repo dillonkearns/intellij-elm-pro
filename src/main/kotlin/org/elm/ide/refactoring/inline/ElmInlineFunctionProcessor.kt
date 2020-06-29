@@ -7,6 +7,7 @@ import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.refactoring.BaseRefactoringProcessor
 import com.intellij.refactoring.RefactoringBundle
@@ -118,10 +119,11 @@ class ElmInlineFunctionProcessor(
                             if (prev is ElmOperator && prev.referenceName.equals("|>")) {
                                 val realCaller = containingFunctionCall(reference.element) as ElmFunctionCallExpr
                                 val arguments =  realCaller.arguments.plus(prev2).toList()
-                                val realBody = (function.originalElement.parent as ElmValueDeclaration)
+                                val realBody = ElmPsiFactory(project).createDeclaration(function.originalElement.parent.text)
+
                                 val bodyExpression = realBody.expression?.originalElement
                                 realBody.functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
-                                    ReferencesSearch.search(namedParameter).findAll().forEach { parameterReference ->
+                                    ReferencesSearch.search(namedParameter, LocalSearchScope(realBody)).findAll().forEach { parameterReference ->
                                         if (parameterReference.canonicalText.equals(namedParameter.name)) {
                                             parameterReference.element.replace(arguments[parameterIndex])
                                         }

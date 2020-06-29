@@ -127,7 +127,7 @@ exclaimGreeting =
 """)
 
 
-    fun `skip test multiple inlines`() =
+    fun `test multiple inlines`() =
             doTest(
                     """
 --@ Main.elm
