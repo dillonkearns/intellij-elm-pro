@@ -168,6 +168,49 @@ anotherExclaimGreeting =
         ++ "!"
 """)
 
+    fun `test multiple inlines in multiple modules`() =
+            doTest(
+                    """
+--@ main.elm
+
+import Other
+
+exclaimGreeting =
+    ("Kearns"
+        |> Other.greet "Dillon"
+    )
+        ++ "!"
+
+
+anotherExclaimGreeting =
+    Other.gre{-caret-}et "John" "Doe"
+        ++ "!"
+
+--@ Other.elm
+module Other exposing (greet, anotherExclaimGreeting)
+
+greet : String -> String -> String
+greet first last =
+    "Hello " ++ first ++ " " ++ last
+
+
+anotherExclaimGreeting =
+    greet "First" "Last"
+        ++ "!"
+""",
+                    """import Other
+
+exclaimGreeting =
+    (
+         "Hello " ++ "Dillon" ++ " " ++ "Kearns"
+    )
+        ++ "!"
+
+
+anotherExclaimGreeting =
+    "Hello " ++ "John" ++ " " ++ "Doe"
+        ++ "!"
+""")
 
     private fun doTest(@Language("Elm") before: String, @Language("Elm") after: String) {
         configureByFileTree(before)

@@ -12,7 +12,9 @@ import com.intellij.refactoring.RefactoringBundle
 import com.intellij.refactoring.util.CommonRefactoringUtil
 import org.elm.ide.refactoring.inline.ElmInlineFunctionDialog
 import org.elm.lang.core.ElmLanguage
+import org.elm.lang.core.psi.ancestors
 import org.elm.lang.core.psi.elements.ElmFunctionDeclarationLeft
+import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.resolve.reference.ElmReference
 
 class ElmInlineFunctionHandler : InlineActionHandler() {
@@ -22,7 +24,17 @@ class ElmInlineFunctionHandler : InlineActionHandler() {
             isEnabledOnElement(element)
 
     override fun inlineElement(project: Project, editor: Editor, element: PsiElement) {
-        val function = element as ElmFunctionDeclarationLeft
+        val attempt2 = element.ancestors.filterIsInstance<ElmFunctionDeclarationLeft>().firstOrNull() // as ElmFunctionDeclarationLeft
+        val attempt1 = element.ancestors.filterIsInstance<ElmValueDeclaration>().firstOrNull()?.functionDeclarationLeft
+        val function = if (element is ElmFunctionDeclarationLeft) {
+            element
+            } else if (attempt1 != null) {
+            attempt1 //        val function = element.ancestors.filterIsInstance<ElmFunctionCallExpr>().first()
+        } else {
+            attempt2!! //        element.ancestors.filterIsInstance<ElmValueDeclaration>().first().functionDeclarationLeft
+        }
+
+
 //                ElmFunctionCallExpr
 
 

@@ -40,7 +40,7 @@ class ElmInlineFunctionProcessor(
 
         val projectScope = GlobalSearchScope.projectScope(project)
         val usages = mutableListOf<PsiReference>()
-        usages.addAll(ReferencesSearch.search(function, projectScope).findAll())
+        usages.addAll(ReferencesSearch.search(function, projectScope).findAll().filter { it.element is ElmValueExpr })
 
         usages.removeAll(usagesAsReference)
         return usages.map(::UsageInfo).toTypedArray()
