@@ -10,6 +10,8 @@ import com.intellij.codeInsight.hints.Option
 import com.intellij.psi.PsiElement
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
+import org.elm.lang.core.types.findInference
+import org.elm.lang.core.types.findPipeTypes
 import org.elm.lang.core.types.findTy
 import org.elm.lang.core.types.renderedText
 import org.elm.utils.getIndent
@@ -38,6 +40,19 @@ object ElmInlayParameterHints {
                 return elem.valueDeclarationList.map { param ->
                     InlayInfo(" -- " + param.findTy()?.renderedText(), param.eqElement?.endOffset!!)
                 }
+            }
+            is ElmBinOpExpr -> {
+                if (elem.parts.none { it is ElmOperator && it.text == "|>" }) { return emptyList() }
+                val firstPart = elem.parts.first()
+                val joinToString = elem.parts.toList().map { it.text }.joinToString(separator = " ")
+                val newPsi = ElmPsiFactory(elem.project).createAnyExpression(joinToString)
+
+                val pipeTypes = elem.findPipeTypes()
+
+                return pipeTypes?.map { (expression, type) ->
+                            InlayInfo("-- " + type.renderedText(), expression.endOffset)
+                        }.orEmpty()
+
             }
             else -> {
                 val (callInfo, valueArgumentList) = when (elem) {

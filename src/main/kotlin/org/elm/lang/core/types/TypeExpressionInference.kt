@@ -142,6 +142,7 @@ class TypeExpression(
     private val varsByElement: MutableMap<ElmNamedElement, TyVar> = mutableMapOf()
     /** A subset of [varsByElement] that contains only vars declared in the current expression */
     private val expressionTypes: MutableMap<ElmPsiElement, Ty> = mutableMapOf()
+    private val pipelineTypes: MutableMap<ElmPsiElement, List<Pair<ElmPsiElement, Ty>>> = mutableMapOf()
 
     fun beginPortAnnotationInference(annotation: ElmPortAnnotation): ParameterizedInferenceResult<Ty> {
         val ty = annotation.typeExpression?.let { typeExpressionType(it) } ?: TyUnknown()
@@ -150,7 +151,7 @@ class TypeExpression(
 
     fun beginTypeRefInference(typeExpr: ElmTypeExpression): InferenceResult {
         val ty = typeExpressionType(typeExpr)
-        return InferenceResult(expressionTypes, diagnostics, ty)
+        return InferenceResult(expressionTypes, diagnostics, ty, pipelineTypes)
     }
 
     fun beginTypeDeclarationInference(typeDeclaration: ElmTypeDeclaration): ParameterizedInferenceResult<TyUnion> {
