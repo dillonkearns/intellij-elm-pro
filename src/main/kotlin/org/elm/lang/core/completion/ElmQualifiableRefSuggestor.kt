@@ -4,6 +4,7 @@ import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.psi.PsiReference
+import org.elm.lang.core.imports.ImportAdder
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
 import org.elm.lang.core.resolve.scope.*
@@ -103,6 +104,12 @@ private fun CompletionResultSet.add(str: String) {
 }
 
 private fun CompletionResultSet.add(element: ElmNamedElement) {
-    addElement(LookupElementBuilder.create(element))
+    addElement(LookupElementBuilder.create(element)
+            .withInsertHandler { context, _ ->
+                if (!element.name.equals(element.moduleName)) {
+                    ImportAdder.addImport(ImportAdder.Import(element.moduleName, null, ".."), context.file as ElmFile, true)
+                }
+            }
+    )
 }
 
