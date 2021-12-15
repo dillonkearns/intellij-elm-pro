@@ -36,7 +36,9 @@ object ImportAdder {
 
         val existingImport = ModuleScope.getImportDecls(file)
                 .find { it.moduleQID.text == candidate.moduleName }
-        if (existingImport != null) {
+        if (isBuiltIn(candidate)) {
+            // do nothing
+        } else if (existingImport != null) {
             // merge with existing import
             val mergedImport = mergeImports(file, existingImport, newImport)
             existingImport.replace(mergedImport)
@@ -45,6 +47,11 @@ object ImportAdder {
             val insertPosition = getInsertPosition(file, candidate.moduleName)
             doInsert(newImport, insertPosition)
         }
+    }
+
+    private fun isBuiltIn(candidate: Import): Boolean {
+        val builtInImports = setOf("Basics", "List", "Maybe", "Result", "String", "Char", "Tuple", "Debug", "Platform", "Platform.Cmd", "Platform.Sub")
+        return builtInImports.contains(candidate.moduleName)
     }
 
     private fun doInsert(importClause: ElmImportClause, insertPosition: ASTNode) {

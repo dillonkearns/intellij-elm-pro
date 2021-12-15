@@ -150,6 +150,41 @@ defaultPage p = case p of
 
 """)
 
+    fun `test qualified union constructor completion with import`() = doSingleCompletionMultiFile(
+            """
+--@ main.elm
+defaultPage p = case p of
+    Page.Ho{-caret-}
+
+--@ Page.elm
+module Page exposing (..)
+type Page = Home
+""", """
+import Page
+defaultPage p = case p of
+    Page.Home{-caret-}
+
+""")
+
+    fun `test function completion with import`() = doSingleCompletionMultiFile(
+            """
+--@ main.elm
+defaultPage p =
+    Page.ho{-caret-}
+
+--@ Page.elm
+module Page exposing (..)
+type Page = Home
+
+home : Page
+home = Home
+""", """
+import Page
+defaultPage p =
+    Page.home{-caret-}
+
+""")
+
 
     fun `test does not complete union constructors in type namespace`() = checkNoCompletion(
             """
