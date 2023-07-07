@@ -14,15 +14,6 @@ import org.intellij.lang.annotations.Language
 
 class ElmExternalFormatActionTest : ElmWorkspaceTestBase() {
 
-    override fun runTestRunnable(testRunnable: ThrowableRunnable<Throwable>) {
-        if (toolchain.elmFormatCLI == null) {
-            // TODO in the future maybe we should install elm-format in the CI build environment
-            System.err.println("SKIP $name: elm-format not found")
-            return
-        }
-        super.runTestRunnable(testRunnable)
-    }
-
 
     fun `test elm-format action with elm 19`() {
         buildProject {

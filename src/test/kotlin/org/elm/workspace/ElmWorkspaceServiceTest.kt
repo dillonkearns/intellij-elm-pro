@@ -11,7 +11,6 @@ import java.nio.file.Paths
 
 class ElmWorkspaceServiceTest : ElmWorkspaceTestBase() {
 
-
     fun `test finds Elm project for source file`() {
         val testProject = fileTree {
             dir("a") {
@@ -259,7 +258,7 @@ class ElmWorkspaceServiceTest : ElmWorkspaceTestBase() {
               <elmProjects>
                 <project path="$projectPathString" />
               </elmProjects>
-              <settings elmCompilerPath="${toolchain.elmCompilerPath.toStringOrEmpty()}" elmFormatPath="${toolchain.elmFormatPath.toStringOrEmpty()}" elmTestPath="${toolchain.elmTestPath.toStringOrEmpty()}" isElmFormatOnSaveEnabled="false" />
+              <settings elmCompilerPath="${toolchain.elmCompilerPath}" elmFormatPath="${toolchain.elmFormatPath}" elmTestPath="${toolchain.elmTestPath}" elmReviewPath="" isElmFormatOnSaveEnabled="true" />
             </state>
             """.trimIndent()
 

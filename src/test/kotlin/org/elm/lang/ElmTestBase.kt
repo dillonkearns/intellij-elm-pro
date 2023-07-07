@@ -42,8 +42,7 @@ import com.intellij.psi.PsiReference
 import com.intellij.psi.impl.PsiManagerEx
 import com.intellij.testFramework.LightProjectDescriptor
 import com.intellij.testFramework.PlatformTestUtil
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import com.intellij.util.ThrowableRunnable
+import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixture4TestCase
 import junit.framework.AssertionFailedError
 import org.elm.FileTree
 import org.elm.TestProject
@@ -55,6 +54,7 @@ import org.elm.workspace.EmptyElmStdlibVariant
 import org.elm.workspace.MinimalElmStdlibVariant
 import org.elm.workspace.elmWorkspace
 import org.intellij.lang.annotations.Language
+import java.util.*
 
 private val log = logger<ElmTestBase>()
 
@@ -73,7 +73,7 @@ private val log = logger<ElmTestBase>()
  *
  * For "heavier" integration tests, see [org.elm.workspace.ElmWorkspaceTestBase]
  */
-abstract class ElmTestBase : BasePlatformTestCase(), ElmTestCase {
+abstract class ElmTestBase : LightPlatformCodeInsightFixture4TestCase(), ElmTestCase {
 
     override fun getProjectDescriptor(): LightProjectDescriptor = ElmDefaultDescriptor
 
@@ -82,17 +82,6 @@ abstract class ElmTestBase : BasePlatformTestCase(), ElmTestCase {
     open val dataPath: String = ""
 
     override fun getTestDataPath(): String = "${ElmTestCase.testResourcesPath}/$dataPath"
-
-    override fun runTestRunnable(testRunnable: ThrowableRunnable<Throwable>) {
-        val projectDescriptor = projectDescriptor
-        val reason = (projectDescriptor as? ElmProjectDescriptorBase)?.skipTestReason
-        if (reason != null) {
-            System.err.println("SKIP $name: $reason")
-            return
-        }
-
-        super.runTestRunnable(testRunnable)
-    }
 
     protected val fileName: String
         get() = "$testName.elm"
@@ -115,8 +104,8 @@ abstract class ElmTestBase : BasePlatformTestCase(), ElmTestCase {
 
         action()
 
-        val afterDir = getVirtualFileByName("$testDataPath/$after")!!
-        PlatformTestUtil.assertDirectoriesEqual(afterDir, beforeDir)
+        val afterDir = getVirtualFileByName("$testDataPath/$after")
+        PlatformTestUtil.assertDirectoriesEqual(afterDir!!, beforeDir)
     }
 
     protected fun checkByDirectory(@Language("Elm") before: String, @Language("Elm") after: String, action: () -> Unit) {
@@ -264,10 +253,7 @@ abstract class ElmTestBase : BasePlatformTestCase(), ElmTestCase {
         @JvmStatic
         fun camelOrWordsToSnake(name: String): String {
             if (' ' in name) return name.replace(" ", "_")
-
-            return name.split("(?=[A-Z])".toRegex())
-                    .map(String::toLowerCase)
-                    .joinToString("_")
+            return name.split("(?=[A-Z])".toRegex()).joinToString("_") { it.lowercase(Locale.US) }
         }
 
         @JvmStatic

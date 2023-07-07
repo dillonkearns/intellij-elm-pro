@@ -24,10 +24,10 @@ import com.intellij.openapi.startup.StartupManager
 import com.intellij.openapi.util.EmptyRunnable
 import com.intellij.openapi.util.SimpleModificationTracker
 import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.impl.source.resolve.ResolveCache
-import com.intellij.util.Consumer
 import com.intellij.util.io.exists
 import com.intellij.util.io.systemIndependentPath
 import com.intellij.util.messages.Topic
@@ -39,6 +39,7 @@ import org.elm.utils.runAsyncTask
 import org.elm.workspace.ElmToolchain.Companion.DEFAULT_FORMAT_ON_SAVE
 import org.elm.workspace.ElmToolchain.Companion.ELM_JSON
 import org.elm.workspace.commandLineTools.ElmCLI
+import org.elm.workspace.commandLineTools.LamderaCLI
 import org.elm.workspace.ui.ElmWorkspaceConfigurable
 import org.jdom.Element
 import java.io.FileNotFoundException
@@ -87,15 +88,16 @@ class ElmWorkspaceService(
 
     // SETTINGS AND TOOLCHAIN
 
-
     /* A nice view of the settings to the outside world */
     data class Settings(val toolchain: ElmToolchain)
 
     /* Representation of settings suitable for editor UI and serialization */
     data class RawSettings(
             val elmCompilerPath: String = "",
+            val lamderaCompilerPath: String = "",
             val elmFormatPath: String = "",
             val elmTestPath: String = "",
+            val elmReviewPath: String = "",
             val isElmFormatOnSaveEnabled: Boolean = DEFAULT_FORMAT_ON_SAVE
     )
 
@@ -105,8 +107,10 @@ class ElmWorkspaceService(
             val raw = rawSettingsRef.get()
             val toolchain = ElmToolchain(
                     elmCompilerPath = raw.elmCompilerPath,
+                    lamderaCompilerPath = raw.lamderaCompilerPath,
                     elmFormatPath = raw.elmFormatPath,
                     elmTestPath = raw.elmTestPath,
+                    elmReviewPath = raw.elmReviewPath,
                     isElmFormatOnSaveEnabled = raw.isElmFormatOnSaveEnabled)
             return Settings(toolchain = toolchain)
         }
@@ -133,9 +137,11 @@ class ElmWorkspaceService(
             return
         }
         modifySettings {
-            it.copy(elmCompilerPath = toolchain.elmCompilerPath?.toString() ?: "",
-                    elmFormatPath = toolchain.elmFormatPath?.toString() ?: "",
-                    elmTestPath = toolchain.elmTestPath?.toString() ?: "",
+            it.copy(elmCompilerPath = toolchain.elmCompilerPath.toString(),
+                    lamderaCompilerPath = toolchain.lamderaCompilerPath.toString(),
+                    elmFormatPath = toolchain.elmFormatPath.toString(),
+                    elmTestPath = toolchain.elmTestPath.toString(),
+                    elmReviewPath = toolchain.elmReviewPath.toString(),
                     isElmFormatOnSaveEnabled = toolchain.isElmFormatOnSaveEnabled)
         }
     }
@@ -195,18 +201,19 @@ class ElmWorkspaceService(
      */
     private fun asyncLoadProject(manifestPath: Path, installDeps: Boolean = false): CompletableFuture<ElmProject> =
             runAsyncTask(intellijProject, "Loading Elm project '$manifestPath'") {
-                val elmCLI = settings.toolchain.elmCLI
-                        ?: throw ProjectLoadException("Must specify a valid path to Elm binary in Settings")
 
-                val compilerVersion = elmCLI.queryVersion().orNull()
-                        ?: throw ProjectLoadException("Could not determine version of the Elm compiler")
+            val elmCLI = settings.toolchain.elmCLI
+                ?: throw ProjectLoadException("Must specify a valid path to Elm binary in Settings")
+            val elmCompilerVersion = elmCLI.queryVersion(intellijProject).orNull()
+                ?: throw ProjectLoadException("Could not determine version of the Elm compiler")
 
-                if (installDeps) {
-                    installProjectDeps(manifestPath, elmCLI)
-                }
+            if (installDeps) {
+                installProjectDeps(manifestPath, elmCLI)
+            }
 
                 // not thread-safe; do not reuse across threads!
-                val repo = ElmPackageRepository(compilerVersion)
+                // TODO lamderaCompilerVersion
+                val repo = ElmPackageRepository(elmCompilerVersion)
 
                 // External files may have been created/modified by the Elm compiler. Refresh.
                 findFileByPathTestAware(Paths.get(repo.elmHomePath))?.also {
@@ -268,16 +275,29 @@ class ElmWorkspaceService(
         }
 
         // Run the Elm compiler to install the dependencies
-        val output = elmCLI.make(intellijProject, workDir = dir.toPath(), path = tempMain.toPath())
+        val tmpEntryPoint: Triple<Path, String?, Int> = Triple(
+            tempMain.toPath(),
+            tempMain.path, // VfsUtilCore.getRelativePath(it, projectDir),
+            0 // mainEntryPoint.textOffset
+        )
+
+        val success =
+            if (dto.has("lamdera/core"))
+                elmCLI.make(intellijProject, workDir = dir.toPath(), null, listOf(tmpEntryPoint)) // path = tempMain.toPath()
+            else {
+                val lamderaCLI = settings.toolchain.lamderaCLI
+                    ?: throw ProjectLoadException("Must specify a valid path to Lamdera binary in Settings")
+/* TODO check version for something important
+                val lamderaCompilerVersion = lamderaCLI.queryVersion(intellijProject).orNull()
+                    ?: throw ProjectLoadException("Could not determine version of the Lamdera compiler")
+*/
+                lamderaCLI.make(intellijProject, workDir = dir.toPath(), null, listOf(tmpEntryPoint))
+            }
 
         // Cleanup
         FileUtil.delete(dir)
 
-        if (!output.isSuccess) {
-            log.error("Failed to install deps: Elm compiler failed: ${output.stderr}")
-            return false
-        }
-        return true
+        return success
     }
 
 
@@ -342,7 +362,7 @@ class ElmWorkspaceService(
 
 
     private val directoryIndex: MyDirectoryIndex<ElmProject> =
-            MyDirectoryIndex(intellijProject, noProjectSentinel, Consumer { index ->
+            MyDirectoryIndex(intellijProject, noProjectSentinel) { index ->
                 fun put(path: Path?, elmProject: ElmProject) {
                     if (path == null) return
                     val file = findFileByPathTestAware(path) ?: return
@@ -389,7 +409,7 @@ class ElmWorkspaceService(
                     log.debug("Registering tests directory ${project.testsDirPath} for $project")
                     put(project.testsDirPath, project)
                 }
-            })
+            }
 
 
     // INTEGRATION TEST SUPPORT
@@ -421,8 +441,10 @@ class ElmWorkspaceService(
         state.addContent(settingsElement)
         val raw = rawSettingsRef.get()
         settingsElement.setAttribute("elmCompilerPath", raw.elmCompilerPath)
+        settingsElement.setAttribute("lamderaCompilerPath", raw.lamderaCompilerPath)
         settingsElement.setAttribute("elmFormatPath", raw.elmFormatPath)
         settingsElement.setAttribute("elmTestPath", raw.elmTestPath)
+        settingsElement.setAttribute("elmReviewPath", raw.elmReviewPath)
         settingsElement.setAttribute("isElmFormatOnSaveEnabled", raw.isElmFormatOnSaveEnabled.toString())
 
         return state
@@ -437,8 +459,10 @@ class ElmWorkspaceService(
         // Must load the Settings before the Elm Projects in order to have an ElmToolchain ready
         val settingsElement = state.getChild("settings")
         val elmCompilerPath = settingsElement.getAttributeValue("elmCompilerPath") ?: ""
+        val lamderaCompilerPath = settingsElement.getAttributeValue("lamderaCompilerPath") ?: ""
         val elmFormatPath = settingsElement.getAttributeValue("elmFormatPath") ?: ""
         val elmTestPath = settingsElement.getAttributeValue("elmTestPath") ?: ""
+        val elmReviewPath = settingsElement.getAttributeValue("elmReviewPath") ?: ""
         val isElmFormatOnSaveEnabled = settingsElement
                 .getAttributeValue("isElmFormatOnSaveEnabled")
                 .takeIf { it != null && it.isNotBlank() }?.toBoolean()
@@ -447,8 +471,10 @@ class ElmWorkspaceService(
         modifySettings(notify = false) {
             RawSettings(
                     elmCompilerPath = elmCompilerPath,
+                    lamderaCompilerPath = lamderaCompilerPath,
                     elmFormatPath = elmFormatPath,
                     elmTestPath = elmTestPath,
+                    elmReviewPath = elmReviewPath,
                     isElmFormatOnSaveEnabled = isElmFormatOnSaveEnabled
             )
         }
@@ -548,8 +574,7 @@ fun asyncAutoDiscoverWorkspace(project: Project, explicitRequest: Boolean = fals
         project.elmWorkspace.useToolchain(suggestedToolchain)
     }
 
-    return project.elmWorkspace.asyncDiscoverAndRefresh()
-            .thenApply { Unit }
+    return project.elmWorkspace.asyncDiscoverAndRefresh().thenApply { }
 }
 
 

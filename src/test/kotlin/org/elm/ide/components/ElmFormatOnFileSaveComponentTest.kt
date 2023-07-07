@@ -12,7 +12,8 @@ import org.intellij.lang.annotations.Language
 
 class ElmFormatOnFileSaveComponentTest : ElmWorkspaceTestBase() {
 
-    override fun runTestRunnable(testRunnable: ThrowableRunnable<Throwable>) {
+/*
+    override fun runTest() {
         if (toolchain.elmFormatCLI == null) {
             // TODO in the future maybe we should install elm-format in the CI build environment
             System.err.println("SKIP $name: elm-format not found")
@@ -20,6 +21,7 @@ class ElmFormatOnFileSaveComponentTest : ElmWorkspaceTestBase() {
         }
         super.runTestRunnable(testRunnable)
     }
+*/
 
     val unformatted = """
                     module Main exposing (f)

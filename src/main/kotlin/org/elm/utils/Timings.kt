@@ -60,7 +60,7 @@ class Timings(
             return
         }
 
-        val width = values.keys.maxOf { it.length }
+        val width = values.keys.map { it.length }.maxByOrNull { i: Int -> i }!!
         for ((k, v) in values) {
             println("${k.padEnd(width)}: $v ms")
         }

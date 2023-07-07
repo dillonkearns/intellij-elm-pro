@@ -24,7 +24,7 @@ class ElmLineMarkerProvider : LineMarkerProviderDescriptor() {
     override fun getOptions(): Array<Option> = OPTIONS
 
     override fun collectSlowLineMarkers(
-        elements: List<PsiElement>,
+        elements: MutableList<out PsiElement>,
         result: MutableCollection<in LineMarkerInfo<*>>
     ) {
         val first = elements.firstOrNull() ?: return

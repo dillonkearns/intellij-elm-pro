@@ -7,7 +7,10 @@ import com.intellij.psi.PsiReference
 import org.elm.lang.core.imports.ImportAdder
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
-import org.elm.lang.core.resolve.scope.*
+import org.elm.lang.core.resolve.scope.ExpressionScope
+import org.elm.lang.core.resolve.scope.GlobalScope
+import org.elm.lang.core.resolve.scope.ModuleScope
+import org.elm.lang.core.resolve.scope.QualifiedImportScope
 import org.elm.lang.core.stubs.index.ElmModulesIndex
 
 
