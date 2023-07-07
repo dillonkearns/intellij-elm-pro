@@ -41,6 +41,21 @@ fun ElmPsiElement.findTy(): Ty? {
     }
 }
 
+/** Find the type of a given element, if the element is a value expression or declaration */
+fun ElmBinOpExpr.findPipeTypes(): List<Pair<ElmPsiElement, Ty>>? {
+    return findInference()?.pipe?.get(this)
+}
+
+/** Find the type of a given element, if the element is a value expression or declaration */
+fun ElmBinOpExpr.findPipelineType(): Ty? {
+            if (this.parts.any { it is ElmOperator && it.text == "|>" }) {
+//            findInference()?.let { it.expressionTypes[this] ?: it.ty }
+                findInference()?.expressionTypes?.get(this)
+            }
+            return null
+}
+
+
 private fun ElmValueDeclaration.inference(activeScopes: Set<ElmValueDeclaration>): InferenceResult {
     return CachedValuesManager.getManager(project).getParameterizedCachedValue(this, TYPE_INFERENCE_KEY, { useActiveScopes ->
         // Elm lets you shadow imported names, including auto-imported names, so only count names
@@ -95,6 +110,7 @@ private class InferenceScope(
     /** Record diffs for elements that have a type error */
     private val recordDiffs: MutableMap<ElmPsiElement, RecordDiff> = mutableMapOf()
 
+    private val pipelineTypes: MutableMap<ElmPsiElement, List<Pair<ElmPsiElement, Ty>>> = mutableMapOf()
     /**
      * If this scope is a let-in, this set contains declarations that are direct children of this scope.
      *
@@ -185,7 +201,7 @@ private class InferenceScope(
         val bodyTy = inferExpression(expr)
         checkToplevelCaseBranches(expr, bodyTy)
 
-        return InferenceResult(expressionTypes, diagnostics, recordDiffs, TyFunction(paramVars, bodyTy).uncurry())
+        return InferenceResult(expressionTypes, diagnostics, recordDiffs, TyFunction(paramVars, bodyTy).uncurry(), pipelineTypes)
     }
 
     private fun beginLetInInference(letIn: ElmLetInExpr): InferenceResult {
@@ -204,7 +220,7 @@ private class InferenceScope(
         val exprTy = inferExpression(expr)
         checkToplevelCaseBranches(expr, exprTy)
 
-        return InferenceResult(expressionTypes, diagnostics, recordDiffs, exprTy)
+        return InferenceResult(expressionTypes, diagnostics, recordDiffs, exprTy, pipelineTypes)
     }
 
     private fun beginCaseBranchInference(
@@ -214,7 +230,7 @@ private class InferenceScope(
     ): InferenceResult {
         bindPattern(pattern, caseTy, false)
         val ty = inferExpression(branchExpression)
-        return InferenceResult(expressionTypes, diagnostics, recordDiffs, ty)
+        return InferenceResult(expressionTypes, diagnostics, recordDiffs, ty, pipelineTypes)
     }
 
     private inline fun inferChild(
@@ -290,7 +306,7 @@ private class InferenceScope(
         val outerVars = ancestors.drop(1).flatMap { it.annotationVars.asSequence() }.toList()
         val ret = TypeReplacement.replace(ty, replacements, outerVars)
         if (replaceExpressionTypes) freeze(ret)
-        return InferenceResult(exprs, diagnostics, recordDiffs, ret)
+        return InferenceResult(exprs, diagnostics, recordDiffs, ret, pipelineTypes)
     }
 
     //</editor-fold>
@@ -362,9 +378,20 @@ private class InferenceScope(
                 }
             }
         }
-
+        val isPipeline = parts.any { it is ElmOperator && it.text == "|>"}
         val result = validateTree(BinaryExprTree.parse(parts, operatorPrecedences))
         expressionTypes[expr] = result.ty
+                if (isPipeline) {
+                    val length = parts.size / 2
+                    val map = (0..(length))
+                            .map { parts.dropLast(it * 2) }
+                            .map { validateTree(BinaryExprTree.parse(it, operatorPrecedences)) }
+                    val typed = map.map { it.end to it.ty }
+                    pipelineTypes[expr] = typed
+                    map
+                } else {
+                    emptyList()
+                }
         return result.ty
     }
 
@@ -1361,12 +1388,11 @@ private class InferenceScope(
  * @property recordDiffs record diffs for elements that have a type error
  * @property ty the return type of the function or expression being inferred
  */
-data class InferenceResult(
-        val expressionTypes: Map<ElmPsiElement, Ty>,
-        val diagnostics: List<ElmDiagnostic>,
-        val recordDiffs: Map<ElmPsiElement, RecordDiff>,
-        val ty: Ty
-) {
+data class InferenceResult(val expressionTypes: Map<ElmPsiElement, Ty>,
+                           val diagnostics: List<ElmDiagnostic>,
+                           val recordDiffs: Map<ElmPsiElement, RecordDiff>,
+                           val ty: Ty,
+                           val pipe: Map<ElmPsiElement, List<Pair<ElmPsiElement, Ty>>>) {
     fun elementType(element: ElmPsiElement): Ty = expressionTypes[element] ?: TyUnknown()
 }
 

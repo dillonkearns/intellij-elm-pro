@@ -13,6 +13,10 @@ import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.psi.endOffset
 import org.elm.lang.core.types.Ty
 import org.elm.lang.core.types.TyUnknown
+import org.elm.lang.core.psi.*
+import org.elm.lang.core.psi.elements.*
+import org.elm.lang.core.types.findInference
+import org.elm.lang.core.types.findPipeTypes
 import org.elm.lang.core.types.findTy
 import org.elm.lang.core.types.renderedText
 
@@ -35,6 +39,15 @@ object ElmInlayParameterHints {
                 } else {
                     emptyList()
                 }
+            }
+            is ElmBinOpExpr -> {
+                if (elem.parts.none { it is ElmOperator && it.text == "|>" }) { return emptyList() }
+                val pipeTypes = elem.findPipeTypes()
+
+                return pipeTypes?.map { (expression, type) ->
+                            InlayInfo(type.renderedText(), expression.endOffset)
+                        }.orEmpty()
+
             }
             else -> {
                 emptyList()
