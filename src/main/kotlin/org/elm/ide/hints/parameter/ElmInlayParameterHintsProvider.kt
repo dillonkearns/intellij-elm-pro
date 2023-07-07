@@ -27,12 +27,5 @@ class ElmInlayParameterHintsProvider : InlayParameterHintsProvider {
         return emptyList()
     }
 
-    override fun getHintInfo(element: PsiElement?): HintInfo? {
-        // Hint info is used to add function names to the exclude list
-        // since we're just doing type hints right now, it doesn't apply.
-        // It will apply if we add parameter name hints.
-        return null
-    }
-
     override fun getInlayPresentation(inlayText: String): String = inlayText
 }
