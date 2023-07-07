@@ -19,7 +19,7 @@ class ElmInlayParameterHintsProvider : InlayParameterHintsProvider {
 
     override fun getDefaultBlackList(): Set<String> = emptySet()
 
-    @ExperimentalStdlibApi
+    @OptIn(ExperimentalStdlibApi::class)
     override fun getParameterHints(element: PsiElement): List<InlayInfo> {
         if (ElmInlayParameterHints.enabled) {
             return ElmInlayParameterHints.provideHints(element)
