@@ -37,6 +37,7 @@
         <lang.refactoringSupport language="Elm"
                                  implementationClass="org.elm.ide.refactoring.ElmRefactoringSupportProvider"/>
         <renamePsiElementProcessor implementation="org.elm.ide.refactoring.ElmRenamePsiFileProcessor"/>
+        <inlineActionHandler implementation="org.elm.ide.refactoring.ElmInlineFunctionHandler"/>
         <renamePsiElementProcessor implementation="org.elm.ide.refactoring.ElmRenamePsiElementProcessor"/>
         <lang.syntaxHighlighterFactory language="Elm"
                                        implementationClass="org.elm.ide.highlight.ElmSyntaxHighlighterFactory"/>

@@ -180,7 +180,10 @@ class ElmPsiFactory(private val project: Project) {
         }
         return elmParenthesizedExpr
     }
-
+    fun createDeclaration(text: String): ElmValueDeclaration =
+            createFromText(text)
+                    ?: error("Invalid value value declaration: `$text`")
+    
     fun createStringConstant(text: String): ElmStringConstantExpr =
             createFromText("f = $text")
                     ?: error("Invalid string: `$text`")

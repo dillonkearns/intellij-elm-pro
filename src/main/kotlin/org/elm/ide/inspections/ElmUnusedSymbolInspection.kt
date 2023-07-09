@@ -10,6 +10,7 @@ import com.intellij.psi.search.PsiSearchHelper.SearchCostResult.TOO_MANY_OCCURRE
 import com.intellij.psi.search.searches.ReferencesSearch
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
+import org.elm.lang.core.psi.elements.ElmTypeAnnotation
 
 /**
  * Find unused functions, parameters, etc.
@@ -62,7 +63,7 @@ class ElmUnusedSymbolInspection : ElmLocalInspection() {
     private fun markAsUnused(holder: ProblemsHolder, element: ElmNameIdentifierOwner, name: String) {
         val fixes = when (element) {
             is ElmLowerPattern -> arrayOf(RenameToWildcardFix())
-            else -> emptyArray()
+            else -> arrayOf(RemoveUnusedFix())
         }
         holder.registerProblem(
                 element.nameIdentifier,
@@ -77,6 +78,29 @@ private class RenameToWildcardFix : NamedQuickFix("Rename to _") {
     override fun applyFix(element: PsiElement, project: Project) {
         (element.parent as? ElmLowerPattern)
                 ?.replace(ElmPsiFactory(project).createAnythingPattern())
+    }
+}
+
+
+private class RemoveUnusedFix : NamedQuickFix("Delete") {
+    override fun applyFix(element: PsiElement, project: Project) {
+        val declaration = element.ancestors.takeWhile { it !is ElmValueDeclaration }
+                .last()
+                .parent
+        when (val parentThing = declaration.parent) {
+           is ElmLetInExpr -> {
+               if (parentThing.valueDeclarationList.size == 1) {
+                   val thingy = parentThing.expression as PsiElement
+                       parentThing.replace(thingy)
+               }
+           }
+        }
+        declaration
+                .prevSiblings
+                .withoutWsOrComments
+                .takeWhile { it is ElmTypeAnnotation }
+                .plus(declaration)
+                .forEach {it.delete()}
     }
 }
 
