@@ -12,8 +12,8 @@ class ElmInlineFunctionDialog(
         private val refElement: ElmReference?,
         private val allowInlineThisOnly: Boolean,
         project: Project = function.project,
-        private val occurrencesNumber: Int = 0
-//                initOccurrencesNumber(function)
+        private val occurrencesNumber: Int =
+                initOccurrencesNumber(function)
 
 ) : InlineOptionsWithSearchSettingsDialog(project, true, function) {
 
