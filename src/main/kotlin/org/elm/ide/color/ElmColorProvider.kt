@@ -12,6 +12,7 @@ import org.elm.lang.core.psi.elementType
 import org.elm.lang.core.psi.elements.*
 import java.awt.Color
 import kotlin.math.roundToInt
+import com.github.ajalt.colormath.Color as ConvertibleColor
 
 private val colorRegex = Regex("""#[0-9a-fA-F]{3,8}\b|\b(?:rgb|hsl)a?\([^)]+\)""")
 
