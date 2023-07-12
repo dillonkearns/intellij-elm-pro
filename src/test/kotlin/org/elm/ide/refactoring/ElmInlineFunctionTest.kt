@@ -28,6 +28,7 @@ message =
                   --^
 """)
 
+    @Test
     fun `test inline function with argument`() =
             doTest(
                     """
@@ -49,6 +50,7 @@ message =
                   --^
 """)
 
+    @Test
     fun `test inline function with two arguments`() =
             doTest(
                     """
@@ -71,6 +73,7 @@ exclaimGreeting =
     --^
 """)
 
+    @Test
     fun `test inline function with two arguments and type annotation`() =
             doTest(
                     """
@@ -154,6 +157,7 @@ myExample2 =
     List.map String.toUpper [4, 5, 6]""")
 
 
+    @Test
     fun `test inline function piping`() =
             doTest(
                     """
@@ -167,9 +171,9 @@ greet first last =
 exclaimGreeting =
     ("Kearns"
         |> greet "Dillon"
+           --^
     )
         ++ "!"
-    --^
 
 """,
                     """
@@ -179,11 +183,12 @@ exclaimGreeting =
 exclaimGreeting =
     (
          "Hello " ++ "Dillon" ++ " " ++ "Kearns"
+           --^
     )
         ++ "!"
-    --^
 """)
 
+    @Test
     fun `test multiple inlines`() =
             doTest(
                     """
@@ -225,6 +230,7 @@ anotherExclaimGreeting =
         ++ "!"
 """)
 
+    @Test
     fun `test multiple inlines in multiple modules`() =
             doTest(
                     """
