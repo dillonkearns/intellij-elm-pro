@@ -2,10 +2,11 @@ package org.elm.ide.refactoring
 
 import org.elm.lang.ElmTestBase
 import org.intellij.lang.annotations.Language
+import org.junit.Test
 
 class ElmInlineFunctionTest : ElmTestBase() {
 
-
+    @Test
     fun `test inline function`() =
             doTest(
                     """
@@ -70,7 +71,6 @@ exclaimGreeting =
     --^
 """)
 
-
     fun `test inline function with two arguments and type annotation`() =
             doTest(
                     """
@@ -92,6 +92,32 @@ exclaimGreeting =
 
 exclaimGreeting =
     "Hello " ++ "Dillon" ++ " " ++ "Kearns" ++ "!"
+    --^
+""")
+
+    @Test
+    fun `test inline function with argument no pipeline`() =
+        doTest(
+            """
+--@ Main.elm
+upperList : List String -> List String
+upperList list =
+    List.map String.toUpper list
+
+
+myExample : List String
+myExample =
+    upperList []
+    --^
+
+""",
+            """
+
+
+
+myExample : List String
+myExample =
+    List.map String.toUpper []
     --^
 """)
 
@@ -125,7 +151,6 @@ exclaimGreeting =
         ++ "!"
     --^
 """)
-
 
     fun `test multiple inlines`() =
             doTest(

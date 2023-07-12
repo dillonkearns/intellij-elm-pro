@@ -70,7 +70,7 @@ class ElmInlineFunctionProcessor(
                                 val realBody = ElmPsiFactory(project).createDeclaration(function.originalElement.parent.text)
 
                                 val bodyExpression = realBody.expression?.originalElement
-                                realBody.functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
+                                function.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
                                     ReferencesSearch.search(namedParameter, LocalSearchScope(realBody)).findAll().forEach { parameterReference ->
                                         if (parameterReference.canonicalText.equals(namedParameter.name)) {
                                             parameterReference.element.replace(arguments[parameterIndex])
@@ -84,11 +84,11 @@ class ElmInlineFunctionProcessor(
                                 prev2.delete()
                             } else {
 
-                                replaceCallerWithRetExpr(function.originalElement, reference.element)
+                                replaceCallerWithRetExpr(function, reference.element)
                             }
 
                         } else {
-                            replaceCallerWithRetExpr(function.originalElement, reference.element)
+                            replaceCallerWithRetExpr(function, reference.element)
                         }
                     }
                 }
@@ -149,15 +149,14 @@ class ElmInlineFunctionProcessor(
     }
 
 
-    private fun replaceCallerWithRetExpr(body: PsiElement, caller: PsiElement) {
+    private fun replaceCallerWithRetExpr(functionLeft: ElmFunctionDeclarationLeft, caller: PsiElement) {
         // Covering a case in which ; isn't included in the expression, and parent is too wide.
         // e.g. if RsExpr is surrounded by RsBlock going to the RsBlock won't help.
-        val realBody = ElmPsiFactory(project).createDeclaration(body.parent.text)
-        val bodyExpression = realBody.expression?.originalElement
+        val bodyExpression = functionLeft.body
         when (val realCaller = containingFunctionCall(caller)) {
             is ElmFunctionCallExpr -> {
-                realBody.functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
-                    ReferencesSearch.search(namedParameter, LocalSearchScope(realBody)).findAll().forEach { parameterReference ->
+                (functionLeft.parent as ElmValueDeclaration).functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
+                    ReferencesSearch.search(namedParameter, LocalSearchScope(functionLeft.parent)).findAll().forEach { parameterReference ->
                         if (parameterReference.canonicalText.equals(namedParameter.name)) {
                             parameterReference.element.replace(realCaller.arguments.toList()[parameterIndex])
                         }

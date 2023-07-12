@@ -57,6 +57,9 @@ class ElmFunctionDeclarationLeft : ElmStubbedNamedElementImpl<ElmFunctionDeclara
     val namedParameters: Collection<ElmNameDeclarationPatternTag>
         get() = PsiTreeUtil.collectElementsOfType(this, ElmNameDeclarationPatternTag::class.java)
 
+    val body: ElmExpressionTag?
+        get() = (this.parent as ElmValueDeclaration).expression
+
 
     /** Return true if this declaration is not nested in a let-in expression */
     val isTopLevel: Boolean
