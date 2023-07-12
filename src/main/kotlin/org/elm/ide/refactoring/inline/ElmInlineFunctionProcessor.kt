@@ -15,11 +15,8 @@ import com.intellij.usageView.UsageInfo
 import com.intellij.usageView.UsageViewBundle
 import com.intellij.usageView.UsageViewDescriptor
 import com.intellij.util.containers.MultiMap
-import org.elm.lang.core.psi.ElmPsiFactory
-import org.elm.lang.core.psi.ancestors
+import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
-import org.elm.lang.core.psi.prevSiblings
-import org.elm.lang.core.psi.withoutWsOrComments
 import org.elm.lang.core.resolve.reference.ElmReference
 
 class ElmInlineFunctionProcessor(
@@ -152,19 +149,18 @@ class ElmInlineFunctionProcessor(
     private fun replaceCallerWithRetExpr(functionLeft: ElmFunctionDeclarationLeft, caller: PsiElement) {
         // Covering a case in which ; isn't included in the expression, and parent is too wide.
         // e.g. if RsExpr is surrounded by RsBlock going to the RsBlock won't help.
-        val bodyExpression = functionLeft.body
+        val bodyExpression = functionLeft.body!!
         when (val realCaller = containingFunctionCall(caller)) {
             is ElmFunctionCallExpr -> {
-                (functionLeft.parent as ElmValueDeclaration).functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
-                    ReferencesSearch.search(namedParameter, LocalSearchScope(functionLeft.parent)).findAll().forEach { parameterReference ->
+                val copied = factory.createDeclaration(functionLeft.parent.text)
+                copied.functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
+                    ReferencesSearch.search(namedParameter, LocalSearchScope(copied)).findAll().forEach { parameterReference ->
                         if (parameterReference.canonicalText.equals(namedParameter.name)) {
                             parameterReference.element.replace(realCaller.arguments.toList()[parameterIndex])
                         }
                     }
                 }
-                if (bodyExpression != null) {
-                    realCaller.replace(bodyExpression)
-                }
+                realCaller.replace(copied.expression!!)
             }
             is ElmValueExpr -> {
                 if (bodyExpression != null) {

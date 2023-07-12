@@ -47,7 +47,11 @@ class ElmFile(viewProvider: FileViewProvider) : PsiFileBase(viewProvider, ElmLan
         // Must use [originalFile] because during code completion the direct [virtualFile] is an
         // in-memory copy of the real file. See:
         // https://intellij-support.jetbrains.com/hc/en-us/community/posts/115000108704/comments/115000123710
-        get() = project.elmWorkspace.findProjectForFile(originalFile.virtualFile)
+        get() = if (originalFile == null || originalFile.virtualFile == null) {
+            null
+        } else {
+            project.elmWorkspace.findProjectForFile(originalFile.virtualFile)
+        }
 
     override val isInTestsDirectory: Boolean
         // This is called often during reference resolve, and the system-independent path comparison

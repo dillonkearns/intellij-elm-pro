@@ -121,6 +121,38 @@ myExample =
     --^
 """)
 
+    @Test
+    fun `test inline function with multiple call sites`() =
+        doTest(
+            """
+--@ Main.elm
+upperList : List String -> List String
+upperList list =
+    List.map String.toUpper list
+
+
+myExample : List String
+myExample =
+    upperList [1, 2, 3]
+    --^
+
+myExample2 : List String
+myExample2 =
+    upperList [4, 5, 6]
+""",
+            """
+
+
+
+myExample : List String
+myExample =
+    List.map String.toUpper [1, 2, 3]
+    --^
+
+myExample2 : List String
+myExample2 =
+    List.map String.toUpper [4, 5, 6]""")
+
 
     fun `test inline function piping`() =
             doTest(
