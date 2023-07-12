@@ -67,7 +67,7 @@ class ElmInlineFunctionProcessor(
                                 val realBody = ElmPsiFactory(project).createDeclaration(function.originalElement.parent.text)
 
                                 val bodyExpression = realBody.expression?.originalElement
-                                function.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
+                                realBody.functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
                                     ReferencesSearch.search(namedParameter, LocalSearchScope(realBody)).findAll().forEach { parameterReference ->
                                         if (parameterReference.canonicalText.equals(namedParameter.name)) {
                                             parameterReference.element.replace(arguments[parameterIndex])
