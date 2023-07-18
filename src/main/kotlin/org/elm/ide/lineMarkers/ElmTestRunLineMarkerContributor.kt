@@ -9,93 +9,78 @@ import com.intellij.execution.TestStateStorage
 import com.intellij.execution.lineMarker.ExecutorAction
 import com.intellij.execution.lineMarker.RunLineMarkerContributor
 import com.intellij.execution.testframework.TestIconMapper
-import com.intellij.execution.testframework.sm.runner.states.TestStateInfo
+import com.intellij.execution.testframework.sm.runner.states.TestStateInfo.Magnitude
 import com.intellij.icons.AllIcons
 import com.intellij.psi.PsiElement
-import com.intellij.psi.tree.IElementType
-import org.elm.lang.core.psi.elementType
-import org.elm.lang.core.psi.elements.ElmValueDeclaration
-import org.elm.lang.core.types.findTy
+import org.elm.ide.test.core.LabelUtils
+import org.elm.ide.test.core.LabelUtils.toPath
+import org.elm.lang.core.psi.ElmPsiElement
+import org.elm.lang.core.psi.elements.ElmFunctionCallExpr
+import org.elm.lang.core.psi.elements.ElmStringConstantExpr
+import org.elm.lang.core.psi.moduleName
 import javax.swing.Icon
 
 class ElmTestRunLineMarkerContributor : RunLineMarkerContributor() {
     override fun getInfo(element: PsiElement): Info? {
         when (element) {
-            is ElmValueDeclaration -> {
-                // if type is `Test`
-                val findTy = element.findTy()
-//                findTy.alias?.name == "Test"
-                val icon = AllIcons.RunConfigurations.TestState.Run
-                if (findTy?.alias?.name == "Test") {
+            is ElmFunctionCallExpr -> {
+                if (element.target.reference?.canonicalText == "describe") {
+                    // TODO this assumes a single level of nesting, need to traverse up the tree to get the full path
+                    val arg = element.arguments.first()
+                    val describeName = if (arg is ElmStringConstantExpr) {
+                        arg.textContent
+                    } else {
+                        null
+                    }
+                    if (describeName == null) {
+                        return null
+                    }
+                    val testUrl = LabelUtils.toLocationUrl(toPath((element as ElmPsiElement).moduleName, describeName), true)
+                    val icon = getTestStateIcon(element, testUrl)
                     return Info(
                         icon,
                         { "Run" },
                         *ExecutorAction.getActions(1)
                     )
-                } else {
-                    return null
+                }
+                else if (element.target.reference?.canonicalText == "test") {
+                    // TODO this assumes a single level of nesting, need to traverse up the tree to find any `describe`s that this test is contained within to get the full path
+                    val arg = element.arguments.first()
+                    val testName = if (arg is ElmStringConstantExpr) {
+                        arg.textContent
+                    } else {
+                        null
+                    }
+                    if (testName == null) {
+                        return null
+                    }
+                    val testUrl = LabelUtils.toLocationUrl(toPath((element as ElmPsiElement).moduleName, testName), false)
+                    val icon = getTestStateIcon(element, testUrl)
+                    return Info(
+                        icon,
+                        { "Run" },
+                        *ExecutorAction.getActions(1)
+                    )
                 }
             }
         }
-
-
-//        val target = when (element.elementType) {
-//            DOC_DATA -> {
-//                val parent = element.parent as? RsDocCodeFenceStartEnd ?: return null
-//                val fence = parent.parent as? RsDocCodeFence ?: return null
-//                if (fence.start != parent) return null
-//                fence
-//            }
-//            IDENTIFIER -> {
-//                val parent = element.parent
-//                if (parent !is RsNameIdentifierOwner || element != parent.nameIdentifier) return null
-//                if (parent is RsFunction && CargoExecutableRunConfigurationProducer.isMainFunction(parent)) return null
-//                parent
-//            }
-//            else -> return null
         return null
-        }
-
-//        val state = CargoTestRunConfigurationProducer().findTestConfig(listOf(target), climbUp = false)
-//            ?: CargoBenchRunConfigurationProducer().findTestConfig(listOf(target), climbUp = false)
-//            ?: return null
-//        val icon = if (state.commandName == "test") {
-//            getTestStateIcon(state.sourceElement)
-//        } else {
-//            AllIcons.RunConfigurations.TestState.Run
-//        }
-//        return Info(
-//            icon,
-//            { state.configurationName },
-//            *ExecutorAction.getActions(1)
-//        )
     }
-//
-//    companion object {
-//        fun getTestStateIcon(sourceElement: PsiElement): Icon? {
-//            val url = when (sourceElement) {
-//                is RsQualifiedNamedElement -> CargoTestLocator.getTestUrl(sourceElement)
-//                is RsDocCodeFence -> {
-//                    val ctx = sourceElement.getDoctestCtx() ?: return null
-//                    CargoTestLocator.getTestUrl(ctx)
-//                }
-//                else -> return null
-//            }
-//
-//            val project = sourceElement.project
-//            val magnitude = TestStateStorage.getInstance(project).getState(url)
-//                ?.let { TestIconMapper.getMagnitude(it.magnitude) }
-//            return when (magnitude) {
-//                TestStateInfo.Magnitude.PASSED_INDEX,
-//                TestStateInfo.Magnitude.COMPLETE_INDEX ->
-//                    CargoIcons.TEST_GREEN
-//
-//                TestStateInfo.Magnitude.ERROR_INDEX,
-//                TestStateInfo.Magnitude.FAILED_INDEX ->
-//                    CargoIcons.TEST_RED
-//
-//                else -> CargoIcons.TEST
-//            }
-//        }
-//    }
-//}
+
+    private fun getTestStateIcon(element: PsiElement, testUrl: String?): Icon? {
+        val instance = TestStateStorage.getInstance(element.project)
+        val state = instance.getState(testUrl)
+
+        return when (state.let { it?.let { it1 -> TestIconMapper.getMagnitude(it1.magnitude) } }) {
+            Magnitude.PASSED_INDEX,
+            Magnitude.COMPLETE_INDEX ->
+                AllIcons.RunConfigurations.TestState.Green2
+
+            Magnitude.ERROR_INDEX,
+            Magnitude.FAILED_INDEX ->
+                AllIcons.RunConfigurations.TestState.Red2
+
+            else -> AllIcons.RunConfigurations.TestState.Run
+        }
+    }
+}
