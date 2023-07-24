@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Elm Project Schema",
+  "description": "JSON Schema for elm.json files.",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["application", "package"]
+    },
+    "source-directories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "elm-version": {
+      "description": "The Elm version used by this project."
+    },
+    "dependencies": {
+      "type": "object",
+      "properties": {
+        "direct": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "indirect": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "test-dependencies": {
+      "type": "object",
+      "properties": {
+        "direct": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "indirect": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "name": { "type": "string" },
+    "summary": { "type": "string" },
+    "license": { "type": "string" },
+    "version": { "type": "string" },
+    "exposed-modules": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": ["type", "elm-version"],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": { "const": "application" }
+        }
+      },
+      "then": {
+        "properties": {
+          "elm-version": {
+            "type": "string",
+            "default": "0.19.1",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "type": { "const": "package" },
+          "elm-version": {
+            "type": "string",
+            "default": "0.19.0 <= v < 0.20.0",
+            "pattern": "^\\d+\\.\\d+\\.\\d+ <= v < \\d+\\.\\d+\\.\\d+$"
+          }
+        }
+      }
+    }
+  ]
+}

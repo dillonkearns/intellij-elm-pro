@@ -229,6 +229,9 @@
         <runConfigurationProducer implementation="org.elm.ide.test.run.ElmTestRunConfigurationProducer"/>
         <projectService serviceImplementation="org.elm.ide.test.run.ElmTestAutoTestManager"/>
     </extensions>
+    <extensions defaultExtensionNs="JavaScript">
+        <JsonSchema.ProviderFactory implementation="org.elm.json.ElmJsonSchemaProviderFactory"/>
+    </extensions>
 
     <project-components>
         <component>
