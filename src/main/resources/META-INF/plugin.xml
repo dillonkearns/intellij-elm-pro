@@ -130,6 +130,11 @@
                          displayName="elm-review error"
                          enabledByDefault="true" level="WARNING"
                          implementationClass="org.elm.ide.inspections.ElmReviewInspection"/>
+        <localInspection language="JSON" groupName="Elm"
+                         enabledByDefault="true"
+                         level="WARNING"
+                         implementationClass="org.elm.json.inspections.NewPackageVersionAvailableInspection"
+                         displayName="New package version available"/>
 
         <!-- Intentions -->
 
