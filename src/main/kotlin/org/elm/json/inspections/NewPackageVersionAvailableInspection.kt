@@ -43,7 +43,22 @@ class NewPackageVersionAvailableInspection : LocalInspectionTool() {
                                 }
                             }
                         } else if (projectType == "package") {
-                            // TODO not implemented - need to compare with constraints parsing
+                            (root.findProperty("dependencies")?.value as JsonObject).propertyList.map {
+                                val packageName = it.name
+                                val versionRange: String = (it.value as JsonStringLiteral).value
+                                val (lower, upper) = versionRange.split(Regex("\\s*<=\\s*v\\s*<\\s*")).let { matches ->
+                                    Pair(matches[0], matches[1])
+                                }
+
+                                val latestVersion = versions?.get(packageName)?.last()
+                                val isUpToDate = upper.split(".")[0].toInt() == latestVersion?.split(".")?.get(0)?.toInt()!! + 1
+                                if (!isUpToDate) {
+                                    holder.registerProblem(
+                                        it.value?.originalElement!!,
+                                        "The package '${it.name}' has version $latestVersion available."
+                                    )
+                                }
+                            }
                         }
                     }
                 }
