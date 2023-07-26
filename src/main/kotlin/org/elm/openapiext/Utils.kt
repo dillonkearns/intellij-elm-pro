@@ -8,11 +8,13 @@
 package org.elm.openapiext
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ex.ApplicationUtil
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.JDOMUtil
@@ -189,3 +191,6 @@ fun refreshAndFindFileByPathTestAware(path: Path): VirtualFile? {
 val isUnitTestMode: Boolean get() = ApplicationManager.getApplication().isUnitTestMode
 
 fun saveAllDocuments() = FileDocumentManager.getInstance().saveAllDocuments()
+
+fun <T> runWithCheckCanceled(callable: () -> T): T =
+    ApplicationUtil.runWithCheckCanceled(callable, ProgressManager.getInstance().progressIndicator)

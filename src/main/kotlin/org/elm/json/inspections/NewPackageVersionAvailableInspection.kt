@@ -16,6 +16,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import org.elm.ide.notifications.showBalloon
+import org.elm.openapiext.runWithCheckCanceled
+
 import java.io.IOException
 
 class NewPackageVersionAvailableInspection : LocalInspectionTool() {
@@ -69,11 +71,12 @@ class NewPackageVersionAvailableInspection : LocalInspectionTool() {
 
 fun packageVersions(project: Project): HashMap<String, List<String>>? {
     return try {
-        val response = HttpRequests.request("https://package.elm-lang.org/all-packages")
-            .readString(ProgressManager.getInstance().progressIndicator)
-        val typeToken = object : TypeToken<HashMap<String, List<String>>>() {}.type
-
-        return Gson().fromJson<HashMap<String, List<String>>>(response, typeToken)
+        runWithCheckCanceled {
+            val response = HttpRequests.request("https://package.elm-lang.org/all-packages")
+                .readString(ProgressManager.getInstance().progressIndicator)
+            val typeToken = object : TypeToken<HashMap<String, List<String>>>() {}.type
+            Gson().fromJson(response, typeToken)
+        }
     } catch (e: IOException) {
         project.showBalloon("Could not reach Elm package server.", NotificationType.WARNING)
         null
