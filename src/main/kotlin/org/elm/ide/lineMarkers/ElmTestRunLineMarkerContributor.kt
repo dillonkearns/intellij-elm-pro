@@ -35,15 +35,15 @@ class ElmTestRunLineMarkerContributor : RunLineMarkerContributor() {
                     if (describeName == null) {
                         return null
                     }
-                    val testUrl = LabelUtils.toLocationUrl(toPath((element as ElmPsiElement).moduleName, describeName), true)
+                    val testUrl =
+                        LabelUtils.toLocationUrl(toPath((element as ElmPsiElement).moduleName, describeName), true)
                     val icon = getTestStateIcon(element, testUrl)
                     return Info(
                         icon,
                         { "Run" },
                         *ExecutorAction.getActions(1)
                     )
-                }
-                else if (element.target.reference?.canonicalText == "test") {
+                } else if (element.target.reference?.canonicalText == "test") {
                     // TODO this assumes a single level of nesting, need to traverse up the tree to find any `describe`s that this test is contained within to get the full path
                     val arg = element.arguments.first()
                     val testName = if (arg is ElmStringConstantExpr) {
@@ -51,10 +51,19 @@ class ElmTestRunLineMarkerContributor : RunLineMarkerContributor() {
                     } else {
                         null
                     }
-                    if (testName == null) {
+                    val describePath = getDescribePath(element)
+                    if (testName == null || describePath == null) {
                         return null
                     }
-                    val testUrl = LabelUtils.toLocationUrl(toPath((element as ElmPsiElement).moduleName, testName), false)
+                    val fullPath =
+                        arrayOf(
+                            arrayOf((element as ElmPsiElement).moduleName),
+                            describePath,
+                            arrayOf(testName)
+                        ).flatten()
+
+                    val testUrl =
+                        LabelUtils.toLocationUrl(toPath(*fullPath.toTypedArray()), false)
                     val icon = getTestStateIcon(element, testUrl)
                     return Info(
                         icon,
@@ -65,6 +74,35 @@ class ElmTestRunLineMarkerContributor : RunLineMarkerContributor() {
             }
         }
         return null
+    }
+
+    private fun getDescribePath(element: PsiElement): Array<String>? {
+        return getDescribePathHelp(element.parent, arrayOf())
+    }
+
+    private fun getDescribePathHelp(element: PsiElement?, soFar: Array<String>?): Array<String>? {
+        if (element == null || soFar == null) {
+            return soFar
+        } else {
+            if (element is ElmFunctionCallExpr && element.target.reference?.canonicalText == "describe") {
+                val firstArg = element.arguments.first()
+                return if (firstArg is ElmStringConstantExpr) {
+                    getDescribePathHelp(
+                        element.parent,
+                        arrayOf(firstArg.textContent) + soFar
+                    )
+                } else {
+                    null
+                }
+            } else {
+                return getDescribePathHelp(
+                    element.parent,
+                    soFar
+                )
+
+            }
+
+        }
     }
 
     private fun getTestStateIcon(element: PsiElement, testUrl: String?): Icon? {
