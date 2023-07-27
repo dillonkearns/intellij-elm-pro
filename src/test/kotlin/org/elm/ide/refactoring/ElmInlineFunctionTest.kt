@@ -46,7 +46,29 @@ message =
 
 
 message =
-    List.join " " ["Hello", "World"]
+    (List.join " ") ["Hello", "World"]
+    --^
+""")
+
+    @Test
+    fun `test complex point-free function definition`() =
+        doTest(
+            """
+--@ Main.elm
+joinWithSpace =
+    List.join " " >> String.toUpper
+
+
+message =
+    joinWithSpace ["Hello", "World"]
+    --^
+
+""",
+            """
+
+
+message =
+    (List.join " " >> String.toUpper) ["Hello", "World"]
     --^
 """)
     @Test
