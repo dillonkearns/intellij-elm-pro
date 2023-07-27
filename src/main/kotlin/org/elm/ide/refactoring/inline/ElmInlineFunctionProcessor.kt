@@ -160,6 +160,12 @@ class ElmInlineFunctionProcessor(
                         }
                     }
                 }
+                val pointFreeArgumentCount =
+                    realCaller.arguments.toList().size - (copied.functionDeclarationLeft?.namedParameters?.size ?: 0)
+                realCaller.arguments.toList().takeLast(pointFreeArgumentCount).forEach {
+                    copied.expression?.addAfter(factory.createWhitespace(" "), copied.expression!!)
+                    copied.expression?.addAfter(it, copied.expression!!)
+                }
                 realCaller.replace(copied.expression!!)
             }
             is ElmValueExpr -> {

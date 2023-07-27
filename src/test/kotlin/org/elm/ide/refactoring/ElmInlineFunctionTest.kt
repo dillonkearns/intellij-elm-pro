@@ -29,6 +29,27 @@ message =
 """)
 
     @Test
+    fun `test point-free function definition`() =
+        doTest(
+            """
+--@ Main.elm
+joinWithSpace =
+    List.join " "
+
+
+message =
+    joinWithSpace ["Hello", "World"]
+    --^
+
+""",
+            """
+
+
+message =
+    List.join " " ["Hello", "World"]
+    --^
+""")
+    @Test
     fun `test inline function with argument`() =
             doTest(
                     """
