@@ -80,6 +80,10 @@ class ElmFile(viewProvider: FileViewProvider) : PsiFileBase(viewProvider, ElmLan
                 .toList()
     }
 
+    fun addAll(elements: Collection<PsiElement>) {
+        elements.forEach { add(it) }
+    }
+
     companion object {
         fun fromVirtualFile(file: VirtualFile, project: Project): ElmFile? =
                 file.toPsiFile(project) as? ElmFile

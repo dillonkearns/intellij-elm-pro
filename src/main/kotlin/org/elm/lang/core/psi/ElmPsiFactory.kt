@@ -287,4 +287,13 @@ class ElmPsiFactory(private val project: Project) {
         return createFromText(s)
                 ?: error("Failed to create value declaration")
     }
+
+    fun createTopLevelFunctionWithAnnotation(annotation: String, fn: String): Collection<PsiElement> {
+        val thing = createFromText<ElmModuleDeclaration>("""module Foo exposing (..)
+
+$annotation
+$fn
+""")
+        return createElements("module Foo exposing (..)\n${annotation}\n${fn}").drop(1)
+    }
 }
