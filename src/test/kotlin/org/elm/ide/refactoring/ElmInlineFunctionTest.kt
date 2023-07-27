@@ -72,6 +72,28 @@ message =
 """)
 
     @Test
+    fun `test simple constant`() =
+        doTest(
+            """
+--@ Main.elm
+value =
+    "World"
+
+
+message =
+    "Hello, " ++ value ++ "!"
+                  --^
+
+""",
+            """
+
+
+message =
+    "Hello, " ++ "World" ++ "!"
+                  --^
+""")
+
+    @Test
     fun `test inline function with two arguments`() =
             doTest(
                     """
