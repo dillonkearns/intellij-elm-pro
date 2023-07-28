@@ -71,6 +71,66 @@ message =
     (List.join " " >> String.toUpper) ["Hello", "World"]
     --^
 """)
+
+    @Test
+    fun `test case expression`() =
+        doTest(
+            """
+--@ Main.elm
+intDescription int =
+    case int of
+        1 ->
+            "one"
+        2 ->
+            "two"
+        _ ->
+            "other"
+
+
+message =
+    intDescription 2
+    --^
+
+""",
+            """
+
+
+message =
+    case 2 of
+        1 ->
+            "one"
+        2 ->
+            "two"
+        _ ->
+            "other"
+    --^
+""")
+
+    @Test
+    fun `test simple custom type parameter destructure`() =
+        doTest(
+            """
+--@ Main.elm
+
+toString : Slug -> String
+toString (Slug str) =
+    str
+
+
+message slug =
+    toString slug
+    --^
+
+""",
+            """
+
+
+
+message slug =
+    ((\(Slug str) -> str) slug)
+    --^
+""")
+
     @Test
     fun `test inline function with argument`() =
             doTest(

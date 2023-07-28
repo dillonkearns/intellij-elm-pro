@@ -152,27 +152,39 @@ class ElmInlineFunctionProcessor(
         val bodyExpression = functionLeft.body!!
         when (val realCaller = containingFunctionCall(caller)) {
             is ElmFunctionCallExpr -> {
-                val copied = factory.createDeclaration(functionLeft.parent.text)
-                copied.functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
-                    ReferencesSearch.search(namedParameter, LocalSearchScope(copied)).findAll().forEach { parameterReference ->
-                        if (parameterReference.canonicalText.equals(namedParameter.name)) {
-                            parameterReference.element.replace(realCaller.arguments.toList()[parameterIndex])
+                val needsLambda = needsLambdaReplacement(functionLeft)
+                if (!needsLambda) {
+                    val copied = factory.createDeclaration(functionLeft.parent.text)
+                    copied.functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
+                        ReferencesSearch.search(namedParameter, LocalSearchScope(copied)).findAll().forEach { parameterReference ->
+                            if (parameterReference.canonicalText.equals(namedParameter.name)) {
+                                parameterReference.element.replace(realCaller.arguments.toList()[parameterIndex])
+                            }
                         }
                     }
-                }
-                val pointFreeArgumentCount =
-                    realCaller.arguments.toList().size - (copied.functionDeclarationLeft?.namedParameters?.size ?: 0)
+                    val pointFreeArgumentCount =
+                        realCaller.arguments.toList().size - (copied.functionDeclarationLeft?.namedParameters?.size ?: 0)
 
-                val copied2 = if (pointFreeArgumentCount > 0) {
-                    factory.createParens(copied.expression?.text!!, "")
+                    val copied2 = if (pointFreeArgumentCount > 0) {
+                        factory.createParens(copied.expression?.text!!, "")
+                    } else {
+                        copied.expression!!
+                    }
+                    realCaller.arguments.toList().takeLast(pointFreeArgumentCount).forEach {
+                        copied2.addAfter(factory.createWhitespace(" "), copied2)
+                        copied2.addAfter(it, copied2)
+                    }
+                    realCaller.replace(copied2)
                 } else {
-                    copied.expression!!
+                    val lambda = factory.createParens(
+                        "(\\" + functionLeft.patterns.joinToString(" ") {
+                            "(${it.text})"
+                        }
+                    + " -> " + functionLeft.body!!.text
+                    + ") ${realCaller.arguments.joinToString(" ") { it.text }}"
+                    )
+                    realCaller.replace(lambda)
                 }
-                realCaller.arguments.toList().takeLast(pointFreeArgumentCount).forEach {
-                    copied2.addAfter(factory.createWhitespace(" "), copied2)
-                    copied2.addAfter(it, copied2)
-                }
-                realCaller.replace(copied2)
             }
             is ElmValueExpr -> {
                 if (bodyExpression != null) {
@@ -181,6 +193,12 @@ class ElmInlineFunctionProcessor(
             }
 
 
+        }
+    }
+
+    private fun needsLambdaReplacement(functionLeft: ElmFunctionDeclarationLeft): Boolean {
+        return functionLeft.patterns.any {
+            (it is ElmPattern) && (it.child is ElmUnionPattern)
         }
     }
 
