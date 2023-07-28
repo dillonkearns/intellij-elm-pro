@@ -20,14 +20,14 @@ import org.elm.lang.core.psi.elements.*
 import org.elm.lang.core.resolve.reference.ElmReference
 
 class ElmInlineFunctionProcessor(
-        private val project: Project,
-        private val function: ElmFunctionDeclarationLeft,
-        private val ref: ElmReference?,
-        private val inlineThisOnly: Boolean,
-        private val removeDefinition: Boolean,
-        private val factory: ElmPsiFactory = ElmPsiFactory(project),
-        private val logger: Logger = Logger.getInstance(ElmInlineFunctionProcessor::class.java),
-        private var usagesAsReference: List<PsiReference> = emptyList()
+    private val project: Project,
+    private val function: ElmFunctionDeclarationLeft,
+    private val ref: ElmReference?,
+    private val inlineThisOnly: Boolean,
+    private val removeDefinition: Boolean,
+    private val factory: ElmPsiFactory = ElmPsiFactory(project),
+    private val logger: Logger = Logger.getInstance(ElmInlineFunctionProcessor::class.java),
+    private var usagesAsReference: List<PsiReference> = emptyList()
 ) : BaseRefactoringProcessor(project) {
 
     override fun findUsages(): Array<UsageInfo> {
@@ -63,17 +63,20 @@ class ElmInlineFunctionProcessor(
                             val prev2 = prevSiblings.toList()[1]
                             if (prev is ElmOperator && prev.referenceName.equals("|>")) {
                                 val realCaller = containingFunctionCall(reference.element) as ElmFunctionCallExpr
-                                val arguments =  realCaller.arguments.plus(prev2).toList()
-                                val realBody = ElmPsiFactory(project).createDeclaration(function.originalElement.parent.text)
+                                val arguments = realCaller.arguments.plus(prev2).toList()
+                                val realBody =
+                                    ElmPsiFactory(project).createDeclaration(function.originalElement.parent.text)
 
                                 val bodyExpression = realBody.expression?.originalElement
-                                realBody.functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
-                                    ReferencesSearch.search(namedParameter, LocalSearchScope(realBody)).findAll().forEach { parameterReference ->
-                                        if (parameterReference.canonicalText.equals(namedParameter.name)) {
-                                            parameterReference.element.replace(arguments[parameterIndex])
-                                        }
+                                realBody.functionDeclarationLeft?.namedParameters?.withIndex()
+                                    ?.forEach { (parameterIndex, namedParameter) ->
+                                        ReferencesSearch.search(namedParameter, LocalSearchScope(realBody)).findAll()
+                                            .forEach { parameterReference ->
+                                                if (parameterReference.canonicalText.equals(namedParameter.name)) {
+                                                    parameterReference.element.replace(arguments[parameterIndex])
+                                                }
+                                            }
                                     }
-                                }
                                 if (bodyExpression != null) {
                                     realCaller.replace(bodyExpression)
                                 }
@@ -102,12 +105,16 @@ class ElmInlineFunctionProcessor(
     override fun createUsageViewDescriptor(usages: Array<out UsageInfo>): UsageViewDescriptor {
         return object : UsageViewDescriptor {
             override fun getCommentReferencesText(usagesCount: Int, filesCount: Int) =
-                    RefactoringBundle.message("comments.elements.header",
-                            UsageViewBundle.getOccurencesString(usagesCount, filesCount))
+                RefactoringBundle.message(
+                    "comments.elements.header",
+                    UsageViewBundle.getOccurencesString(usagesCount, filesCount)
+                )
 
             override fun getCodeReferencesText(usagesCount: Int, filesCount: Int) =
-                    RefactoringBundle.message("invocations.to.be.inlined",
-                            UsageViewBundle.getReferencesString(usagesCount, filesCount))
+                RefactoringBundle.message(
+                    "invocations.to.be.inlined",
+                    UsageViewBundle.getReferencesString(usagesCount, filesCount)
+                )
 
             override fun getElements() = arrayOf(function)
 
@@ -117,8 +124,8 @@ class ElmInlineFunctionProcessor(
 
     private fun deleteDeclaration(element: PsiElement) {
         val declaration = element.ancestors.takeWhile { it !is ElmValueDeclaration }
-                .last()
-                .parent
+            .last()
+            .parent
         when (val parentThing = declaration.parent) {
             is ElmLetInExpr -> {
                 if (parentThing.valueDeclarationList.size == 1) {
@@ -128,11 +135,11 @@ class ElmInlineFunctionProcessor(
             }
         }
         declaration
-                .prevSiblings
-                .withoutWsOrComments
-                .takeWhile { it is ElmTypeAnnotation }
-                .plus(declaration)
-                .forEach { it.delete() }
+            .prevSiblings
+            .withoutWsOrComments
+            .takeWhile { it is ElmTypeAnnotation }
+            .plus(declaration)
+            .forEach { it.delete() }
     }
 
     private fun containingFunctionCall(caller: PsiElement): PsiElement {
@@ -155,15 +162,18 @@ class ElmInlineFunctionProcessor(
                 val needsLambda = needsLambdaReplacement(functionLeft)
                 if (!needsLambda) {
                     val copied = factory.createDeclaration(functionLeft.parent.text)
-                    copied.functionDeclarationLeft?.namedParameters?.withIndex()?.forEach { ( parameterIndex, namedParameter ) ->
-                        ReferencesSearch.search(namedParameter, LocalSearchScope(copied)).findAll().forEach { parameterReference ->
-                            if (parameterReference.canonicalText.equals(namedParameter.name)) {
-                                parameterReference.element.replace(realCaller.arguments.toList()[parameterIndex])
-                            }
+                    copied.functionDeclarationLeft?.namedParameters?.withIndex()
+                        ?.forEach { (parameterIndex, namedParameter) ->
+                            ReferencesSearch.search(namedParameter, LocalSearchScope(copied)).findAll()
+                                .forEach { parameterReference ->
+                                    if (parameterReference.canonicalText.equals(namedParameter.name)) {
+                                        parameterReference.element.replace(realCaller.arguments.toList()[parameterIndex])
+                                    }
+                                }
                         }
-                    }
                     val pointFreeArgumentCount =
-                        realCaller.arguments.toList().size - (copied.functionDeclarationLeft?.namedParameters?.size ?: 0)
+                        realCaller.arguments.toList().size - (copied.functionDeclarationLeft?.namedParameters?.size
+                            ?: 0)
 
                     val copied2 = if (pointFreeArgumentCount > 0) {
                         factory.createParens(copied.expression?.text!!, "")
@@ -180,8 +190,8 @@ class ElmInlineFunctionProcessor(
                         "(\\" + functionLeft.patterns.joinToString(" ") {
                             "(${it.text})"
                         }
-                    + " -> " + functionLeft.body!!.text
-                    + ") ${realCaller.arguments.joinToString(" ") { it.text }}"
+                                + " -> " + functionLeft.body!!.text
+                                + ") ${realCaller.arguments.joinToString(" ") { it.text }}"
                     )
                     realCaller.replace(lambda)
                 }
