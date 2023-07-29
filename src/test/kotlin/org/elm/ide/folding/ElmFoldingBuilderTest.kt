@@ -1,6 +1,7 @@
 package org.elm.ide.folding
 
 import org.elm.lang.ElmTestBase
+import org.junit.Test
 
 class ElmFoldingBuilderTest: ElmTestBase() {
     override val dataPath = "org/elm/ide/folding/fixtures"
@@ -15,7 +16,10 @@ class ElmFoldingBuilderTest: ElmTestBase() {
     fun `test type declaration`() = doTest()
     fun `test type alias`() = doTest()
     fun `test let in`() = doTest()
+    @Test
     fun `test case of`() = doTest()
+    @Test
+    fun `test describe suite`() = doTest()
 
     // Partial input test. It's ok if this doesn't produce any folds. We just want to
     // make sure that it doesn't throw any exceptions.

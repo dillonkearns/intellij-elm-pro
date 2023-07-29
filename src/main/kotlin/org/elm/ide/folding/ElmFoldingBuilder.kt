@@ -11,6 +11,7 @@ import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.util.castSafelyTo
 import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.psi.ElmTypes.*
 import org.elm.lang.core.psi.directChildren
@@ -95,6 +96,38 @@ private class ElmFoldingVisitor : PsiElementVisitor() {
             is ElmCaseOfBranch -> {
                 foldToEnd(element) { directChildren.find { it.elementType == ARROW } }
             }
+            is ElmFunctionCallExpr -> {
+                val callingFunction =
+                    when (val target = element.target) {
+                        is ElmValueExpr -> {
+                            target.referenceName
+                        }
+                        else -> {
+                            null
+                        }
+                    }
+                if (callingFunction == "test") {
+                    if (element.parent is ElmBinOpExpr) {
+                        val binOpExpr = (element.parent as ElmBinOpExpr).parts.toList()
+                        val start = binOpExpr.drop(1).first()
+                        val end = binOpExpr.last()
+                        foldBetween(start, start, end, true, true)
+                    } else {
+                        fold(element)
+                    }
+                } else if (callingFunction == "describe") {
+                    if (element.parent is ElmBinOpExpr) {
+                        fold(element.parent)
+                    } else {
+                        val describeList = element.arguments.last().castSafelyTo<ElmListExpr>()
+                        if (describeList != null) {
+                            val listStart = describeList.directChildren.toList().first { it.elementType == LEFT_SQUARE_BRACKET }
+                            val listEnd = describeList.directChildren.toList().first { it.elementType == RIGHT_SQUARE_BRACKET }
+                            foldBetween(listStart, listStart, listEnd, false, false)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -108,8 +141,10 @@ private class ElmFoldingVisitor : PsiElementVisitor() {
         foldBetween(element, start, element.lastChild, false, true)
     }
 
-    private fun foldBetween(element: PsiElement, left: PsiElement?, right: PsiElement?,
-                            includeStart: Boolean, includeEnd: Boolean) {
+    private fun foldBetween(
+        element: PsiElement, left: PsiElement?, right: PsiElement?,
+        includeStart: Boolean, includeEnd: Boolean
+    ) {
         if (left == null || right == null) return
         val start = if (includeStart) left.textRange.startOffset else left.textRange.endOffset
         val end = if (includeEnd) right.textRange.endOffset else right.textRange.startOffset
