@@ -96,21 +96,21 @@ abstract class ElmTestBase : LightPlatformCodeInsightFixture4TestCase(), ElmTest
         myFixture.checkResultByFile(after, ignoreTrailingWhitespace)
     }
 
-    protected fun checkByDirectory(action: () -> Unit) {
+    protected fun checkByDirectory(action: (VirtualFile) -> Unit) {
         val (before, after) = ("$testName/before" to "$testName/after")
 
         val targetPath = ""
         val beforeDir = myFixture.copyDirectoryToProject(before, targetPath)
 
-        action()
+        action(beforeDir)
 
         val afterDir = getVirtualFileByName("$testDataPath/$after")
         PlatformTestUtil.assertDirectoriesEqual(afterDir!!, beforeDir)
     }
 
-    protected fun checkByDirectory(@Language("Elm") before: String, @Language("Elm") after: String, action: () -> Unit) {
-        fileTreeFromText(before).create()
-        action()
+    protected fun checkByDirectory(@Language("Elm") before: String, @Language("Elm") after: String, action: (TestProject) -> Unit) {
+        val testProject = fileTreeFromText(before).create()
+        action(testProject)
         FileDocumentManager.getInstance().saveAllDocuments()
         fileTreeFromText(after).assertEquals(myFixture.findFileInTempDir("."))
     }
@@ -274,6 +274,27 @@ abstract class ElmTestBase : LightPlatformCodeInsightFixture4TestCase(), ElmTest
             return StreamUtil.readText(stream, Charsets.UTF_8)
         }
     }
+
+    protected open fun checkEditorAction(
+        @Language("Elm") before: String,
+        @Language("Elm") after: String,
+        actionId: String,
+        trimIndent: Boolean = true,
+    ) {
+        fun String.trimIndentIfNeeded(): String = if (trimIndent) trimIndent() else this
+
+        if ("-->" in before) {
+            checkByDirectory(before, after) {
+                myFixture.configureFromTempProjectFile(it.fileWithCaret)
+                myFixture.performEditorAction(actionId)
+            }
+        } else {
+            checkByText(before.trimIndentIfNeeded(), after.trimIndentIfNeeded()) {
+                myFixture.performEditorAction(actionId)
+            }
+        }
+    }
+
 
     protected fun FileTree.create(): TestProject =
             create(myFixture.project, myFixture.findFileInTempDir("."))

@@ -7,6 +7,7 @@
 
 package org.elm.openapiext
 
+import com.intellij.ui.dsl.builder.Cell
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
@@ -17,8 +18,13 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.util.Alarm
+import javax.swing.JComponent
 import javax.swing.event.DocumentEvent
 import kotlin.reflect.KProperty
+import com.intellij.ui.dsl.builder.Row
+import com.intellij.ui.dsl.gridLayout.HorizontalAlign
+
+
 
 class UiDebouncer(
         private val parentDisposable: Disposable,
@@ -71,4 +77,9 @@ class CheckboxDelegate(private val checkbox: JBCheckBox) {
     operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Boolean) {
         checkbox.isSelected = value
     }
+}
+
+fun <T : JComponent> Row.fullWidthCell(component: T): Cell<T> {
+    return cell(component)
+        .horizontalAlign(HorizontalAlign.FILL)
 }

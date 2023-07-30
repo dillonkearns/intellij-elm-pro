@@ -14,7 +14,7 @@ class ElmNamesValidator : NamesValidator {
 
 
     override fun isKeyword(name: String, project: Project?) =
-            getLexerType(name) in ELM_KEYWORDS
+        getLexerType(name) in ELM_KEYWORDS
 
 
     override fun isIdentifier(name: String, project: Project?): Boolean {
@@ -29,11 +29,11 @@ class ElmNamesValidator : NamesValidator {
 
 
 fun isValidLowerIdentifier(text: String) =
-        getLexerType(text) == ElmTypes.LOWER_CASE_IDENTIFIER
+    getLexerType(text) == ElmTypes.LOWER_CASE_IDENTIFIER
 
 
 fun isValidUpperIdentifier(text: String) =
-        getLexerType(text) == ElmTypes.UPPER_CASE_IDENTIFIER
+    getLexerType(text) == ElmTypes.UPPER_CASE_IDENTIFIER
 
 
 private fun getLexerType(text: String): IElementType? {

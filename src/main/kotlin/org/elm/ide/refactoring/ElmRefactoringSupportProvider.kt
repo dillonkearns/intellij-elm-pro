@@ -3,6 +3,7 @@ package org.elm.ide.refactoring
 import com.intellij.lang.refactoring.RefactoringSupportProvider
 import com.intellij.psi.PsiElement
 import com.intellij.refactoring.RefactoringActionHandler
+import org.elm.ide.refactoring.extractFunction.ElmExtractFunctionHandler
 
 
 class ElmRefactoringSupportProvider : RefactoringSupportProvider() {
@@ -15,4 +16,6 @@ class ElmRefactoringSupportProvider : RefactoringSupportProvider() {
     override fun getIntroduceVariableHandler(): RefactoringActionHandler? {
         return ElmIntroduceVariableHandler()
     }
+
+    override fun getExtractMethodHandler(): RefactoringActionHandler = ElmExtractFunctionHandler()
 }
