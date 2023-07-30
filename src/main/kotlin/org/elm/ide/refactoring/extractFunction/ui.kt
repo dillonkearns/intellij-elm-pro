@@ -9,6 +9,8 @@ import com.intellij.refactoring.ui.NameSuggestionsField
 import com.intellij.ui.components.dialog
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.JBUI
+import org.elm.ide.refactoring.ElmNamesValidator
+import org.elm.ide.refactoring.isValidLowerIdentifier
 import org.elm.lang.core.ElmFileType
 import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.types.Ty
@@ -121,8 +123,7 @@ private class DialogExtractFunctionUi(
     }
 
     private fun isValidElmVariableIdentifier(name: String): Boolean {
-        // TODO implement
-        return true
+        return isValidLowerIdentifier(name)
     }
 
     private fun updateConfig(
