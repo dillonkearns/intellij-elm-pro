@@ -19,13 +19,13 @@ class ElmExtractFunctionTest : ElmTestBase() {
         """
 hello =
     {-selection-}"Hello, World!"{-selection--}
-    """, """
+""", """
 hello =
     test
 
 test =
     "Hello, World!"
-    """, "test"
+""", "test"
     )
 
     private fun doTest(

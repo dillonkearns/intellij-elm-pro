@@ -14,6 +14,7 @@ import org.elm.ide.refactoring.isValidLowerIdentifier
 import org.elm.lang.core.ElmFileType
 import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.types.Ty
+import org.elm.openapiext.fullWidthCell
 import org.elm.openapiext.isUnitTestMode
 import org.jetbrains.annotations.TestOnly
 
@@ -91,10 +92,10 @@ private class DialogExtractFunctionUi(
         }
 
         val panel = panel {
-//            row(ElmBundle.message("name2")) { fullWidthCell(functionNameField) }
-//            row(ElmBundle.message("visibility")) { cell(visibilityBox) }
-//            row(ElmBundle.message("parameters")) { fullWidthCell(parameterPanel) }
-//            row(ElmBundle.message("signature")) { fullWidthCell(signatureComponent) }
+            row("Name") { fullWidthCell(functionNameField) }
+            row("Visibility") { cell(visibilityBox) }
+            row("Parameters") { fullWidthCell(parameterPanel) }
+            row("Signature") { fullWidthCell(signatureComponent) }
         }
 
         val extractDialog = dialog(

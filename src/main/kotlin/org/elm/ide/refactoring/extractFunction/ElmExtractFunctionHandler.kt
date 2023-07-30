@@ -11,6 +11,9 @@ import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.refactoring.RefactoringActionHandler
 import com.intellij.refactoring.RefactoringBundle
 import com.intellij.usageView.UsageInfo
+import org.elm.ide.utils.findElementAtIgnoreWhitespaceAfter
+import org.elm.ide.utils.findExpressionInRange
+import org.elm.ide.utils.getElementRange
 import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
@@ -36,7 +39,12 @@ class ElmExtractFunctionHandler : RefactoringActionHandler {
     private fun extractFunction(project: Project, file: PsiFile, config: ElmExtractFunctionConfig) {
         project.runWriteCommandAction(
         ) {
-//            val psiFactory = ElmPsiFactory(project)
+            val psiFactory = ElmPsiFactory(project)
+            val (start, end) = config.selection
+            val expressionToExtract = findExpressionInRange(file, start, end)
+            val fnBody = expressionToExtract?.text
+            val newTopLevel = psiFactory.createTopLevelFunction("${config.name}=${fnBody}")
+            file.add(newTopLevel)
 //            val extractedFunction = addExtractedFunction(project, config, psiFactory) ?: return@runWriteCommandAction
 //            replaceOldStatementsWithCallExpr(config, psiFactory)
 //            val parameters = config.valueParameters.filter { it.isSelected }
