@@ -23,9 +23,9 @@ hello =
 hello =
     test
 
+test : String
 test =
-    "Hello, World!"
-""", "test"
+    "Hello, World!"""", "test"
     )
 
     private fun doTest(

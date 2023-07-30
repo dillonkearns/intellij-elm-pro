@@ -17,6 +17,8 @@ import org.elm.ide.utils.getElementRange
 import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
+import org.elm.lang.core.types.findInference
+import org.elm.lang.core.types.renderedText
 import org.elm.openapiext.runWriteCommandAction
 
 class ElmExtractFunctionHandler : RefactoringActionHandler {
@@ -39,12 +41,15 @@ class ElmExtractFunctionHandler : RefactoringActionHandler {
     private fun extractFunction(project: Project, file: PsiFile, config: ElmExtractFunctionConfig) {
         project.runWriteCommandAction(
         ) {
+            if (file !is ElmFile) return@runWriteCommandAction
             val psiFactory = ElmPsiFactory(project)
             val (start, end) = config.selection
             val expressionToExtract = findExpressionInRange(file, start, end)
             val fnBody = expressionToExtract?.text
-            val newTopLevel = psiFactory.createTopLevelFunction("${config.name}=${fnBody}")
-            file.add(newTopLevel)
+            val signature = expressionToExtract?.findInference()?.ty?.renderedText()
+            val newTopLevel = psiFactory.createTopLevelFunctionWithAnnotation("${config.name} : $signature", "${config.name} =\n    $fnBody")
+            file.addAll(newTopLevel)
+            expressionToExtract?.replace(psiFactory.createExpression(config.name))
 //            val extractedFunction = addExtractedFunction(project, config, psiFactory) ?: return@runWriteCommandAction
 //            replaceOldStatementsWithCallExpr(config, psiFactory)
 //            val parameters = config.valueParameters.filter { it.isSelected }
