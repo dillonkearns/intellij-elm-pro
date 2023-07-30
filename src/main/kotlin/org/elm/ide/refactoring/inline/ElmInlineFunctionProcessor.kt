@@ -162,17 +162,31 @@ class ElmInlineFunctionProcessor(
                 val needsLambda = needsLambdaReplacement(functionLeft)
                 if (!needsLambda) {
                     val copied = factory.createDeclaration(functionLeft.parent.text)
-                    copied.functionDeclarationLeft?.namedParameters?.withIndex()
+                    copied.functionDeclarationLeft?.patterns?.withIndex()
                         ?.forEach { (parameterIndex, namedParameter) ->
-                            ReferencesSearch.search(namedParameter, LocalSearchScope(copied)).findAll()
-                                .forEach { parameterReference ->
-                                    if (parameterReference.canonicalText.equals(namedParameter.name)) {
-                                        parameterReference.element.replace(realCaller.arguments.toList()[parameterIndex])
+                            when (namedParameter) {
+                                is ElmLowerPattern -> {
+                                    ReferencesSearch.search(namedParameter, LocalSearchScope(copied)).findAll()
+                                        .forEach { parameterReference ->
+                                            if (parameterReference.canonicalText.equals(namedParameter.name)) {
+                                                parameterReference.element.replace(realCaller.arguments.toList()[parameterIndex])
+                                            }
+                                        }
+                                }
+                                is ElmRecordPattern -> {
+                                    namedParameter.lowerPatternList.forEach {
+                                        ReferencesSearch.search(it, LocalSearchScope(copied)).findAll().forEach { reference ->
+                                            reference.element.replace(
+                                                factory.createExpression("${realCaller.arguments.first().text}.${reference.canonicalText}")
+                                            )
+
+                                        }
                                     }
                                 }
+                            }
                         }
                     val pointFreeArgumentCount =
-                        realCaller.arguments.toList().size - (copied.functionDeclarationLeft?.namedParameters?.size
+                        realCaller.arguments.toList().size - (copied.functionDeclarationLeft?.patterns?.toList()?.size
                             ?: 0)
 
                     val copied2 = if (pointFreeArgumentCount > 0) {

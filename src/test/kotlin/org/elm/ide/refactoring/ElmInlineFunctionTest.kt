@@ -132,6 +132,31 @@ message slug =
 """)
 
     @Test
+    fun `test record destructure`() =
+        doTest(
+            """
+--@ Main.elm
+
+
+fullName { first, last } =
+    first ++ " " ++ last
+
+
+example3 record =
+    fullName record
+    --^
+
+""",
+            """
+
+
+example3 record =
+    record.first ++ " " ++ record.last
+    --^
+""")
+
+
+    @Test
     fun `test inline function with argument`() =
             doTest(
                     """

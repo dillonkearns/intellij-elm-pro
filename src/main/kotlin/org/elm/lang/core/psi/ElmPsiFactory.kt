@@ -149,6 +149,17 @@ class ElmPsiFactory(private val project: Project) {
                         "$text\n    )`")
     }
 
+    fun createExpression(text: String, indentation: String = "    "): ElmExpressionTag {
+        val createFromText = if (text.lines().size > 1) {
+            createFromText<ElmParenthesizedExpr>("f = ($text\n$indentation)\n")?.expression
+        } else {
+            createFromText<ElmParenthesizedExpr>("f = ($text)")?.expression
+        }
+        return createFromText
+            ?: error("Invalid Expression: `(" +
+                    "$text\n    )`")
+    }
+
     fun createParensWithComments(comments: List<PsiComment>, text: String, indentation: String = "    "): ElmParenthesizedExpr {
         val commentsText = comments
                 .map { indentation + it.text }
