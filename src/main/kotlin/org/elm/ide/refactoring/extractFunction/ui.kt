@@ -3,22 +3,28 @@ package org.elm.ide.refactoring.extractFunction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.psi.PsiReference
+import com.intellij.psi.search.LocalSearchScope
+import com.intellij.psi.search.searches.ReferencesSearch
+import com.intellij.psi.util.parentsOfType
 import com.intellij.refactoring.ui.MethodSignatureComponent
 import com.intellij.refactoring.ui.NameSuggestionsField
 import com.intellij.ui.components.dialog
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.JBUI
-import org.elm.ide.refactoring.ElmNamesValidator
 import org.elm.ide.refactoring.isValidLowerIdentifier
+import org.elm.ide.utils.findExpressionInRange
 import org.elm.lang.core.ElmFileType
 import org.elm.lang.core.psi.ElmFile
+import org.elm.lang.core.psi.descendantsOfType
+import org.elm.lang.core.psi.elements.ElmLowerPattern
+import org.elm.lang.core.psi.elements.ElmPattern
+import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.types.Ty
+import org.elm.lang.core.types.findTy
+import org.elm.lang.core.types.renderedText
 import org.elm.openapiext.fullWidthCell
 import org.elm.openapiext.isUnitTestMode
 import org.jetbrains.annotations.TestOnly
-
-//import org.elm.ide.refactoring.isValidElmVariableIdentifier
 
 private var MOCK: ExtractFunctionUi? = null
 
@@ -42,11 +48,21 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
 ) {
     val signature: String
         get() {
-            return "TODO"
+            return "$name : ${parameters.joinToString(" -> ") { it.type?.renderedText() ?: "" }} -> <TODO RETURN-TYPE>\n$name ${parameters.joinToString(" ") { it.name }} ="
         }
     companion object {
         fun createConfig(file: ElmFile, start: Int, end: Int): ElmExtractFunctionConfig {
-            return ElmExtractFunctionConfig("", false, emptyList(), Pair(start, end))
+            val expressionToExtract = findExpressionInRange(file, start, end)
+            val patterns = expressionToExtract?.parentsOfType<ElmValueDeclaration>()?.toList()?.flatMap { it.functionDeclarationLeft?.patterns.orEmpty() }
+            val parameters: List<Parameter> = patterns?.flatMap { pattern ->
+                val references = ReferencesSearch.search(pattern, LocalSearchScope(expressionToExtract)).toList()
+                if (references.isNotEmpty() && pattern is ElmLowerPattern) {
+                    listOf(Parameter(pattern.name, pattern.findTy()))
+                } else {
+                    emptyList()
+                }
+            }.orEmpty()
+            return ElmExtractFunctionConfig("", false, parameters, Pair(start, end))
         }
     }
 }
@@ -146,7 +162,7 @@ private class ElmSignatureComponent(
     override fun getFileName(): String = myFileName
 }
 
-class Parameter private constructor(
+class Parameter constructor(
     var name: String,
     val type: Ty? = null,
     private val isReference: Boolean = false,

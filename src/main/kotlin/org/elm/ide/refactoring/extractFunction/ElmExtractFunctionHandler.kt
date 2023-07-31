@@ -5,19 +5,13 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiParserFacade
-import com.intellij.psi.search.LocalSearchScope
-import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.refactoring.RefactoringActionHandler
-import com.intellij.refactoring.RefactoringBundle
-import com.intellij.usageView.UsageInfo
-import org.elm.ide.utils.findElementAtIgnoreWhitespaceAfter
 import org.elm.ide.utils.findExpressionInRange
-import org.elm.ide.utils.getElementRange
 import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
-import org.elm.lang.core.types.findInference
+import org.elm.lang.core.types.Ty
+import org.elm.lang.core.types.findTy
 import org.elm.lang.core.types.renderedText
 import org.elm.openapiext.runWriteCommandAction
 
@@ -46,10 +40,19 @@ class ElmExtractFunctionHandler : RefactoringActionHandler {
             val (start, end) = config.selection
             val expressionToExtract = findExpressionInRange(file, start, end)
             val fnBody = expressionToExtract?.text
-            val signature = expressionToExtract?.findInference()?.ty?.renderedText()
-            val newTopLevel = psiFactory.createTopLevelFunctionWithAnnotation("${config.name} : $signature", "${config.name} =\n    $fnBody")
+            val signatureTypes: List<Ty?> = (config.parameters.map { it.type }) + listOf(expressionToExtract?.findTy())
+            val signature = if (signatureTypes.all { it != null }) {
+                signatureTypes.joinToString(" -> ") { it!!.renderedText().replace("→", "->") }
+            } else { null }
+            
+            val parameterString = (listOf(config.name) + config.parameters.map { it.name } + listOf("=")).joinToString(" ")
+            val newTopLevel = if (signature != null) {
+                psiFactory.createTopLevelFunctionWithAnnotation("${config.name} : $signature", "$parameterString\n    $fnBody")
+            } else {
+                listOf(psiFactory.createTopLevelFunction("$parameterString\n    $fnBody"))
+            }
             file.addAll(newTopLevel)
-            expressionToExtract?.replace(psiFactory.createExpression(config.name))
+            expressionToExtract?.replace(psiFactory.createExpression((listOf(config.name) + config.parameters.map { it.name }).joinToString(" ")))
 //            val extractedFunction = addExtractedFunction(project, config, psiFactory) ?: return@runWriteCommandAction
 //            replaceOldStatementsWithCallExpr(config, psiFactory)
 //            val parameters = config.valueParameters.filter { it.isSelected }

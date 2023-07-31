@@ -28,6 +28,24 @@ test =
     "Hello, World!"""", "test"
     )
 
+    @Test
+    fun `test depends on function parameter`() = doTest(
+        """
+hello name =
+    let
+        message = {-selection-}"Hello, " ++ name{-selection--}
+    in
+    "The message is:\n" ++ message
+""", """
+hello name =
+    let
+        message = test name
+    in
+    "The message is:\n" ++ message
+test name =
+    "Hello, " ++ name""", "test"
+    )
+
     private fun doTest(
         @Language("Elm") code: String,
         @Language("Elm") excepted: String,
