@@ -14,10 +14,7 @@ import com.intellij.util.ui.JBUI
 import org.elm.ide.refactoring.isValidLowerIdentifier
 import org.elm.ide.utils.findExpressionInRange
 import org.elm.lang.core.ElmFileType
-import org.elm.lang.core.psi.ElmFile
-import org.elm.lang.core.psi.ElmFunctionParamTag
-import org.elm.lang.core.psi.ElmNameDeclarationPatternTag
-import org.elm.lang.core.psi.descendantsOfType
+import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.ElmLowerPattern
 import org.elm.lang.core.psi.elements.ElmPattern
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
@@ -47,10 +44,18 @@ fun extractFunctionDialog(
 class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Boolean,
                                var parameters: List<Parameter>,
                                val selection: Pair<Int, Int>,
+                               val expressionToExtract: ElmExpressionTag
 ) {
     val signature: String
         get() {
-            return "$name : ${parameters.joinToString(" -> ") { it.type?.renderedText() ?: "" }} -> <TODO RETURN-TYPE>\n$name ${parameters.joinToString(" ") { it.name }} ="
+            // TODO handle parens if needed around function-type values in annotation?
+            val signatureTypes: List<Ty?> = parameters.map { it.type } + listOf(expressionToExtract.findTy())
+            val annotation = if (signatureTypes.all { it != null }) {
+                "$name : " + signatureTypes.joinToString(" -> ") { it!!.renderedText().replace("→", "->") }
+            } else { null }
+
+            val parameterString = (listOf(name) + parameters.map { it.name } + listOf("=")).joinToString(" ")
+            return "$annotation\n$parameterString"
         }
     companion object {
         fun createConfig(file: ElmFile, start: Int, end: Int): ElmExtractFunctionConfig {
@@ -64,7 +69,7 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
                     emptyList()
                 }
             }
-            return ElmExtractFunctionConfig("", false, parameters, Pair(start, end))
+            return ElmExtractFunctionConfig("", false, parameters, Pair(start, end), expressionToExtract!!)
         }
     }
 }
