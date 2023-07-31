@@ -46,6 +46,24 @@ test name =
     "Hello, " ++ name""", "test"
     )
 
+    @Test
+    fun `test depends on destructured parameters`() = doTest(
+        """
+hello { first, last } =
+    let
+        message = {-selection-}"Hello, " ++ first ++ " " ++ last{-selection--}
+    in
+    "The message is:\n" ++ message
+""", """
+hello { first, last } =
+    let
+        message = test first last
+    in
+    "The message is:\n" ++ message
+test first last =
+    "Hello, " ++ first ++ " " ++ last""", "test"
+    )
+
     private fun doTest(
         @Language("Elm") code: String,
         @Language("Elm") excepted: String,

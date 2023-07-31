@@ -15,6 +15,8 @@ import org.elm.ide.refactoring.isValidLowerIdentifier
 import org.elm.ide.utils.findExpressionInRange
 import org.elm.lang.core.ElmFileType
 import org.elm.lang.core.psi.ElmFile
+import org.elm.lang.core.psi.ElmFunctionParamTag
+import org.elm.lang.core.psi.ElmNameDeclarationPatternTag
 import org.elm.lang.core.psi.descendantsOfType
 import org.elm.lang.core.psi.elements.ElmLowerPattern
 import org.elm.lang.core.psi.elements.ElmPattern
@@ -53,15 +55,15 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
     companion object {
         fun createConfig(file: ElmFile, start: Int, end: Int): ElmExtractFunctionConfig {
             val expressionToExtract = findExpressionInRange(file, start, end)
-            val patterns = expressionToExtract?.parentsOfType<ElmValueDeclaration>()?.toList()?.flatMap { it.functionDeclarationLeft?.patterns.orEmpty() }
-            val parameters: List<Parameter> = patterns?.flatMap { pattern ->
-                val references = ReferencesSearch.search(pattern, LocalSearchScope(expressionToExtract)).toList()
+            val patterns: List<ElmNameDeclarationPatternTag> = expressionToExtract?.parentsOfType<ElmValueDeclaration>()?.toList()?.flatMap { it.functionDeclarationLeft?.namedParameters.orEmpty() }.orEmpty()
+            val parameters: List<Parameter> = patterns.flatMap { pattern ->
+                val references = ReferencesSearch.search(pattern, LocalSearchScope(expressionToExtract?.originalElement!!)).toList()
                 if (references.isNotEmpty() && pattern is ElmLowerPattern) {
                     listOf(Parameter(pattern.name, pattern.findTy()))
                 } else {
                     emptyList()
                 }
-            }.orEmpty()
+            }
             return ElmExtractFunctionConfig("", false, parameters, Pair(start, end))
         }
     }
