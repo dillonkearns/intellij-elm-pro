@@ -47,6 +47,7 @@ class ElmPsiFactory(private val project: Project) {
                     FIELD_ACCESS_EXPR -> ElmFieldAccessExpr(node)
                     FIELD_ACCESSOR_FUNCTION_EXPR -> ElmFieldAccessorFunctionExpr(node)
                     FIELD_TYPE -> ElmFieldType(node)
+                    DOCS_ANNOTATION -> ElmFieldType(node)
                     FUNCTION_CALL_EXPR -> ElmFunctionCallExpr(node)
                     FUNCTION_DECLARATION_LEFT -> ElmFunctionDeclarationLeft(node)
                     GLSL_CODE_EXPR -> ElmGlslCodeExpr(node)
@@ -89,6 +90,7 @@ class ElmPsiFactory(private val project: Project) {
                     VALUE_DECLARATION -> ElmValueDeclaration(node)
                     VALUE_EXPR -> ElmValueExpr(node)
                     VALUE_QID -> ElmValueQID(node)
+                    MODULE_DOC_COMMENT -> ElmDocsAnnotation(node)
                     else -> throw AssertionError("Unknown element type: " + node.elementType)
                 }
     }

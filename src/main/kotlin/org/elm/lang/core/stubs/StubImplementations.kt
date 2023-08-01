@@ -58,6 +58,7 @@ In all cases, you must also:
  */
 
 fun factory(name: String): ElmStubElementType<*, *> = when (name) {
+    "MODULE_DOC_COMMENT" -> ElmModuleDocCommentStub.Type
     "MODULE_DECLARATION" -> ElmModuleDeclarationStub.Type
     "TYPE_DECLARATION" -> ElmTypeDeclarationStub.Type
     "TYPE_ALIAS_DECLARATION" -> ElmTypeAliasDeclarationStub.Type
@@ -120,9 +121,33 @@ class ElmModuleDeclarationStub(
     }
 }
 
+class ElmModuleDocCommentStub(
+    parent: StubElement<*>?,
+    elementType: IStubElementType<*, *>) : StubBase<ElmDocsAnnotation>(parent, elementType) {
+
+    object Type : ElmStubElementType<ElmModuleDocCommentStub, ElmDocsAnnotation>("MODULE_DOC_COMMENT") {
+
+        override fun serialize(stub: ElmModuleDocCommentStub, dataStream: StubOutputStream) =
+            with(dataStream) {
+            }
+
+        override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?) =
+            ElmModuleDocCommentStub(parentStub, this)
+
+        override fun createPsi(stub: ElmModuleDocCommentStub) =
+            ElmDocsAnnotation(stub, this)
+
+        override fun createStub(psi: ElmDocsAnnotation, parentStub: StubElement<*>?) =
+            ElmModuleDocCommentStub(parentStub, this)
+
+        override fun indexStub(stub: ElmModuleDocCommentStub, sink: IndexSink) {
+            sink.indexModuleDocComment(stub)
+        }
+    }
+}
 
 class ElmTypeDeclarationStub(
-        parent: StubElement<*>?,
+    parent: StubElement<*>?,
         elementType: IStubElementType<*, *>,
         override val name: String
 ) : StubBase<ElmTypeDeclaration>(parent, elementType), ElmNamedStub {

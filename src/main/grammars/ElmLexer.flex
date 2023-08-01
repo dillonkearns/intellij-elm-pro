@@ -31,7 +31,7 @@ import static org.elm.lang.core.psi.ElmTypes.*;
     }
 %}
 
-%xstate COMMENT GLSL_CODE STRING RAW_STRING CHAR TYPE_PENDING
+%xstate COMMENT GLSL_CODE STRING RAW_STRING CHAR TYPE_PENDING DOCS_LINE
 
 Newline = (\n|\r|\r\n)
 Space = " "
@@ -92,6 +92,12 @@ ThreeQuotes = \"\"\"
 }
 
 <COMMENT> {
+    \n {
+        // Return to COMMENT state when newline encountered
+        if (docComment) {
+            return DOC_COMMENT;
+        }
+    }
     "{-" {
         commentLevel++;
     }
@@ -101,10 +107,34 @@ ThreeQuotes = \"\"\"
                 return docComment ? DOC_COMMENT : BLOCK_COMMENT;
             }
         }
+    "@docs" {
+        if (docComment) {
+            yybegin(DOCS_LINE);
+        }
+    }
 
     <<EOF>> { commentLevel = 0; yybegin(YYINITIAL); return docComment ? DOC_COMMENT : BLOCK_COMMENT; }
 
     [^] { }
+}
+
+
+<DOCS_LINE> {
+    [^\n]* {
+        // Process the entire line excluding newline
+        // Split by comma, trim spaces and add the identifiers to some data structure
+//        String[] identifiers = yytext().split(",");
+//        for(int i = 0; i < identifiers.length; i++) {
+//            identifiers[i] = identifiers[i].trim();
+//        }
+        // do something with identifiers
+        yytext();
+    }
+    \n {
+        // Return to COMMENT state when newline encountered
+        yybegin(COMMENT);
+        return DOCS_ANNOTATION;
+    }
 }
 
 <GLSL_CODE> {

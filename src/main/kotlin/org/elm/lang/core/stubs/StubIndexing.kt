@@ -4,6 +4,8 @@ import com.intellij.psi.stubs.IndexSink
 import org.elm.lang.core.stubs.index.ElmModulesIndex
 import org.elm.lang.core.stubs.index.ElmNamedElementIndex
 
+fun IndexSink.indexModuleDocComment(stub: ElmModuleDocCommentStub) {
+}
 
 fun IndexSink.indexModuleDecl(stub: ElmModuleDeclarationStub) {
     indexNamedStub(stub)

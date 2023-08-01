@@ -47,6 +47,7 @@
         LINE_COMMENT='LINE_COMMENT'
         BLOCK_COMMENT='BLOCK_COMMENT'
         DOC_COMMENT='DOC_COMMENT'
+        DOCS_ANNOTATION='DOCS_ANNOTATION'
         NEWLINE='NEWLINE'
         TAB='TAB'
     ]
@@ -88,7 +89,7 @@ private Module ::=
     ModuleDeclaration? VIRTUAL_END_DECL? ImportList? VIRTUAL_END_DECL? TopDeclList?
 
 ModuleDeclaration ::=
-    PORT? MODULE UpperCaseQID ExposingList
+    PORT? MODULE UpperCaseQID ExposingList ModuleDocComment?
     | 'effect' MODULE UpperCaseQID WHERE RecordExpr ExposingList
     { pin(".*")=UpperCaseQID; recoverWhile=module_recover }
 
@@ -127,6 +128,8 @@ private ExposedItem ::=
 private exposed_item_recover ::= !(COMMA | RIGHT_PARENTHESIS | VIRTUAL_END_DECL)
 
 private MoreExposedItems ::= (COMMA ExposedItem)+ {pin(".*")=1}
+
+ModuleDocComment ::= (DOC_COMMENT | DOCS_ANNOTATION)+ {pin(".*")=1}
 
 ExposedValue ::= LOWER_CASE_IDENTIFIER
 
