@@ -2,6 +2,7 @@ package org.elm.lang.core.resolve.reference
 
 import org.elm.lang.core.psi.ElmNamedElement
 import org.elm.lang.core.psi.elements.DocsAnnotationItem
+import org.elm.lang.core.resolve.scope.DeclaredNames
 import org.elm.lang.core.resolve.scope.ModuleScope
 
 /**
@@ -14,5 +15,9 @@ class DocsValueModuleReference(docsItem: DocsAnnotationItem)
 
     override fun getVariants(): Array<ElmNamedElement> = getCandidates().array
 
-    private fun getCandidates() = ModuleScope.getDeclaredValues(element.elmFile)
+    private fun getCandidates(): DeclaredNames {
+        val declaredValues = ModuleScope.getDeclaredValues(element.elmFile)
+        val declaredTypes = ModuleScope.getDeclaredTypes(element.elmFile)
+        return declaredValues.plus(declaredTypes)
+    }
 }
