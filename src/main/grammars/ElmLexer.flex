@@ -112,6 +112,10 @@ ThreeQuotes = \"\"\"
 <IN_DOC_COMMENT> {
     {WhiteSpace} { return TokenType.WHITE_SPACE; }
     {Newline} { return NEWLINE; }
+    ^ "@docs" {
+        yybegin(DOCS_LINE);
+        return DOCS_ANNOTATION;
+    }
     [^@{\-]+ {
       return DOC_CONTENT;
    }
@@ -123,10 +127,6 @@ ThreeQuotes = \"\"\"
             yybegin(YYINITIAL);
             return END_DOC_COMMENT;
         }
-    }
-    "@docs" {
-        yybegin(DOCS_LINE);
-        return DOCS_ANNOTATION;
     }
     [@{\-] {
       return DOC_CONTENT;
