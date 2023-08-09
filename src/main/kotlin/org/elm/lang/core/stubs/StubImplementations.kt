@@ -69,6 +69,8 @@ fun factory(name: String): ElmStubElementType<*, *> = when (name) {
     "EXPOSING_LIST" -> ElmExposingListStub.Type
     "EXPOSED_OPERATOR" -> ElmPlaceholderRefStub.Type(name, ::ElmExposedOperator)
     "EXPOSED_VALUE" -> ElmPlaceholderRefStub.Type(name, ::ElmExposedValue)
+    "DOCS_ANNOTATION_ITEM" -> ElmPlaceholderRefStub.Type(name, ::DocsAnnotationItem)
+    "DOC_COMMENT" -> ElmModuleDocCommentStub.Type
     "EXPOSED_TYPE" -> ElmExposedTypeStub.Type
     "VALUE_DECLARATION" -> ElmPlaceholderStub.Type(name, ::ElmValueDeclaration)
     "PORT_ANNOTATION" -> ElmPortAnnotationStub.Type
@@ -85,6 +87,7 @@ fun factory(name: String): ElmStubElementType<*, *> = when (name) {
     "IMPORT_CLAUSE" -> ElmPlaceholderStub.Type(name, ::ElmImportClause)
     "AS_CLAUSE" -> ElmAsClauseStub.Type
     "UPPER_CASE_QID" -> ElmUpperCaseQIDStub.Type
+    "DOCS_ANNOTATION_LIST" -> ElmDocsAnnotationListStub.Type
     else -> error("Unknown element $name")
 }
 
@@ -125,7 +128,7 @@ class ElmModuleDocCommentStub(
     parent: StubElement<*>?,
     elementType: IStubElementType<*, *>) : StubBase<ElmDocsAnnotation>(parent, elementType) {
 
-    object Type : ElmStubElementType<ElmModuleDocCommentStub, ElmDocsAnnotation>("MODULE_DOC_COMMENT") {
+    object Type : ElmStubElementType<ElmModuleDocCommentStub, ElmDocsAnnotation>("DOC_COMMENT") {
 
         override fun serialize(stub: ElmModuleDocCommentStub, dataStream: StubOutputStream) =
             with(dataStream) {
@@ -342,6 +345,38 @@ class ElmExposingListStub(
         }
     }
 }
+
+class ElmDocsAnnotationListStub(
+    parent: StubElement<*>?,
+    elementType: IStubElementType<*, *>,
+) : StubBase<ElmDocsAnnotationList>(parent, elementType) {
+
+    object Type : ElmStubElementType<ElmDocsAnnotationListStub, ElmDocsAnnotationList>("DOCS_ANNOTATION_LIST") {
+
+        override fun shouldCreateStub(node: ASTNode) =
+            createStubIfParentIsStub(node)
+
+        override fun serialize(stub: ElmDocsAnnotationListStub, dataStream: StubOutputStream) {
+            with(dataStream) {
+            }
+        }
+
+        override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?) =
+            ElmDocsAnnotationListStub(parentStub, this
+            )
+
+        override fun createPsi(stub: ElmDocsAnnotationListStub) =
+            ElmDocsAnnotationList(stub, this)
+
+        override fun createStub(psi: ElmDocsAnnotationList, parentStub: StubElement<*>?) =
+            ElmDocsAnnotationListStub(parentStub, this)
+
+        override fun indexStub(stub: ElmDocsAnnotationListStub, sink: IndexSink) {
+            // no-op
+        }
+    }
+}
+
 
 class ElmExposedTypeStub(
         parent: StubElement<*>?,

@@ -37,7 +37,12 @@ class ElmSyntaxHighlighter : SyntaxHighlighterBase() {
                     LINE_COMMENT -> ElmColor.LINE_COMMENT
                     BLOCK_COMMENT -> ElmColor.BLOCK_COMMENT
                     DOC_COMMENT -> ElmColor.DOC_COMMENT
+                    DOC_CONTENT -> ElmColor.DOC_COMMENT
+                    START_DOC_COMMENT -> ElmColor.DOC_COMMENT
+                    END_DOC_COMMENT -> ElmColor.DOC_COMMENT
                     in ELM_KEYWORDS -> ElmColor.KEYWORD
+                    // TODO should this just be in ELM_KEYWORDS?
+                    DOCS_ANNOTATION -> ElmColor.RECORD_FIELD
                     in ELM_OPERATORS -> ElmColor.OPERATOR
                     TokenType.BAD_CHARACTER -> ElmColor.BAD_CHAR
                     else -> null

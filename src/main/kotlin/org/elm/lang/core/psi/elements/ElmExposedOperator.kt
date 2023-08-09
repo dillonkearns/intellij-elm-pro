@@ -44,6 +44,8 @@ class ElmExposedOperator : ElmStubbedElement<ElmPlaceholderRefStub>, ElmReferenc
     override fun getReference() =
             if (parentOfType<ElmModuleDeclaration>() != null) ExposedOperatorModuleReference(this)
             else if (parentOfType<ElmImportClause>() != null) ExposedOperatorImportReference(this)
+//            TODO should this be its own class for DocsAnnotationItem operators?
+            else if (parentOfType<ElmDocsAnnotationList>() != null) ExposedOperatorImportReference(this)
             else error("unexpected exposed operator context: reference cannot be determined")
 }
 
@@ -80,6 +82,7 @@ class ExposedOperatorImportReference(exposedValue: ElmExposedOperator
 
     private fun getCandidates(): ExposedNames? {
         // TODO [kl] verify: this was copied from ElmExposedValue's ref
+        // TODO fix this - it's erroring because the parent is ElmDocsAnnotationList
         val importClause = element.parentOfType<ElmImportClause>()
                 ?: error("should never happen: this ref must be in an import")
 

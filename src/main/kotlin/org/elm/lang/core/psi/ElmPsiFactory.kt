@@ -39,6 +39,7 @@ class ElmPsiFactory(private val project: Project) {
                     CASE_OF_BRANCH -> ElmCaseOfBranch(node)
                     CHAR_CONSTANT_EXPR -> ElmCharConstantExpr(node)
                     CONS_PATTERN -> ElmConsPattern(node)
+                    DOC_COMMENT -> ElmDocsAnnotation(node)
                     EXPOSED_OPERATOR -> ElmExposedOperator(node)
                     EXPOSED_TYPE -> ElmExposedType(node)
                     EXPOSED_VALUE -> ElmExposedValue(node)
@@ -90,7 +91,8 @@ class ElmPsiFactory(private val project: Project) {
                     VALUE_DECLARATION -> ElmValueDeclaration(node)
                     VALUE_EXPR -> ElmValueExpr(node)
                     VALUE_QID -> ElmValueQID(node)
-                    MODULE_DOC_COMMENT -> ElmDocsAnnotation(node)
+                    DOCS_ANNOTATION_LIST -> ElmDocsAnnotationList(node)
+                    DOCS_ANNOTATION_ITEM -> DocsAnnotationItem(node)
                     else -> throw AssertionError("Unknown element type: " + node.elementType)
                 }
     }

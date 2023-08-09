@@ -2,8 +2,10 @@ package org.elm.lang.core.psi.elements
 
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiComment
+import com.intellij.psi.PsiDocCommentBase
 import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.IStubElementType
+import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
 import org.elm.ide.presentation.getPresentation
 import org.elm.lang.core.psi.*
@@ -21,13 +23,26 @@ import org.elm.lang.core.stubs.ElmNamedStub
  * - give the module a name
  * - expose values and types
  */
-class ElmDocsAnnotation : ElmStubbedElement<ElmModuleDocCommentStub> {
+class ElmDocsAnnotation : ElmStubbedElement<ElmModuleDocCommentStub>, PsiDocCommentBase, PsiComment {
 
     constructor(node: ASTNode) :
             super(node)
 
     constructor(stub: ElmModuleDocCommentStub, stubType: IStubElementType<*, *>) :
             super(stub, stubType)
+
+//    override fun getTokenType(): IElementType {
+//        return DOC_COMMENT
+//    }
+
+    override fun getOwner(): PsiElement? {
+        return (containingFile as? ElmFile)?.getModuleDecl()
+    }
+    override fun getTokenType(): IElementType {
+    //        return DOC_COMMENT
+        return ElmTypes.BLOCK_COMMENT
+    }
+
 
 
 //    /**

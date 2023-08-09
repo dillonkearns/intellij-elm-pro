@@ -10,6 +10,8 @@
     extends(".+Expr") = Expression
 
     elementTypeFactory("ModuleDeclaration")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
+    elementTypeFactory("DocsAnnotationList")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
+    elementTypeFactory("DocComment")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("TypeDeclaration")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("TypeAliasDeclaration")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("UnionVariant")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
@@ -19,6 +21,7 @@
     elementTypeFactory("ExposingList")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("ExposedOperator")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("ExposedValue")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
+    elementTypeFactory("DocsAnnotationItem")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("ExposedType")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("ValueDeclaration")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("PortAnnotation")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
@@ -46,8 +49,6 @@
         RESERVED='RESERVED'
         LINE_COMMENT='LINE_COMMENT'
         BLOCK_COMMENT='BLOCK_COMMENT'
-        DOC_COMMENT='DOC_COMMENT'
-        DOCS_ANNOTATION='DOCS_ANNOTATION'
         NEWLINE='NEWLINE'
         TAB='TAB'
     ]
@@ -86,10 +87,10 @@ ElmFile ::= !<<eof>> Module
 
 
 private Module ::=
-    ModuleDeclaration? VIRTUAL_END_DECL? ImportList? VIRTUAL_END_DECL? TopDeclList?
+    ModuleDeclaration? VIRTUAL_END_DECL? DocComment? VIRTUAL_END_DECL? ImportList? VIRTUAL_END_DECL? TopDeclList?
 
 ModuleDeclaration ::=
-    PORT? MODULE UpperCaseQID ExposingList ModuleDocComment?
+    PORT? MODULE UpperCaseQID ExposingList
     | 'effect' MODULE UpperCaseQID WHERE RecordExpr ExposingList
     { pin(".*")=UpperCaseQID; recoverWhile=module_recover }
 
@@ -103,13 +104,13 @@ private module_recover ::= !(VIRTUAL_END_DECL | IMPORT | Declaration)
 
 private generic_recover ::= !VIRTUAL_END_DECL
 
-private ImportList ::= Import (VIRTUAL_END_DECL Import)*
+private ImportList ::= Import (VIRTUAL_END_DECL? Import)*
 private Import ::= ImportClause
     {pin=1 recoverWhile=generic_recover}
 
 
-private TopDeclList ::= TopDecl (VIRTUAL_END_DECL TopDecl)*
-private TopDecl ::= !<<eof>> Declaration
+private TopDeclList ::= TopDecl (VIRTUAL_END_DECL? TopDecl)*
+private TopDecl ::= !<<eof>> DocComment? VIRTUAL_END_DECL? Declaration
     {pin=1 recoverWhile=generic_recover}
 
 
@@ -125,11 +126,28 @@ private ExposedItem ::=
     | ExposedOperator
     {recoverWhile=exposed_item_recover}
 
+DocsAnnotationItem ::=
+    LOWER_CASE_IDENTIFIER
+    | UPPER_CASE_IDENTIFIER
+    | ExposedOperator
+    {recoverWhile=docs_item_recover}
+
+private MoreDocsAnnotationItem ::= (COMMA DocsAnnotationItem)+ {pin(".*")=1}
+
+private docs_item_recover ::= !(COMMA | VIRTUAL_END_DECL)
+
 private exposed_item_recover ::= !(COMMA | RIGHT_PARENTHESIS | VIRTUAL_END_DECL)
 
 private MoreExposedItems ::= (COMMA ExposedItem)+ {pin(".*")=1}
 
-ModuleDocComment ::= (DOC_COMMENT | DOCS_ANNOTATION)+ {pin(".*")=1}
+DocComment ::= START_DOC_COMMENT VIRTUAL_END_DECL? DOC_CONTENT? (VIRTUAL_END_DECL? CommentContent)* VIRTUAL_END_DECL? END_DOC_COMMENT
+    {pin=1}
+
+private CommentContent ::= DOC_CONTENT | DocsAnnotationList
+
+DocsAnnotationList ::=
+    DOCS_ANNOTATION DocsAnnotationItem MoreDocsAnnotationItem?
+    {pin=1}
 
 ExposedValue ::= LOWER_CASE_IDENTIFIER
 

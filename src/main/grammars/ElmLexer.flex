@@ -23,15 +23,18 @@ import static org.elm.lang.core.psi.ElmTypes.*;
 %{
     private int commentLevel = 0;
     private int charLength = 0;
-    private boolean docComment = false;
 
     private void startComment() {
         commentLevel = 1;
         yybegin(COMMENT);
     }
+    private void startDocComment() {
+        commentLevel = 1;
+        yybegin(IN_DOC_COMMENT);
+    }
 %}
 
-%xstate COMMENT GLSL_CODE STRING RAW_STRING CHAR TYPE_PENDING DOCS_LINE
+%xstate COMMENT GLSL_CODE STRING RAW_STRING CHAR TYPE_PENDING DOCS_LINE IN_DOC_COMMENT
 
 Newline = (\n|\r|\r\n)
 Space = " "
@@ -92,48 +95,64 @@ ThreeQuotes = \"\"\"
 }
 
 <COMMENT> {
-    \n {
-        // Return to COMMENT state when newline encountered
-        if (docComment) {
-            return DOC_COMMENT;
-        }
-    }
     "{-" {
         commentLevel++;
     }
     "-}" {
             if (--commentLevel == 0) {
                 yybegin(YYINITIAL);
-                return docComment ? DOC_COMMENT : BLOCK_COMMENT;
+                return BLOCK_COMMENT;
             }
         }
-    "@docs" {
-        if (docComment) {
-            yybegin(DOCS_LINE);
-        }
-    }
-
-    <<EOF>> { commentLevel = 0; yybegin(YYINITIAL); return docComment ? DOC_COMMENT : BLOCK_COMMENT; }
+    <<EOF>> { commentLevel = 0; yybegin(YYINITIAL); return BLOCK_COMMENT; }
 
     [^] { }
 }
 
+<IN_DOC_COMMENT> {
+    {WhiteSpace} { return TokenType.WHITE_SPACE; }
+    {Newline} { return NEWLINE; }
+    [^@{\-]+ {
+      return DOC_CONTENT;
+   }
+    "{-" {
+        commentLevel++;
+    }
+    "-}" {
+        if (--commentLevel == 0) {
+            yybegin(YYINITIAL);
+            return END_DOC_COMMENT;
+        }
+    }
+    "@docs" {
+        yybegin(DOCS_LINE);
+        return DOCS_ANNOTATION;
+    }
+    [@{\-] {
+      return DOC_CONTENT;
+   }
+    <<EOF>> { commentLevel = 0; yybegin(YYINITIAL); return DOC_CONTENT; }
+
+    [^] { }
+}
 
 <DOCS_LINE> {
-    [^\n]* {
-        // Process the entire line excluding newline
-        // Split by comma, trim spaces and add the identifiers to some data structure
-//        String[] identifiers = yytext().split(",");
-//        for(int i = 0; i < identifiers.length; i++) {
-//            identifiers[i] = identifiers[i].trim();
-//        }
-        // do something with identifiers
-        yytext();
+    "-}" {
+        if (--commentLevel == 0) {
+            yybegin(YYINITIAL);
+            return END_DOC_COMMENT;
+        }
     }
-    \n {
-        // Return to COMMENT state when newline encountered
-        yybegin(COMMENT);
-        return DOCS_ANNOTATION;
+    "("                         { return LEFT_PARENTHESIS; }
+    ")"                         { return RIGHT_PARENTHESIS; }
+    {Operator}                  { return OPERATOR_IDENTIFIER; }
+    {WhiteSpace}                { return TokenType.WHITE_SPACE; }
+    {LowerCaseIdentifier}       { return LOWER_CASE_IDENTIFIER; }
+    {UpperCaseIdentifier}       { return UPPER_CASE_IDENTIFIER; }
+    ","                         { return COMMA; }
+    {Newline} {
+        yybegin(IN_DOC_COMMENT);
+        { return NEWLINE; }
     }
 }
 
@@ -198,11 +217,10 @@ ThreeQuotes = \"\"\"
             return START_GLSL_CODE;
         }
     "{-|" {
-        docComment = true;
-        startComment();
+        startDocComment();
+        return START_DOC_COMMENT;
     }
     "{-" {
-        docComment = false;
         startComment();
     }
 
