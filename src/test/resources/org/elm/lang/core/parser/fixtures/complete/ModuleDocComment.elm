@@ -12,8 +12,12 @@ This is NOT an annotation @docs because it is not at the start of the line.
 @docs decoder, urlParser
 @docs toString
 
-See also [example](Article.Tag).
-See also [`Article.Tag`](Article.Tag).
+- [Module](Article.Tag)
+- [Qualified Type](Article.Tag#Tag).
+- [Qualified Type `Char`](Char#Char)
+- [Qualified Operator `(++)`](Basics#++)
+- [No hash character is not a reference](notAnElmReference).
+
 This is a vanilla URL [GitHub](https://github.com/dillonkearns).
 
 [the URI spec](https://tools.ietf.org/html/rfc3986)

@@ -46,6 +46,7 @@
     tokens = [
         // tokens used by manual/external parse rules
         DOT='DOT'
+        HASH='HASH'
 
         // tokens used by the lexer but not visible to PsiBuilder parser
         RESERVED='RESERVED'
@@ -149,11 +150,8 @@ private CommentContent ::= MarkdownLink | DOC_CONTENT | DocsAnnotationList
 
 MarkdownLink ::= LEFT_PARENTHESIS MarkdownElmRef RIGHT_PARENTHESIS
 
-MarkdownElmRef ::= (TypeRefWithoutArgs | ValueQID | (HASH? UPPER_CASE_IDENTIFIER) | (HASH? LOWER_CASE_IDENTIFIER))
 
-private MarkdownElmTypeOrValue ::=
-    LOWER_CASE_IDENTIFIER
-    | UPPER_CASE_IDENTIFIER
+MarkdownElmRef ::= (UPPER_CASE_IDENTIFIER (DotWithoutWhitespace UPPER_CASE_IDENTIFIER)*)? (HASH (UPPER_CASE_IDENTIFIER | LOWER_CASE_IDENTIFIER | Operator))?
 
 DocsAnnotationList ::=
     DOCS_ANNOTATION DocsAnnotationItem MoreDocsAnnotationItem?

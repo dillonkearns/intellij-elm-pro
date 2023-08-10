@@ -48,6 +48,7 @@ UpperCaseIdentifier = [:uppercase:]{IdentifierChar}*
 NumberLiteral = ("-")?[:digit:]+(\.[:digit:]+)?(e"-"?[:digit:]+)?
 HexLiteral = 0x{HexChar}+
 Operator = ("!"|"$"|"^"|"|"|"*"|"/"|"?"|"+"|"~"|"."|-|=|@|#|%|&|<|>|:|€|¥|¢|£|¤)+
+OperatorNoHash = ("!"|"$"|"^"|"|"|"*"|"/"|"?"|"+"|"~"|"."|-|=|@|%|&|<|>|:|€|¥|¢|£|¤)+
 
 ValidEscapeSequence = \\(u\{{HexChar}{4,6}\}|[nrt\"'\\])
 InvalidEscapeSequence = \\(u\{[^}]*\}|[^nrt\"'\\])
@@ -147,11 +148,12 @@ Protocol = [a-zA-Z]+ ":"
     {LowerCaseIdentifier}  { return LOWER_CASE_IDENTIFIER; }
     {UpperCaseIdentifier}  { return UPPER_CASE_IDENTIFIER; }
     "."                    { return DOT; }
+    "-"                    { return DOT; }
     ")" {
           yybegin(IN_DOC_COMMENT);
           return RIGHT_PARENTHESIS;
     }
-
+    {OperatorNoHash}                  { return OPERATOR_IDENTIFIER; }
 }
 
 <IN_MARKDOWN_DESTINATION> {
@@ -160,8 +162,17 @@ Protocol = [a-zA-Z]+ ":"
           yybegin(IN_DOC_COMMENT);
           return DOC_CONTENT;
     }
+    "(/" [^)]* ")" {
+          yybegin(IN_DOC_COMMENT);
+          return DOC_CONTENT;
+    }
     // ignore links to operators
     "(#<" [^)]* ")" {
+          yybegin(IN_DOC_COMMENT);
+          return DOC_CONTENT;
+    }
+    // module names can be referenced with no `#`, but lower case identifiers must start with a `#`
+    "(" [:lowercase:] [^#)]* ")" {
           yybegin(IN_DOC_COMMENT);
           return DOC_CONTENT;
     }
