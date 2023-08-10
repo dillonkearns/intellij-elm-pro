@@ -93,6 +93,8 @@ class ElmPsiFactory(private val project: Project) {
                     VALUE_QID -> ElmValueQID(node)
                     DOCS_ANNOTATION_LIST -> ElmDocsAnnotationList(node)
                     DOCS_ANNOTATION_ITEM -> DocsAnnotationItem(node)
+                    MARKDOWN_LINK -> ElmMarkdownLink(node)
+                    MARKDOWN_ELM_REF -> MarkdownElmRef(node)
                     else -> throw AssertionError("Unknown element type: " + node.elementType)
                 }
     }

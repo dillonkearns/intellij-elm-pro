@@ -12,6 +12,23 @@ This is NOT an annotation @docs because it is not at the start of the line.
 @docs decoder, urlParser
 @docs toString
 
+See also [example](Article.Tag).
+See also [`Article.Tag`](Article.Tag).
+This is a vanilla URL [GitHub](https://github.com/dillonkearns).
+
+[the URI spec](https://tools.ietf.org/html/rfc3986)
+
+Turn JSON values into Elm values. Definitely check out this [intro to
+JSON decoders][guide] to get a feel for how this library works!
+
+Parse a segment of the path if it matches a given string. It is almost
+always used with [`</>`](#</>) or [`oneOf`](#oneOf). For example:
+
+
+    example : Int
+    example =
+        1 + 1
+
 -}
 
 import Json.Decode as Decode exposing (Decoder)

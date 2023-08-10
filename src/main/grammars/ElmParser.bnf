@@ -11,6 +11,7 @@
 
     elementTypeFactory("ModuleDeclaration")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("DocsAnnotationList")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
+    elementTypeFactory("MarkdownLink")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("DocComment")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("TypeDeclaration")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("TypeAliasDeclaration")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
@@ -22,6 +23,7 @@
     elementTypeFactory("ExposedOperator")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("ExposedValue")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("DocsAnnotationItem")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
+    elementTypeFactory("MarkdownElmRef")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("ExposedType")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("ValueDeclaration")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
     elementTypeFactory("PortAnnotation")="org.elm.lang.core.stubs.StubImplementationsKt.factory"
@@ -143,7 +145,15 @@ private MoreExposedItems ::= (COMMA ExposedItem)+ {pin(".*")=1}
 DocComment ::= START_DOC_COMMENT VIRTUAL_END_DECL? DOC_CONTENT? (VIRTUAL_END_DECL? CommentContent)* VIRTUAL_END_DECL? END_DOC_COMMENT
     {pin=1}
 
-private CommentContent ::= DOC_CONTENT | DocsAnnotationList
+private CommentContent ::= MarkdownLink | DOC_CONTENT | DocsAnnotationList
+
+MarkdownLink ::= LEFT_PARENTHESIS MarkdownElmRef RIGHT_PARENTHESIS
+
+MarkdownElmRef ::= (TypeRefWithoutArgs | ValueQID | (HASH? UPPER_CASE_IDENTIFIER) | (HASH? LOWER_CASE_IDENTIFIER))
+
+private MarkdownElmTypeOrValue ::=
+    LOWER_CASE_IDENTIFIER
+    | UPPER_CASE_IDENTIFIER
 
 DocsAnnotationList ::=
     DOCS_ANNOTATION DocsAnnotationItem MoreDocsAnnotationItem?

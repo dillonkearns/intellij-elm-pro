@@ -70,6 +70,7 @@ fun factory(name: String): ElmStubElementType<*, *> = when (name) {
     "EXPOSED_OPERATOR" -> ElmPlaceholderRefStub.Type(name, ::ElmExposedOperator)
     "EXPOSED_VALUE" -> ElmPlaceholderRefStub.Type(name, ::ElmExposedValue)
     "DOCS_ANNOTATION_ITEM" -> ElmPlaceholderRefStub.Type(name, ::DocsAnnotationItem)
+    "MARKDOWN_ELM_REF" -> ElmPlaceholderRefStub.Type(name, ::MarkdownElmRef)
     "DOC_COMMENT" -> ElmModuleDocCommentStub.Type
     "EXPOSED_TYPE" -> ElmExposedTypeStub.Type
     "VALUE_DECLARATION" -> ElmPlaceholderStub.Type(name, ::ElmValueDeclaration)
@@ -88,6 +89,7 @@ fun factory(name: String): ElmStubElementType<*, *> = when (name) {
     "AS_CLAUSE" -> ElmAsClauseStub.Type
     "UPPER_CASE_QID" -> ElmUpperCaseQIDStub.Type
     "DOCS_ANNOTATION_LIST" -> ElmDocsAnnotationListStub.Type
+    "MARKDOWN_LINK" -> MarkdownLinkStub.Type
     else -> error("Unknown element $name")
 }
 
@@ -372,6 +374,37 @@ class ElmDocsAnnotationListStub(
             ElmDocsAnnotationListStub(parentStub, this)
 
         override fun indexStub(stub: ElmDocsAnnotationListStub, sink: IndexSink) {
+            // no-op
+        }
+    }
+}
+
+class MarkdownLinkStub(
+    parent: StubElement<*>?,
+    elementType: IStubElementType<*, *>,
+) : StubBase<ElmMarkdownLink>(parent, elementType) {
+
+    object Type : ElmStubElementType<MarkdownLinkStub, ElmMarkdownLink>("MARKDOWN_LINK") {
+
+        override fun shouldCreateStub(node: ASTNode) =
+            createStubIfParentIsStub(node)
+
+        override fun serialize(stub: MarkdownLinkStub, dataStream: StubOutputStream) {
+            with(dataStream) {
+            }
+        }
+
+        override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?) =
+            MarkdownLinkStub(parentStub, this
+            )
+
+        override fun createPsi(stub: MarkdownLinkStub) =
+            ElmMarkdownLink(stub, this)
+
+        override fun createStub(psi: ElmMarkdownLink, parentStub: StubElement<*>?) =
+            MarkdownLinkStub(parentStub, this)
+
+        override fun indexStub(stub: MarkdownLinkStub, sink: IndexSink) {
             // no-op
         }
     }

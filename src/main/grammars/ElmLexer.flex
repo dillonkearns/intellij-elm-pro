@@ -34,7 +34,7 @@ import static org.elm.lang.core.psi.ElmTypes.*;
     }
 %}
 
-%xstate COMMENT GLSL_CODE STRING RAW_STRING CHAR TYPE_PENDING DOCS_LINE IN_DOC_COMMENT
+%xstate COMMENT GLSL_CODE STRING RAW_STRING CHAR TYPE_PENDING DOCS_LINE IN_DOC_COMMENT IN_MARKDOWN_DESTINATION IN_MARKDOWN_DESTINATION_ELM_REF
 
 Newline = (\n|\r|\r\n)
 Space = " "
@@ -52,6 +52,8 @@ Operator = ("!"|"$"|"^"|"|"|"*"|"/"|"?"|"+"|"~"|"."|-|=|@|#|%|&|<|>|:|€|¥|¢|
 ValidEscapeSequence = \\(u\{{HexChar}{4,6}\}|[nrt\"'\\])
 InvalidEscapeSequence = \\(u\{[^}]*\}|[^nrt\"'\\])
 ThreeQuotes = \"\"\"
+
+Protocol = [a-zA-Z]+ ":"
 
 %%
 
@@ -116,7 +118,11 @@ ThreeQuotes = \"\"\"
         yybegin(DOCS_LINE);
         return DOCS_ANNOTATION;
     }
-    [^@{\-]+ {
+    "[" [^\]]* "]" {
+          yybegin(IN_MARKDOWN_DESTINATION);
+          return DOC_CONTENT;
+    }
+    [^@{\-\[]+ {
       return DOC_CONTENT;
    }
     "{-" {
@@ -134,6 +140,39 @@ ThreeQuotes = \"\"\"
     <<EOF>> { commentLevel = 0; yybegin(YYINITIAL); return DOC_CONTENT; }
 
     [^] { }
+}
+
+<IN_MARKDOWN_DESTINATION_ELM_REF> {
+    "#" { return HASH; }
+    {LowerCaseIdentifier}  { return LOWER_CASE_IDENTIFIER; }
+    {UpperCaseIdentifier}  { return UPPER_CASE_IDENTIFIER; }
+    "."                    { return DOT; }
+    ")" {
+          yybegin(IN_DOC_COMMENT);
+          return RIGHT_PARENTHESIS;
+    }
+
+}
+
+<IN_MARKDOWN_DESTINATION> {
+// TODO handle whitespace
+    "(" {Protocol} [^)]* ")" {
+          yybegin(IN_DOC_COMMENT);
+          return DOC_CONTENT;
+    }
+    // ignore links to operators
+    "(#<" [^)]* ")" {
+          yybegin(IN_DOC_COMMENT);
+          return DOC_CONTENT;
+    }
+    "(" {
+          yybegin(IN_MARKDOWN_DESTINATION_ELM_REF);
+          return LEFT_PARENTHESIS;
+    }
+    [^] {
+          yybegin(IN_DOC_COMMENT);
+          return DOC_CONTENT;
+    }
 }
 
 <DOCS_LINE> {
