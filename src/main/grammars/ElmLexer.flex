@@ -157,7 +157,9 @@ Protocol = [a-zA-Z]+ ":"
 }
 
 <IN_MARKDOWN_DESTINATION> {
-// TODO handle whitespace
+    "(" [^)]* "\n" {
+        yybegin(IN_DOC_COMMENT);
+      }
     "(" {Protocol} [^)]* ")" {
           yybegin(IN_DOC_COMMENT);
           return DOC_CONTENT;
