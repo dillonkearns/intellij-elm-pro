@@ -41,8 +41,11 @@ intellij {
     version.set(properties("platformVersion"))
     type.set(properties("platformType"))
 
-    // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file.
-    plugins.set(properties("platformPlugins").split(',').map(String::trim).filter(String::isNotEmpty))
+    // Plugin Dependencies -> https://plugins.jetbrains.com/docs/intellij/plugin-dependencies.html
+    // Example: platformPlugins = com.intellij.java, com.jetbrains.php:203.4449.22
+    val ideaVimPlugin = "IdeaVim:2.4.1"
+    val psiViewerPlugin = "PsiViewer:232.2"
+    plugins.set(listOf(psiViewerPlugin, ideaVimPlugin))
 }
 
 // Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
