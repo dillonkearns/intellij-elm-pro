@@ -149,11 +149,20 @@ Protocol = [a-zA-Z]+ ":"
     {UpperCaseIdentifier}  { return UPPER_CASE_IDENTIFIER; }
     "."                    { return DOT; }
     "-"                    { return DOT; }
+    {WhiteSpace} { return TokenType.WHITE_SPACE; }
+    {Newline} { return NEWLINE; }
     ")" {
           yybegin(IN_DOC_COMMENT);
           return RIGHT_PARENTHESIS;
     }
     {OperatorNoHash}                  { return OPERATOR_IDENTIFIER; }
+    {Newline} {
+          return NEWLINE;
+    }
+    [^] {
+          yybegin(IN_DOC_COMMENT);
+          return DOC_CONTENT;
+    }
 }
 
 <IN_MARKDOWN_DESTINATION> {
@@ -182,9 +191,13 @@ Protocol = [a-zA-Z]+ ":"
           yybegin(IN_MARKDOWN_DESTINATION_ELM_REF);
           return LEFT_PARENTHESIS;
     }
-    [^] {
-          yybegin(IN_DOC_COMMENT);
-          return DOC_CONTENT;
+    {Newline} {
+        yybegin(IN_DOC_COMMENT);
+        return NEWLINE;
+    }
+    . {
+        yypushback(1);
+        yybegin(IN_DOC_COMMENT);
     }
 }
 

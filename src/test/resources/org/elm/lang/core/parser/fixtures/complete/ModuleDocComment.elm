@@ -33,6 +33,12 @@ always used with [`</>`](#</>) or [`oneOf`](#oneOf). For example:
     example =
         1 + 1
 
+["cat","dog","cow"]
+
+Code comments shouldn't be parsed as link references.
+
+    split "," "cat,dog,cow"        == ["cat","dog","cow"]
+
 -}
 
 import Json.Decode as Decode exposing (Decoder)
