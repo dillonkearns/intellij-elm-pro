@@ -44,7 +44,7 @@ class ElmUnusedSymbolInspection : ElmLocalInspection() {
 
         // perform Find Usages
         val usages = ReferencesSearch.search(element).findAll()
-                .filterNot { it.element is ElmTypeAnnotation || it.element is ElmExposedItemTag }
+                .filterNot { it.element is ElmTypeAnnotation || it.element is ElmExposedItemTag || it.element is DocsAnnotationItem || it.element is MarkdownElmRef }
 
         if (usages.isEmpty()) {
             markAsUnused(holder, element, name)
