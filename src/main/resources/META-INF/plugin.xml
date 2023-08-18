@@ -1,11 +1,9 @@
 <idea-plugin>
-    <id>Elm IntelliJ NG</id>
-    <name>Elm / Lamdera</name>
-    <vendor url="https://github.com/klazuka/intellij-elm">Keith Lazuka</vendor>
+    <id>Elm IntelliJ Pro</id>
+    <name>Elm Pro</name>
+    <vendor url="https://incrementalelm.com/">Incremental Elm Consulting</vendor>
 
-    <description><![CDATA[
-        Provides support for Elm & Lamdera projects
-    ]]></description>
+    <description>Editing and refactoring support for Elm projects.</description>
 
     <!-- please see https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
          on how to target different products -->
