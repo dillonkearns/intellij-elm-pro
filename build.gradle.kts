@@ -1,4 +1,5 @@
 import org.jetbrains.changelog.markdownToHTML
+import org.gradle.api.JavaVersion.VERSION_17
 import org.jetbrains.grammarkit.tasks.GenerateLexerTask
 import org.jetbrains.grammarkit.tasks.GenerateParserTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -9,11 +10,11 @@ plugins {
     // Java support
     id("java")
     // Kotlin support
-    id("org.jetbrains.kotlin.jvm") version "1.6.10"
+    kotlin("jvm") version "1.8.22"
     // Gradle IntelliJ Plugin
-    id("org.jetbrains.intellij") version "1.4.0"
+    id("org.jetbrains.intellij") version "1.13.1"
     // GrammarKit Plugin
-    id("org.jetbrains.grammarkit") version "2021.2.1"
+    id("org.jetbrains.grammarkit") version "2022.3.1"
     // Gradle Changelog Plugin
     id("org.jetbrains.changelog") version "1.3.1"
     // Gradle Qodana Plugin
@@ -59,7 +60,7 @@ qodana {
 }
 
 val generateSpecParser = tasks.create<GenerateParserTask>("generateElmParser") {
-    source.set("$projectDir/src/main/grammars/ElmParser.bnf")
+    sourceFile.set(file("$projectDir/src/main/grammars/ElmParser.bnf"))
     targetRoot.set("$projectDir/src/main/gen")
     pathToParser.set("/org/elm/lang/core/parser/ElmParser.java")
     pathToPsiRoot.set("/org/elm/lang/core/psi")
@@ -67,7 +68,7 @@ val generateSpecParser = tasks.create<GenerateParserTask>("generateElmParser") {
 }
 
 val generateSpecLexer = tasks.create<GenerateLexerTask>("generateElmLexer") {
-    source.set("$projectDir/src/main/grammars/ElmLexer.flex")
+    sourceFile.set(file("$projectDir/src/main/grammars/ElmLexer.flex"))
     skeleton.set(file("$projectDir/src/main/grammars/lexer.skeleton"))
     targetDir.set("$projectDir/src/main/gen/org/elm/lang/core/lexer/")
     targetClass.set("_ElmLexer")
@@ -90,14 +91,12 @@ tasks {
     }
 
     // Set the JVM compatibility versions
-    properties("javaVersion").let {
-        withType<JavaCompile> {
-            sourceCompatibility = it
-            targetCompatibility = it
-        }
-        withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = it
-        }
+    withType<JavaCompile> {
+        sourceCompatibility = VERSION_17.toString()
+        targetCompatibility = VERSION_17.toString()
+    }
+    withType<KotlinCompile> {
+        kotlinOptions.jvmTarget = VERSION_17.toString()
     }
 
     wrapper {

@@ -11,7 +11,6 @@ import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.util.castSafelyTo
 import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.psi.ElmTypes.*
 import org.elm.lang.core.psi.directChildren
@@ -119,7 +118,7 @@ private class ElmFoldingVisitor : PsiElementVisitor() {
                     if (element.parent is ElmBinOpExpr) {
                         fold(element.parent)
                     } else {
-                        val describeList = element.arguments.last().castSafelyTo<ElmListExpr>()
+                        val describeList = element.arguments.last() as? ElmListExpr
                         if (describeList != null) {
                             val listStart = describeList.directChildren.toList().first { it.elementType == LEFT_SQUARE_BRACKET }
                             val listEnd = describeList.directChildren.toList().first { it.elementType == RIGHT_SQUARE_BRACKET }

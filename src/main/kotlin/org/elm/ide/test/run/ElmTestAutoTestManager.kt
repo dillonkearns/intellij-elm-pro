@@ -22,7 +22,7 @@ class ElmTestAutoTestManager internal constructor(
     override fun createWatcher(project: Project) =
         DelayedDocumentWatcher(project,
             myDelayMillis,
-            IntConsumer { value -> restartAllAutoTests(value) }
+            this
         ) { it.fileType == ElmFileType && FileEditorManager.getInstance(project).isFileOpen(it) }
 }
 

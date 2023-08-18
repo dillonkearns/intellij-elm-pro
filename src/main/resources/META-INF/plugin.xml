@@ -221,11 +221,11 @@
 
         <multiHostInjector implementation="org.elm.ide.injection.ElmGlslInjector"/>
 
-        <liveTemplateContext implementation="org.elm.ide.livetemplates.ElmLiveTemplateContext$Generic"/>
-        <liveTemplateContext implementation="org.elm.ide.livetemplates.ElmLiveTemplateContext$TopLevel"/>
-        <liveTemplateContext implementation="org.elm.ide.livetemplates.ElmLiveTemplateContext$Expression"/>
-        <liveTemplateContext implementation="org.elm.ide.livetemplates.ElmLiveTemplateContext$ValueDecl"/>
-        <defaultLiveTemplatesProvider implementation="org.elm.ide.livetemplates.ElmLiveTemplateProvider"/>
+        <liveTemplateContext implementation="org.elm.ide.livetemplates.ElmLiveTemplateContext$Generic" contextId="ELM"/>
+        <liveTemplateContext implementation="org.elm.ide.livetemplates.ElmLiveTemplateContext$TopLevel" contextId="ELM_TOP_LEVEL" baseContextId="ELM" />
+        <liveTemplateContext implementation="org.elm.ide.livetemplates.ElmLiveTemplateContext$Expression" contextId="ELM_EXPRESSION" baseContextId="ELM" />
+        <liveTemplateContext implementation="org.elm.ide.livetemplates.ElmLiveTemplateContext$ValueDecl" contextId="ELM_VALUE_DECL" baseContextId="ELM"/>
+        <defaultLiveTemplates file="/liveTemplates/Elm.xml"/>
 
         <configurationType implementation="org.elm.ide.test.run.ElmTestRunConfigurationType"/>
         <programRunner implementation="org.elm.ide.test.run.ElmTestProgramRunner"/>
