@@ -119,7 +119,7 @@ Protocol = [a-zA-Z]+ ":"
         yybegin(DOCS_LINE);
         return DOCS_ANNOTATION;
     }
-    "[" [^\]]* "]" {
+    "[" [^\]\n]* "]" {
           yybegin(IN_MARKDOWN_DESTINATION);
           return DOC_CONTENT;
     }
@@ -157,14 +157,14 @@ Protocol = [a-zA-Z]+ ":"
 }
 
 <IN_MARKDOWN_DESTINATION> {
-    "(" [^)]* "\n" {
+    "(" [^)\n]* "\n" {
         yybegin(IN_DOC_COMMENT);
       }
     "(" {Protocol} [^)]* ")" {
           yybegin(IN_DOC_COMMENT);
           return DOC_CONTENT;
     }
-    "(/" [^)]* ")" {
+    "(/" [^)\n]* ")" {
           yybegin(IN_DOC_COMMENT);
           return DOC_CONTENT;
     }
@@ -174,7 +174,7 @@ Protocol = [a-zA-Z]+ ":"
           return DOC_CONTENT;
     }
     // module names can be referenced with no `#`, but lower case identifiers must start with a `#`
-    "(" [:lowercase:] [^#)]* ")" {
+    "(" [:lowercase:] [^#)\n]* ")" {
           yybegin(IN_DOC_COMMENT);
           return DOC_CONTENT;
     }

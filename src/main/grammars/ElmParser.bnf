@@ -148,9 +148,7 @@ DocComment ::= START_DOC_COMMENT VIRTUAL_END_DECL? DOC_CONTENT? (VIRTUAL_END_DEC
 
 private CommentContent ::= MarkdownLink | DOC_CONTENT | DocsAnnotationList
 
-MarkdownLink ::= LEFT_PARENTHESIS MarkdownElmRef? RIGHT_PARENTHESIS
-    {pin=1}
-
+MarkdownLink ::= LEFT_PARENTHESIS MarkdownElmRef RIGHT_PARENTHESIS
 
 MarkdownElmRef ::= (UPPER_CASE_IDENTIFIER (DotWithoutWhitespace UPPER_CASE_IDENTIFIER)*)? (HASH (UPPER_CASE_IDENTIFIER | LOWER_CASE_IDENTIFIER | Operator))?
 
