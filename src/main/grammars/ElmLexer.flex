@@ -203,7 +203,6 @@ Protocol = [a-zA-Z]+ ":"
         yybegin(IN_DOC_COMMENT);
     }
 }
-
 <DOCS_LINE> {
     "-}" {
         if (--commentLevel == 0) {
@@ -214,13 +213,25 @@ Protocol = [a-zA-Z]+ ":"
     "("                         { return LEFT_PARENTHESIS; }
     ")"                         { return RIGHT_PARENTHESIS; }
     {Operator}                  { return OPERATOR_IDENTIFIER; }
-    {WhiteSpace}                { return TokenType.WHITE_SPACE; }
     {LowerCaseIdentifier}       { return LOWER_CASE_IDENTIFIER; }
     {UpperCaseIdentifier}       { return UPPER_CASE_IDENTIFIER; }
     ","                         { return COMMA; }
-    {Newline} {
+     // Two newlines in a row ends the docs line
+    {Newline} "@docs" {
+          yypushback(5);
+          yybegin(IN_DOC_COMMENT);
+          return NEWLINE;
+      }
+    {Newline} {WhiteSpace}* {Newline} {
         yybegin(IN_DOC_COMMENT);
         { return NEWLINE; }
+    }
+    // A single newline on its own can continue the docs line
+    {Newline} { return TokenType.WHITE_SPACE; }
+    {WhiteSpace}                { return TokenType.WHITE_SPACE; }
+    . {
+        yypushback(1);
+        yybegin(IN_DOC_COMMENT);
     }
 }
 

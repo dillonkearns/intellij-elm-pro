@@ -39,6 +39,16 @@ Code comments shouldn't be parsed as link references.
 
     split "," "cat,dog,cow"        == ["cat","dog","cow"]
 
+
+Doc comments can continue onto the next line
+
+@docs onClick, onDoubleClick,
+      onMouseDown, onMouseUp,
+      onMouseEnter, onMouseLeave,
+      onMouseOver, onMouseOut
+
+But they end after an empty line.
+
 -}
 
 import Json.Decode as Decode exposing (Decoder)
