@@ -23,7 +23,4 @@ class MarkdownElmReference(docsItem: MarkdownElmRef) : ElmReferenceCached<Markdo
             }
         }
     }
-
-
-    override fun getVariants(): Array<ElmNamedElement> = emptyArray()
 }
