@@ -33,8 +33,8 @@ import org.elm.utils.Timings
 
 class ElmHighlightingPerformanceTest : ElmRealProjectTestBase() {
 
-    // It is a performance test, but we will measure performance ourselves
-    override fun isPerformanceTest(): Boolean = false
+//    // It is a performance test, but we will measure performance ourselves
+//    override fun isPerformanceTest(): Boolean = false
 
     fun `test highlighting elm-json-tree-view`() =
             repeatTest { highlightProjectFile(JSON_TREE_VIEW, "src/JsonTree.elm") }
@@ -93,5 +93,5 @@ class ElmHighlightingPerformanceTest : ElmRealProjectTestBase() {
     }
 
     private fun currentPsiModificationCount() =
-            PsiModificationTracker.SERVICE.getInstance(project).modificationCount
+            PsiModificationTracker.getInstance(project).modificationCount
 }
