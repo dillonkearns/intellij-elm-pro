@@ -132,7 +132,7 @@ private ExposedItem ::=
 DocsAnnotationItem ::=
     LOWER_CASE_IDENTIFIER
     | UPPER_CASE_IDENTIFIER
-    | ExposedOperator
+    | OperatorAsFunction_inner
     {recoverWhile=docs_item_recover}
 
 private MoreDocsAnnotationItem ::= (COMMA DocsAnnotationItem)+ {pin(".*")=1}

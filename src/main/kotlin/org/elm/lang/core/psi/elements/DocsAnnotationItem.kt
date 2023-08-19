@@ -4,8 +4,8 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.IStubElementType
 import org.elm.lang.core.psi.ElmStubbedElement
-import org.elm.lang.core.psi.ElmTypes.LOWER_CASE_IDENTIFIER
-import org.elm.lang.core.psi.ElmTypes.UPPER_CASE_IDENTIFIER
+import org.elm.lang.core.psi.ElmTypes
+import org.elm.lang.core.psi.ElmTypes.*
 import org.elm.lang.core.psi.tokenSetOf
 import org.elm.lang.core.resolve.ElmReferenceElement
 import org.elm.lang.core.resolve.reference.DocsValueModuleReference
@@ -31,6 +31,7 @@ class DocsAnnotationItem : ElmStubbedElement<ElmPlaceholderRefStub>, ElmReferenc
         get() =
             findChildByClass(ElmExposedOperator::class.java) ?: findNotNullChildByType(
                 tokenSetOf(
+                    OPERATOR_IDENTIFIER,
                     LOWER_CASE_IDENTIFIER,
                     UPPER_CASE_IDENTIFIER
                 )

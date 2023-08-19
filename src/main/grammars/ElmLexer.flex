@@ -166,6 +166,9 @@ Protocol = [a-zA-Z]+ ":"
 }
 
 <IN_MARKDOWN_DESTINATION> {
+    "(" {WhiteSpace}* ")" {
+          yybegin(IN_DOC_COMMENT);
+    }
     "(" [^)\n]* "\n" {
         yybegin(IN_DOC_COMMENT);
       }

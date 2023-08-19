@@ -26,18 +26,17 @@ class MarkdownElmRef : ElmStubbedElement<ElmPlaceholderRefStub>, ElmReferenceEle
 
 
     override val referenceNameElement: PsiElement
-        get() = //this
-            // TODO consider refining down the reference name element to be more narrow for better highlighting
-            findChildByClass(ElmExposedOperator::class.java) ?: (findChildByType(
-                tokenSetOf(
-                    LOWER_CASE_IDENTIFIER,
-                )
-            ) ?: findChildrenByType<PsiElement>(
-                tokenSetOf(
-                    UPPER_CASE_IDENTIFIER,
-                )
-            ).last()
-                    )
+        get() {
+            val maybeElement: PsiElement? =
+                this.findChildByClass(ElmOperator::class.java) ?: (findChildByType(LOWER_CASE_IDENTIFIER) ?: findLastChildByType(
+                    UPPER_CASE_IDENTIFIER
+                ))
+            if (maybeElement != null) {
+                return maybeElement
+            } else {
+                throw Exception("MarkdownElmRef referenceNameElement is null")
+            }
+        }
 
     override val referenceName: String
         get() = referenceNameElement.text
