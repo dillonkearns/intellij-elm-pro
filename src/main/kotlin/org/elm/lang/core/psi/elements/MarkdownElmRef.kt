@@ -4,9 +4,10 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.IStubElementType
 import org.elm.lang.core.psi.ElmStubbedElement
+import org.elm.lang.core.psi.ElmTypes.*
+import org.elm.lang.core.psi.tokenSetOf
 import org.elm.lang.core.resolve.ElmReferenceElement
-import org.elm.lang.core.resolve.reference.ElmReference
-import org.elm.lang.core.resolve.reference.MarkdownElmReference
+import org.elm.lang.core.resolve.reference.*
 import org.elm.lang.core.stubs.ElmPlaceholderRefStub
 
 
@@ -25,19 +26,66 @@ class MarkdownElmRef : ElmStubbedElement<ElmPlaceholderRefStub>, ElmReferenceEle
 
 
     override val referenceNameElement: PsiElement
-        get() = this
-             // TODO consider refining down the reference name element to be more narrow for better highlighting
-//            findChildByClass(ElmExposedOperator::class.java) ?: findNotNullChildByType(
-//                tokenSetOf(
-//                    LOWER_CASE_IDENTIFIER,
-//                    UPPER_CASE_IDENTIFIER
-//                )
-//            )
+        get() = //this
+            // TODO consider refining down the reference name element to be more narrow for better highlighting
+            findChildByClass(ElmExposedOperator::class.java) ?: (findChildByType(
+                tokenSetOf(
+                    LOWER_CASE_IDENTIFIER,
+                )
+            ) ?: findChildrenByType<PsiElement>(
+                tokenSetOf(
+                    UPPER_CASE_IDENTIFIER,
+                )
+            ).last()
+                    )
 
     override val referenceName: String
-        get() = this.text.replace(Regex("^#"), "").replace("#", ".") // stub?.refName ?: referenceNameElement.text
+        get() = referenceNameElement.text
 
-    override fun getReference(): ElmReference {
-        return MarkdownElmReference(this)
+    val isQualified: Boolean
+        get() = findChildByType<PsiElement>(HASH) != null
+
+    private val flavor: Flavor
+        get() {
+            val lowerCaseId = this.node.findChildByType(tokenSetOf(LOWER_CASE_IDENTIFIER))
+            return when {
+                lowerCaseId == null ->
+                    if (isQualified)
+                        Flavor.QualifiedConstructor
+                    else
+                        Flavor.BareConstructor
+
+                else ->
+                    if (isQualified)
+                        Flavor.QualifiedValue
+                    else
+                        Flavor.BareValue
+            }
+        }
+
+    override fun getReference(): ElmReference =
+        references.first()
+
+    override fun getReferences(): Array<ElmReference> {
+
+        return when (flavor) {
+            Flavor.BareValue -> arrayOf(MarkdownElmReference(this))
+            Flavor.BareConstructor -> arrayOf(MarkdownElmReference(this))
+            Flavor.QualifiedValue -> {
+                val qualifierPrefix = this.text.split("#").first()
+                if (qualifierPrefix == "") {
+                    arrayOf(MarkdownElmReference(this))
+                } else {
+                    arrayOf(
+                        MarkdownElmReference(this),
+                        MarkdownModuleNameQualifierReference(this, qualifierPrefix)
+                    )
+                }
+            }
+
+            Flavor.QualifiedConstructor -> arrayOf(
+                MarkdownElmReference(this),
+            )
+        }
     }
 }
