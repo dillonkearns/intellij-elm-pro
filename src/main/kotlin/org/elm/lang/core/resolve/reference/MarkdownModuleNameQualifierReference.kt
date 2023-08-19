@@ -24,7 +24,8 @@ class MarkdownModuleNameQualifierReference<T : ElmReferenceElement>(
     private val refText: String = qualifierPrefix
 
     override fun resolveInner(): ElmNamedElement? {
-        val targetModuleName = GlobalScope.defaultAliases[refText] ?: refText
+        val normalizedRef = refText.replace("-", ".")
+        val targetModuleName = GlobalScope.defaultAliases[normalizedRef] ?: normalizedRef
         return ElmModulesIndex.get(targetModuleName, element.elmFile)
     }
 

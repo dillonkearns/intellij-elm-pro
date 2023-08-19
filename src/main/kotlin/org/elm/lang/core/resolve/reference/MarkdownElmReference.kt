@@ -5,7 +5,7 @@ import org.elm.lang.core.psi.elements.MarkdownElmRef
 import org.elm.lang.core.resolve.scope.ModuleScope
 import org.elm.lang.core.stubs.index.ElmModulesIndex
 
-class MarkdownElmReference(docsItem: MarkdownElmRef) : ElmReferenceCached<MarkdownElmRef>(docsItem), QualifiedReference {
+class MarkdownElmReference(docsItem: MarkdownElmRef) : ElmReferenceCached<MarkdownElmRef>(docsItem) {
 
     override fun resolveInner(): ElmNamedElement? {
         val splitList = element.text.split('#').map { it.replace("-", ".") }
@@ -24,10 +24,6 @@ class MarkdownElmReference(docsItem: MarkdownElmRef) : ElmReferenceCached<Markdo
         }
     }
 
-    override val qualifierPrefix: String
-        get() = element.text.split('#').first().replace("-", ".") //this.element.qualifierPrefix
-    override val nameWithoutQualifier: String
-        get() = this.element.text.split('#').lastOrNull().orEmpty()
 
     override fun getVariants(): Array<ElmNamedElement> = emptyArray()
 }
