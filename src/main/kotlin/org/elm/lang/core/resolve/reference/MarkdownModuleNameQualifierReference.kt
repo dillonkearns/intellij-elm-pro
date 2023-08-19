@@ -31,8 +31,4 @@ class MarkdownModuleNameQualifierReference<T : ElmReferenceElement>(
     override fun calculateDefaultRangeInElement(): TextRange {
         return TextRange.allOf(refText)
     }
-
-    override fun handleElementRename(newElementName: String): PsiElement {
-        TODO("Implement")
-    }
 }
