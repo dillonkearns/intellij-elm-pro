@@ -75,7 +75,6 @@ jobs:
           gunzip binary-for-linux-64-bit.gz
           chmod +x binary-for-linux-64-bit
           sudo mv binary-for-linux-64-bit /usr/local/bin/elm
-          ./gradlew check
       # Run tests
       - name: Run Tests
         run: ./gradlew test
