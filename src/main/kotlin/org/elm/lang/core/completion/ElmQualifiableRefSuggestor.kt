@@ -109,7 +109,8 @@ private fun CompletionResultSet.add(str: String) {
 private fun CompletionResultSet.add(element: ElmNamedElement) {
     addElement(LookupElementBuilder.create(element)
             .withInsertHandler { context, _ ->
-                if (!element.name.equals(element.moduleName)) {
+                val isSelfModule = element.elmFile.getModuleDecl()?.name == (context.file as? ElmFile)?.getModuleDecl()?.moduleName
+                if (!element.name.equals(element.moduleName) && !isSelfModule && element.moduleName != "") {
                     ImportAdder.addImport(ImportAdder.Import(element.moduleName, null, ".."), context.file as ElmFile, true)
                 }
             }
