@@ -44,7 +44,7 @@ class MyDirectoryIndex<T>(parentDisposable: Disposable,
                           private val myDefValue: T,
                           private val myInitializer: Consumer<MyDirectoryIndex<T>>) {
 
-    private val myInfoCache = ContainerUtil.createConcurrentIntObjectMap<T>()
+    private val myInfoCache = com.intellij.concurrency.ConcurrentCollectionFactory.createConcurrentIntObjectMap<T>()
 
     init {
         resetIndex()
