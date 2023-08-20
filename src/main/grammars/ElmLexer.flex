@@ -204,6 +204,9 @@ Protocol = [a-zA-Z]+ ":"
     }
 }
 <DOCS_LINE> {
+    "{-" {
+        commentLevel++;
+    }
     "-}" {
         if (--commentLevel == 0) {
             yybegin(YYINITIAL);
@@ -224,11 +227,11 @@ Protocol = [a-zA-Z]+ ":"
       }
     {Newline} {WhiteSpace}* {Newline} {
         yybegin(IN_DOC_COMMENT);
-        { return NEWLINE; }
+        return NEWLINE;
     }
     // A single newline on its own can continue the docs line
     {Newline} { return TokenType.WHITE_SPACE; }
-    {WhiteSpace}                { return TokenType.WHITE_SPACE; }
+    {WhiteSpace}+ { return TokenType.WHITE_SPACE; }
     . {
         yypushback(1);
         yybegin(IN_DOC_COMMENT);

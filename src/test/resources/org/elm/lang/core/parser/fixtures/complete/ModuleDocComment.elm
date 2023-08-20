@@ -49,6 +49,7 @@ Doc comments can continue onto the next line
 
 But they end after an empty line.
 
+@docs targetValue, targetChecked, keyCode
 -}
 
 import Json.Decode as Decode exposing (Decoder)

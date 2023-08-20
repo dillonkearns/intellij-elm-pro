@@ -137,7 +137,7 @@ DocsAnnotationItem ::=
 
 private MoreDocsAnnotationItem ::= (COMMA DocsAnnotationItem)+ {pin(".*")=1}
 
-private docs_item_recover ::= !(COMMA | VIRTUAL_END_DECL)
+private docs_item_recover ::= !(COMMA | VIRTUAL_END_DECL | END_DOC_COMMENT)
 
 private exposed_item_recover ::= !(COMMA | RIGHT_PARENTHESIS | VIRTUAL_END_DECL)
 
