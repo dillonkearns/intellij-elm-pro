@@ -32,6 +32,14 @@ class ElmPresentableTreeElement(val element: ElmPsiElement)
     override fun getPresentation() =
             getPresentationForStructure(element)
 
+    override fun navigate(requestFocus: Boolean) {
+        (element as? Navigatable)?.navigate(requestFocus)
+    }
+
+    override fun canNavigate(): Boolean = true
+
+    override fun canNavigateToSource(): Boolean = true
+
 }
 
 /** Like [PsiElement.descendants], but stops at any [ElmValueDeclaration]s */
