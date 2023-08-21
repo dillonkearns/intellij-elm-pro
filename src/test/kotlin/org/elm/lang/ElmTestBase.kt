@@ -54,6 +54,7 @@ import org.elm.workspace.EmptyElmStdlibVariant
 import org.elm.workspace.MinimalElmStdlibVariant
 import org.elm.workspace.elmWorkspace
 import org.intellij.lang.annotations.Language
+import org.junit.runner.RunWith
 import java.util.*
 
 private val log = logger<ElmTestBase>()
@@ -73,6 +74,8 @@ private val log = logger<ElmTestBase>()
  *
  * For "heavier" integration tests, see [org.elm.workspace.ElmWorkspaceTestBase]
  */
+
+@RunWith(ElmJUnit4TestRunner::class)
 abstract class ElmTestBase : LightPlatformCodeInsightFixture4TestCase(), ElmTestCase {
 
     override fun getProjectDescriptor(): LightProjectDescriptor = ElmDefaultDescriptor
