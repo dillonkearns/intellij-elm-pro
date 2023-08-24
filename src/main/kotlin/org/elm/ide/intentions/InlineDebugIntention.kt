@@ -3,6 +3,7 @@ package org.elm.ide.intentions
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import org.elm.ide.settings.experimentalFlags
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
 import org.elm.utils.getIndent
@@ -24,6 +25,9 @@ class InlineDebugIntention : ElmAtCaretIntentionActionBase<InlineDebugIntention.
     override fun getFamilyName() = text
 
     override fun findApplicableContext(project: Project, editor: Editor, element: PsiElement): Context? {
+        if (!project.experimentalFlags.debugIntentionEnabled) {
+            return null
+        }
         element.ancestors.forEach {
             when (it) {
                 is ElmValueExpr -> {

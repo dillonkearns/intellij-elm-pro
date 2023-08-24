@@ -14,7 +14,7 @@ import com.intellij.openapi.project.Project
 //import org.elm.cargo.toolchain.ExternalLinter
 //import org.elm.cargo.toolchain.RustChannel
 
-val Project.externalLinterSettings: ElmExternalLinterProjectSettingsService
+val Project.experimentalFlags: ElmExternalLinterProjectSettingsService
     get() = service<ElmExternalLinterProjectSettingsService>()
 
 private const val SERVICE_NAME: String = "ElmExternalLinterProjectSettings"
@@ -27,7 +27,7 @@ class ElmExternalLinterProjectSettingsService(
     val additionalArguments: String get() = state.additionalArguments
 //    val channel: RustChannel get() = state.channel
     val envs: Map<String, String> get() = state.envs
-    val runOnTheFly: Boolean get() = state.runOnTheFly
+    val debugIntentionEnabled: Boolean get() = state.enableDebugIntention
 
     override fun noStateLoaded() {
         val rustSettings = project.rustSettings
@@ -35,7 +35,7 @@ class ElmExternalLinterProjectSettingsService(
 //        rustSettings.state.externalLinter = ExternalLinter.DEFAULT
         state.additionalArguments = rustSettings.state.externalLinterArguments
 //        rustSettings.state.externalLinterArguments = ""
-        state.runOnTheFly = rustSettings.state.runExternalLinterOnTheFly
+        state.enableDebugIntention = rustSettings.state.runExternalLinterOnTheFly
 //        rustSettings.state.runExternalLinterOnTheFly = false
     }
 
@@ -51,7 +51,7 @@ class ElmExternalLinterProjectSettingsService(
         @AffectsHighlighting
         var envs by map<String, String>()
         @AffectsHighlighting
-        var runOnTheFly by property(false)
+        var enableDebugIntention by property(false)
 
         override fun copy(): ElmExternalLinterProjectSettings {
             val state = ElmExternalLinterProjectSettings()

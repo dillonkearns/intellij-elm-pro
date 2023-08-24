@@ -7,9 +7,7 @@ package org.elm.ide.settings
 
 import com.intellij.execution.configuration.EnvironmentVariablesComponent
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogPanel
-import com.intellij.ui.EnumComboBoxModel
 import com.intellij.ui.components.Label
 import com.intellij.ui.dsl.builder.*
 import org.elm.ElmBundle
@@ -36,7 +34,7 @@ class ElmExternalLinterConfigurable(project: Project) : ElmConfigurableBase(proj
     private val environmentVariables: EnvironmentVariablesComponent = EnvironmentVariablesComponent()
 
     override fun createPanel(): DialogPanel = panel {
-        val settings = project.externalLinterSettings
+        val settings = project.experimentalFlags
         val state = settings.state.copy()
 
 //        row(ElmBundle.message("settings.rust.external.linters.tool.label")) {
@@ -75,9 +73,9 @@ class ElmExternalLinterConfigurable(project: Project) : ElmConfigurableBase(proj
         }
 
         row {
-            checkBox(ElmBundle.message("settings.rust.external.linters.on.the.fly.label"))
-                .comment(ElmBundle.message("settings.rust.external.linters.on.the.fly.comment"))
-                .bindSelected(state::runOnTheFly)
+            checkBox(ElmBundle.message("settings.elm.feature.unstable.add-debug.label"))
+                .comment(ElmBundle.message("settings.elm.feature.unstable.add-debug.comment"))
+                .bindSelected(state::enableDebugIntention)
         }
 
         onApply {
@@ -86,7 +84,7 @@ class ElmExternalLinterConfigurable(project: Project) : ElmConfigurableBase(proj
                 it.additionalArguments = state.additionalArguments
 //                it.channel = state.channel
                 it.envs = state.envs
-                it.runOnTheFly = state.runOnTheFly
+                it.enableDebugIntention = state.enableDebugIntention
             }
         }
     }
