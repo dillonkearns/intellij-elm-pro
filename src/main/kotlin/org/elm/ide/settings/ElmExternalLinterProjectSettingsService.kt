@@ -23,35 +23,27 @@ private const val SERVICE_NAME: String = "ElmExternalLinterProjectSettings"
 class ElmExternalLinterProjectSettingsService(
     project: Project
 ) : ElmProjectSettingsServiceBase<ElmExternalLinterProjectSettingsService.ElmExternalLinterProjectSettings>(project, ElmExternalLinterProjectSettings()) {
-//    val tool: ExternalLinter get() = state.tool
     val additionalArguments: String get() = state.additionalArguments
-//    val channel: RustChannel get() = state.channel
-    val envs: Map<String, String> get() = state.envs
     val debugIntentionEnabled: Boolean get() = state.enableDebugIntention
+    val extractVariableEnabled: Boolean get() = state.enableExtractVariable
 
     override fun noStateLoaded() {
-        val rustSettings = project.rustSettings
-//        state.tool = rustSettings.state.externalLinter
-//        rustSettings.state.externalLinter = ExternalLinter.DEFAULT
-        state.additionalArguments = rustSettings.state.externalLinterArguments
-//        rustSettings.state.externalLinterArguments = ""
-        state.enableDebugIntention = rustSettings.state.runExternalLinterOnTheFly
-//        rustSettings.state.runExternalLinterOnTheFly = false
+        val unstableFlags = project.rustSettings
+        state.additionalArguments = unstableFlags.state.externalLinterArguments
+        state.enableDebugIntention = unstableFlags.state.enableDebugIntention
     }
 
     class ElmExternalLinterProjectSettings : ElmProjectSettingsBase<ElmExternalLinterProjectSettings>() {
 //        @AffectsHighlighting
-//        var tool by enum(ExternalLinter.DEFAULT)
-
-        @AffectsHighlighting
         var additionalArguments by property("") { it.isEmpty() }
 
 //        @AffectsHighlighting
 //        var channel by enum(RustChannel.DEFAULT)
-        @AffectsHighlighting
-        var envs by map<String, String>()
-        @AffectsHighlighting
+//        @AffectsHighlighting
+//        var envs by map<String, String>()
+//        @AffectsHighlighting
         var enableDebugIntention by property(false)
+        var enableExtractVariable by property(false)
 
         override fun copy(): ElmExternalLinterProjectSettings {
             val state = ElmExternalLinterProjectSettings()

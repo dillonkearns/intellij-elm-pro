@@ -4,6 +4,7 @@ import com.intellij.lang.refactoring.RefactoringSupportProvider
 import com.intellij.psi.PsiElement
 import com.intellij.refactoring.RefactoringActionHandler
 import org.elm.ide.refactoring.extractFunction.ElmExtractFunctionHandler
+import org.elm.ide.settings.experimentalFlags
 
 
 class ElmRefactoringSupportProvider : RefactoringSupportProvider() {

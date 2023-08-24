@@ -12,6 +12,7 @@ import com.intellij.refactoring.RefactoringBundle
 import com.intellij.refactoring.introduce.inplace.InplaceVariableIntroducer
 import com.intellij.refactoring.util.CommonRefactoringUtil
 import com.intellij.util.DocumentUtil
+import org.elm.ide.settings.experimentalFlags
 import org.elm.ide.utils.findExpressionAtCaret
 import org.elm.ide.utils.findExpressionInRange
 import org.elm.lang.core.psi.*
@@ -25,6 +26,7 @@ import org.elm.openapiext.runWriteCommandAction
 class ElmIntroduceVariableHandler : RefactoringActionHandler {
 
     override fun invoke(project: Project, editor: Editor, file: PsiFile, dataContext: DataContext?) {
+        if (!project.experimentalFlags.extractVariableEnabled) return
         if (file !is ElmFile) return
         val exprs = findCandidateExpressions(editor, file)
         when (exprs.size) {

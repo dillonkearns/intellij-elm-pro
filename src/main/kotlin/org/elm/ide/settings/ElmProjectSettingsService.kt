@@ -12,16 +12,12 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiManager
 import com.intellij.util.ThreeState
-import com.intellij.util.io.systemIndependentPath
-import com.intellij.util.xmlb.annotations.Transient
 //import org.elm.ide.settings.ElmProjectConfigurable
 import org.elm.ide.settings.ELmProjectSettingsService.ELmProjectSettings
 //import org.elm.ide.toolchain.ExternalLinter
 //import org.elm.ide.toolchain.ElmToolchainBase
 //import org.elm.ide.toolchain.ElmToolchainProvider
-import org.elm.openapiext.isUnitTestMode
 //import org.elm.openapiext.showSettingsDialog
-import java.nio.file.Paths
 
 val Project.rustSettings: ELmProjectSettingsService
     get() = service<ELmProjectSettingsService>()
@@ -67,7 +63,7 @@ class ELmProjectSettingsService(
         // BACKCOMPAT: 2023.1
 //        var externalLinter by enum(ExternalLinter.DEFAULT)
         // BACKCOMPAT: 2023.1
-        var runExternalLinterOnTheFly by property(false)
+        var enableDebugIntention by property(false)
         // BACKCOMPAT: 2023.1
         var externalLinterArguments by property("") { it.isEmpty() }
         @AffectsHighlighting
