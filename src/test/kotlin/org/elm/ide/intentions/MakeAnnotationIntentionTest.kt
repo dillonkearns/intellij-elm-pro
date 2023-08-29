@@ -1,10 +1,12 @@
 package org.elm.ide.intentions
 
+import org.elm.ide.inspections.ElmInspectionsTestBase
 
-class MakeAnnotationIntentionTest : ElmIntentionTestBase(MakeAnnotationIntention()) {
+
+class MakeAnnotationIntentionTest : ElmInspectionsTestBase(MakeAnnotationIntention()) {
     override fun getProjectDescriptor() = ElmWithStdlibDescriptor
 
-    fun `test value`() = doAvailableTest(
+    fun `test value`() = checkFixByText("Add Annotation",
             """
 module Test exposing (f)
 
@@ -19,7 +21,7 @@ f =
     1.0
 """)
 
-    fun `test value with docstring`() = doAvailableTest(
+    fun `test value with docstring`() = checkFixByText("Add Annotation",
             """
 {- docs -}
 f{-caret-} =
@@ -32,7 +34,7 @@ f =
     1.0
 """)
 
-    fun `test value with caret in name`() = doAvailableTest(
+    fun `test value with caret in name`() = checkFixByText("Add Annotation",
             """
 module Test exposing (function)
 
@@ -47,7 +49,7 @@ function =
     1.0
 """)
 
-    fun `test value with caret before name`() = doAvailableTest(
+    fun `test value with caret before name`() = checkFixByText("Add Annotation",
             """
 module Test exposing (f)
 
@@ -63,7 +65,7 @@ f =
 """)
 
 
-    fun `test function with unconstrained params`() = doAvailableTest(
+    fun `test function with unconstrained params`() = checkFixByText("Add Annotation",
             """
 f{-caret-} a b =
     a
@@ -74,7 +76,7 @@ f a b =
     a
 """)
 
-    fun `test function with constrained params`() = doAvailableTest(
+    fun `test function with constrained params`() = checkFixByText("Add Annotation",
             """
 f{-caret-} a b =
     a < b
@@ -85,7 +87,7 @@ f a b =
     a < b
 """)
 
-    fun `test nested value`() = doAvailableTest(
+    fun `test nested value`() = checkFixByText("Add Annotation",
             """
 f =
     let
@@ -104,7 +106,7 @@ f =
         g
 """)
 
-    fun `test nested function`() = doAvailableTest(
+    fun `test nested function`() = checkFixByText("Add Annotation",
             """
 f =
     let
@@ -123,7 +125,7 @@ f =
         g
 """)
 
-    fun `test nested value with previous sibling`() = doAvailableTest(
+    fun `test nested value with previous sibling`() = checkFixByText("Add Annotation",
             """
 f =
     let
@@ -146,7 +148,7 @@ f =
         g
 """)
 
-    fun `test nested value with caret before name`() = doAvailableTest(
+    fun `test nested value with caret before name`() = checkFixByText("Add Annotation",
             """
 f =
     let
@@ -165,7 +167,7 @@ f =
         function
 """)
 
-    fun `test nested value with caret in name`() = doAvailableTest(
+    fun `test nested value with caret in name`() = checkFixByText("Add Annotation",
             """
 f =
     let
@@ -184,7 +186,7 @@ f =
         function
 """)
 
-    fun `test qualified name`() = doAvailableTestWithFileTree(
+    fun `test qualified name`() = checkFixByFileTree("Add Annotation",
             """
 --@ main.elm
 import Foo as F

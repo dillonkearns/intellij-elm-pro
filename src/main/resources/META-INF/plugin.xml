@@ -182,10 +182,10 @@
             <className>org.elm.ide.intentions.TripleQuotedToRegularStringIntention</className>
             <category>Elm</category>
         </intentionAction>
-        <intentionAction>
-            <className>org.elm.ide.intentions.MakeAnnotationIntention</className>
-            <category>Elm</category>
-        </intentionAction>
+        <localInspection language="Elm" groupName="Elm"
+                         displayName="Missing annotation"
+                         enabledByDefault="true" level="WARNING"
+                         implementationClass="org.elm.ide.intentions.MakeAnnotationIntention"/>
         <intentionAction>
             <className>org.elm.ide.intentions.MakeDecoderIntention</className>
             <category>Elm</category>

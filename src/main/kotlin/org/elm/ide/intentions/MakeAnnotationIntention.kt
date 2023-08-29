@@ -1,8 +1,14 @@
 package org.elm.ide.intentions
 
+import com.intellij.codeInspection.ProblemHighlightType
+import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import org.elm.ide.inspections.ElmLocalInspection
+import org.elm.ide.inspections.NamedQuickFix
+import org.elm.lang.core.psi.ElmPsiElement
 import org.elm.lang.core.psi.elements.ElmFunctionDeclarationLeft
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.psi.parentOfType
@@ -10,39 +16,50 @@ import org.elm.lang.core.psi.startOffset
 import org.elm.lang.core.types.Ty
 import org.elm.lang.core.types.findTy
 import org.elm.lang.core.types.renderedText
-import org.elm.openapiext.runWriteCommandAction
 import org.elm.utils.getIndent
 
-class MakeAnnotationIntention : ElmAtCaretIntentionActionBase<MakeAnnotationIntention.Context>() {
+class MakeAnnotationIntention : ElmLocalInspection() {
 
-    data class Context(val fdl: ElmFunctionDeclarationLeft, val valueDeclaration: ElmValueDeclaration, val ty: Ty)
-
-    override fun getText() = "Add type annotation"
-    override fun getFamilyName() = text
-
-    override fun findApplicableContext(project: Project, editor: Editor, element: PsiElement): Context? {
-        val fdl = element.parentOfType<ElmFunctionDeclarationLeft>()
-                ?: return null
-
-        val declaration = fdl.parentOfType<ElmValueDeclaration>()
-                ?: return null
-
-        if (declaration.typeAnnotation != null) {
-            // the target annotation already exists; nothing needs to be done
-            return null
-        }
-
-        val ty = declaration.findTy() ?: return null
-
-        return Context(fdl, declaration, ty)
+    override fun visitElement(element: ElmPsiElement, holder: ProblemsHolder, isOnTheFly: Boolean) {
+        val context = findApplicableContext(element) ?: return
+        holder.registerProblem(
+            context.fdl.nameIdentifier,
+            "Missing annotation",
+            ProblemHighlightType.WEAK_WARNING,
+            AddAnnotationFix()
+        )
     }
 
-    override fun invoke(project: Project, editor: Editor, context: Context) {
-        val (fdl, valueDeclaration, ty) = context
-        val indent = editor.getIndent(valueDeclaration.startOffset)
-        val code = "${fdl.name} : ${ty.renderedText(elmFile = fdl.elmFile).replace("→", "->")}\n$indent"
-        project.runWriteCommandAction {
+
+    private class AddAnnotationFix() : NamedQuickFix("Add Annotation") {
+        override fun applyFix(element: PsiElement, project: Project) {
+            val context = findApplicableContext(element) ?: return
+
+            val editor: Editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
+
+            val (fdl, valueDeclaration, ty) = context
+            val indent = editor.getIndent(valueDeclaration.startOffset)
+            val code = "${fdl.name} : ${ty.renderedText(elmFile = fdl.elmFile).replace("→", "->")}\n$indent"
             editor.document.insertString(valueDeclaration.startOffset, code)
         }
     }
+}
+
+data class Context(val fdl: ElmFunctionDeclarationLeft, val valueDeclaration: ElmValueDeclaration, val ty: Ty)
+fun findApplicableContext(element: PsiElement): Context? {
+//    val fdl = element.parentOfType<ElmFunctionDeclarationLeft>()
+//        ?: return null
+
+    val declaration = element.parentOfType<ElmValueDeclaration>()
+        ?: return null
+    val fdl = declaration.functionDeclarationLeft ?: return null
+
+    if (declaration.typeAnnotation != null) {
+        // the target annotation already exists; nothing needs to be done
+        return null
+    }
+
+    val ty = declaration.findTy() ?: return null
+
+    return Context(fdl, declaration, ty)
 }
