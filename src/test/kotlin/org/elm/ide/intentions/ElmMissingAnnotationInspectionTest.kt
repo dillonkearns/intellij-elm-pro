@@ -3,7 +3,7 @@ package org.elm.ide.intentions
 import org.elm.ide.inspections.ElmInspectionsTestBase
 
 
-class MakeAnnotationIntentionTest : ElmInspectionsTestBase(MakeAnnotationIntention()) {
+class ElmMissingAnnotationInspectionTest : ElmInspectionsTestBase(ElmMissingAnnotationInspection()) {
     override fun getProjectDescriptor() = ElmWithStdlibDescriptor
 
     fun `test value`() = checkFixByText("Add Annotation",

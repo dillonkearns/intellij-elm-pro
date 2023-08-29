@@ -18,7 +18,7 @@ import org.elm.lang.core.types.findTy
 import org.elm.lang.core.types.renderedText
 import org.elm.utils.getIndent
 
-class MakeAnnotationIntention : ElmLocalInspection() {
+class ElmMissingAnnotationInspection : ElmLocalInspection() {
 
     override fun visitElement(element: ElmPsiElement, holder: ProblemsHolder, isOnTheFly: Boolean) {
         val context = findApplicableContext2(element) ?: return

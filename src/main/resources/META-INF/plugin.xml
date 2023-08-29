@@ -185,7 +185,7 @@
         <localInspection language="Elm" groupName="Elm"
                          displayName="Missing annotation"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.elm.ide.intentions.MakeAnnotationIntention"/>
+                         implementationClass="org.elm.ide.intentions.ElmMissingAnnotationInspection"/>
         <intentionAction>
             <className>org.elm.ide.intentions.MakeDecoderIntention</className>
             <category>Elm</category>
