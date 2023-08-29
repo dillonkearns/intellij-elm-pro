@@ -21,7 +21,7 @@ import org.elm.utils.getIndent
 class MakeAnnotationIntention : ElmLocalInspection() {
 
     override fun visitElement(element: ElmPsiElement, holder: ProblemsHolder, isOnTheFly: Boolean) {
-        val context = findApplicableContext(element) ?: return
+        val context = findApplicableContext2(element) ?: return
         holder.registerProblem(
             context.fdl.nameIdentifier,
             "Missing annotation",
@@ -51,6 +51,21 @@ fun findApplicableContext(element: PsiElement): Context? {
 //        ?: return null
 
     val declaration = element.parentOfType<ElmValueDeclaration>()
+        ?: return null
+    val fdl = declaration.functionDeclarationLeft ?: return null
+
+    if (declaration.typeAnnotation != null) {
+        // the target annotation already exists; nothing needs to be done
+        return null
+    }
+
+    val ty = declaration.findTy() ?: return null
+
+    return Context(fdl, declaration, ty)
+}
+
+fun findApplicableContext2(element: PsiElement): Context? {
+    val declaration = element as? ElmValueDeclaration
         ?: return null
     val fdl = declaration.functionDeclarationLeft ?: return null
 
