@@ -52,7 +52,7 @@ class ElmReviewToolWindowFactory : ToolWindowFactory {
         virtualFile: VirtualFile?
     ) {
         if (elmReviewError.region == null) {
-            errorTreeViewPanel.addErrorMessage(
+            errorTreeViewPanel.addMessage(
                 MessageCategory.SIMPLE, arrayOf("$encodedIndex${elmReviewError.rule ?: ""}:", elmReviewError.message ?: ""),
                 virtualFile,
                 0,
@@ -60,7 +60,7 @@ class ElmReviewToolWindowFactory : ToolWindowFactory {
                 elmReviewError.html ?: "General Error !"
             )
         } else {
-            errorTreeViewPanel.addErrorMessage(
+            errorTreeViewPanel.addMessage(
                 MessageCategory.SIMPLE, arrayOf("$encodedIndex${elmReviewError.rule}:", "${elmReviewError.message}"),
                 virtualFile,
                 elmReviewError.region!!.start.let { it!!.line - 1 },
