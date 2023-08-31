@@ -7,7 +7,6 @@ import com.intellij.codeInspection.LocalInspectionTool
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.json.psi.JsonElementVisitor
 import com.intellij.json.psi.JsonFile
-import com.intellij.util.io.HttpRequests
 import com.intellij.json.psi.JsonObject
 import com.intellij.json.psi.JsonStringLiteral
 import com.intellij.notification.NotificationType
@@ -15,9 +14,9 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
+import com.intellij.util.io.HttpRequests
 import org.elm.ide.notifications.showBalloon
 import org.elm.openapiext.runWithCheckCanceled
-
 import java.io.IOException
 
 class NewPackageVersionAvailableInspection : LocalInspectionTool() {
@@ -29,7 +28,7 @@ class NewPackageVersionAvailableInspection : LocalInspectionTool() {
                     is JsonFile -> {
                         val versions = packageVersions(holder.project)
                         val root = element.topLevelValue as JsonObject
-                        val projectType = (root.findProperty("type")?.value as JsonStringLiteral).value
+                        val projectType = (root.findProperty("type")?.value as? JsonStringLiteral)?.value
                         if (projectType == "application") {
                             (((root.findProperty("dependencies")?.value as JsonObject)).findProperty(
                                 "direct"
