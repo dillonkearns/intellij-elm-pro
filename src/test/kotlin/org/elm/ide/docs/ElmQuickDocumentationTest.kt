@@ -213,10 +213,9 @@ foo bar baz =
 <div class='definition'><pre><b>foo</b> : <a href="psi_element://Int">Int</a> → <a href="psi_element://Int">Int</a> → <a href="psi_element://Int">Int</a>
 <b>foo</b> bar baz<i> defined in </i>Foo</pre></div>
 <div class='content'><p>Map some <code>Int</code>s together,
-producing another <code>Int</code></p><h2>Example</h2><pre><code>bar = 1
-baz = 2
-foo bar baz
-</code></pre><p><em>For more information</em>, see <a href="https://example.com/">this</a> before
+producing another <code>Int</code></p><h2>Example</h2><code class="language-elm"><pre>bar <span style="color:#47748d">=</span> <span style="color:#0000ff">1</span>
+baz <span style="color:#47748d">=</span> <span style="color:#0000ff">2</span>
+foo bar baz</pre></code><p><em>For more information</em>, see <a href="https://example.com/">this</a> before
 deciding if this is what you want.</p></div>
 """)
 

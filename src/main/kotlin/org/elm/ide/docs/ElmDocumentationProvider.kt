@@ -3,6 +3,10 @@ package org.elm.ide.docs
 import com.intellij.codeInsight.documentation.DocumentationManagerUtil
 import com.intellij.lang.documentation.AbstractDocumentationProvider
 import com.intellij.lang.documentation.DocumentationMarkup
+import com.intellij.markdown.utils.lang.CodeBlockHtmlSyntaxHighlighter
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.text.HtmlBuilder
+import com.intellij.openapi.util.text.HtmlChunk
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import org.elm.lang.core.psi.ElmDocTarget
@@ -15,6 +19,9 @@ import org.elm.lang.core.resolve.scope.QualifiedImportScope
 import org.elm.lang.core.types.*
 import org.intellij.markdown.IElementType
 import org.intellij.markdown.MarkdownElementTypes
+import org.intellij.markdown.MarkdownTokenTypes
+import org.intellij.markdown.ast.ASTNode
+import org.intellij.markdown.ast.getTextInNode
 import org.intellij.markdown.flavours.MarkdownFlavourDescriptor
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.html.GeneratingProvider
@@ -256,7 +263,7 @@ private fun StringBuilder.renderDocContent(element: ElmDocTarget?, transform: (S
         text.substring(i + 3, j)
     } ?: return
 
-    val flavor = ElmDocMarkdownFlavourDescriptor()
+    val flavor = ElmDocMarkdownFlavourDescriptor(project = element.project)
     val root = MarkdownParser(flavor).buildMarkdownTreeFromString(content)
     content {
         append(transform(HtmlGenerator(content, root, flavor).generateHtml()))
@@ -264,6 +271,7 @@ private fun StringBuilder.renderDocContent(element: ElmDocTarget?, transform: (S
 }
 
 private class ElmDocMarkdownFlavourDescriptor(
+       val project: Project,
         private val gfm: MarkdownFlavourDescriptor = GFMFlavourDescriptor()
 ) : MarkdownFlavourDescriptor by gfm {
 
@@ -274,8 +282,39 @@ private class ElmDocMarkdownFlavourDescriptor(
         // h1 and h2 are too large
         generatingProviders[MarkdownElementTypes.ATX_1] = SimpleTagProvider("h2")
         generatingProviders[MarkdownElementTypes.ATX_2] = SimpleTagProvider("h3")
+
+        // add syntax highlighting for code blocks
+        generatingProviders[MarkdownElementTypes.CODE_BLOCK] = ElmSyntaxProvider(project)
         return generatingProviders
     }
+}
+
+private class ElmSyntaxProvider(val project: Project) : GeneratingProvider {
+    override fun processNode(visitor: HtmlGenerator.HtmlGeneratingVisitor, text: String, node: ASTNode) {
+        val languageCodeBlock = "elm"
+        val codeBlockRawContent = StringBuilder()
+
+        val iterator = node.children.iterator()
+        while (iterator.hasNext()) {
+            val child = iterator.next()
+            when (child.type) {
+                MarkdownTokenTypes.CODE_LINE, MarkdownTokenTypes.EOL -> {
+                    val textInNode = child.getTextInNode(text)
+                    codeBlockRawContent.append(HtmlGenerator.trimIndents(textInNode, 4))
+                }
+                else -> break
+            }
+        }
+
+        val codeBlockHtmlSyntaxHighlighter = CodeBlockHtmlSyntaxHighlighter(project)
+        val coloredContent = codeBlockHtmlSyntaxHighlighter.color(languageCodeBlock, codeBlockRawContent.toString())
+
+        val codeHtmlChunk = HtmlChunk.tag("code").setClass("language-$languageCodeBlock")
+
+        val html = HtmlBuilder().append(coloredContent).wrapWith(codeHtmlChunk)
+        visitor.consumeHtml(html.toString())
+    }
+
 }
 
 private inline fun StringBuilder.definition(block: () -> Unit) {
