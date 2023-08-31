@@ -74,14 +74,15 @@ foo a =
 """)
 
     fun `test function with doc comment`() = doTest(
-            """
+            """module Foo exposing (..)
+
 {-| this should be included. -}
 foo bar baz = bar baz
 --^
 """,
             """
 <div class='definition'><pre><b>foo</b> : (b → a) → b → a
-<b>foo</b> bar baz</pre></div>
+<b>foo</b> bar baz<i> defined in </i>Foo</pre></div>
 <div class='content'><p>this should be included.</p></div>
 """)
 
@@ -150,7 +151,7 @@ foo a =
 
 
     fun `test function with qualified type annotation`() = doTest(
-            """
+            """module Foo exposing (..)
 import Json.Decode
 foo : Json.Decode.Decoder ()
 foo = Json.Decode.succeed ()
@@ -158,11 +159,11 @@ foo = Json.Decode.succeed ()
 """,
             """
 <div class='definition'><pre><b>foo</b> : <a href="psi_element://Decoder">Decoder</a> ()
-<b>foo</b></pre></div>
+<b>foo</b><i> defined in </i>Foo</pre></div>
 """)
 
     fun `test function with type and docs`() = doTest(
-            """
+            """module Foo exposing (..)
 {-| foo some ints together -}
 foo : Int -> Int -> Int
 foo bar baz = bar baz
@@ -170,7 +171,7 @@ foo bar baz = bar baz
 """,
             """
 <div class='definition'><pre><b>foo</b> : <a href="psi_element://Int">Int</a> → <a href="psi_element://Int">Int</a> → <a href="psi_element://Int">Int</a>
-<b>foo</b> bar baz</pre></div>
+<b>foo</b> bar baz<i> defined in </i>Foo</pre></div>
 <div class='content'><p>foo some ints together</p></div>
 """)
 
@@ -188,7 +189,7 @@ foo bar = bar
 
 
     fun `test doc comments with markdown`() = doTest(
-            """
+            """module Foo exposing (..)
 {-| Map some `Int`s together,
 producing another `Int`
 
@@ -210,7 +211,7 @@ foo bar baz =
 """,
             """
 <div class='definition'><pre><b>foo</b> : <a href="psi_element://Int">Int</a> → <a href="psi_element://Int">Int</a> → <a href="psi_element://Int">Int</a>
-<b>foo</b> bar baz</pre></div>
+<b>foo</b> bar baz<i> defined in </i>Foo</pre></div>
 <div class='content'><p>Map some <code>Int</code>s together,
 producing another <code>Int</code></p><h2>Example</h2><pre><code>bar = 1
 baz = 2
@@ -245,20 +246,21 @@ type Foo = Bar
 """)
 
     fun `test type declaration with docs`() = doTest(
-            """
+            """module Foo exposing (..)
 {-| included *docs* -}
 type Foo = Bar
      --^
 """,
             """
-<div class='definition'><pre><b>type</b> Foo</pre></div>
+<div class='definition'><pre><b>type</b> Foo<i> defined in </i>Foo</pre></div>
 <div class='content'><p>included <em>docs</em></p></div>
 <table class='sections'><tr><td valign='top' class='section'><p>Variants:</td><td valign='top'><p>
 <p><code>Bar</code></td></table>
 """)
 
     fun `test type declaration with multiple variants`() = doTest(
-            """
+            """module Foo exposing (..)
+
 {-| included *docs* -}
 type Foo
      --^
@@ -268,7 +270,7 @@ type Foo
      | Lorem { ipsum: Int }
 """,
             """
-<div class='definition'><pre><b>type</b> Foo</pre></div>
+<div class='definition'><pre><b>type</b> Foo<i> defined in </i>Foo</pre></div>
 <div class='content'><p>included <em>docs</em></p></div>
 <table class='sections'><tr><td valign='top' class='section'><p>Variants:</td><td valign='top'><p>
 <p><code>Bar</code>
@@ -316,13 +318,14 @@ type alias Foo = Int
 """)
 
     fun `test type alias with docs`() = doTest(
-            """
+            """module Foo exposing (..)
+
 {-| included *docs* -}
 type alias Foo = Int
          --^
 """,
             """
-<div class='definition'><pre><b>type alias</b> Foo</pre></div>
+<div class='definition'><pre><b>type alias</b> Foo<i> defined in </i>Foo</pre></div>
 <div class='content'><p>included <em>docs</em></p></div>
 """)
 
@@ -496,7 +499,8 @@ foo a = a
 """)
 
     fun `test operator`() = doTest(
-            """
+            """module Foo exposing (..)
+
 {-| included *docs* -}
 foo : number -> number -> number
 foo a b = a
@@ -507,7 +511,7 @@ bar = 11 ~~ 11
 """,
             """
 <div class='definition'><pre><b>foo</b> : number → number → number
-<b>foo</b> a b</pre></div>
+<b>foo</b> a b<i> defined in </i>Foo</pre></div>
 <div class='content'><p>included <em>docs</em></p></div>
 """)
 
