@@ -38,7 +38,7 @@ class ElmReviewCLI(val elmReviewExecutablePath: Path) {
         // "--debug",
 
         val arguments = listOf("--report=json", "--namespace=intellij-elm") +
-                if (elmProject is ElmApplicationProject) "--config=." else "" +
+                if (elmProject is ElmApplicationProject) "--config=./review" else "" +
                         if (elmCompiler == null) "" else "--compiler=${elmCompiler.elmExecutablePath}"
 
         val generalCommandLine = GeneralCommandLine(elmReviewExecutablePath).withWorkDirectory(elmProject.projectDirPath.toString()).withParameters(arguments)
@@ -97,7 +97,7 @@ class ElmReviewCLI(val elmReviewExecutablePath: Path) {
         // "--debug",
 
         val arguments = listOf("--watch", "--report=json", "--namespace=intellij-elm") +
-                if (elmProject is ElmApplicationProject) "--config=." else "" +
+                if (elmProject is ElmApplicationProject) "--config=./review" else "" +
                         if (elmCompiler == null) "" else "--compiler=${elmCompiler.elmExecutablePath}"
 
         val command: List<String> = listOf(elmReviewExecutablePath.absolutePathString(), *arguments.toTypedArray())
