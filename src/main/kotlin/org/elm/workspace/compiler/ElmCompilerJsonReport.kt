@@ -33,7 +33,7 @@ fun elmJsonToCompilerMessages(json: String): List<ElmError> {
     }
 }
 
-private fun chunksToHtml(chunks: List<Chunk>): String =
+fun chunksToHtml(chunks: List<Chunk>): String =
         chunks.joinToString("",
                 prefix = "<html><body style=\"font-family: monospace; font-weight: bold\">",
                 postfix = "</body></html>"

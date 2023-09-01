@@ -1,5 +1,6 @@
 package org.elm.workspace.elmreview
 
+import com.google.gson.Gson
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
 
@@ -60,6 +61,69 @@ fun JsonReader.readProperties(propertyHandler: (String) -> Unit) {
         propertyHandler(nextName())
     }
     endObject()
+}
+
+data class Root(
+    val type: String,
+    val errors: List<ErrorEntry>,
+)
+data class ErrorEntry(
+    val path: String,
+    val errors: List<ErrorDetail>
+)
+data class ErrorDetail(
+    var path: String?,
+    val rule: String,
+    val message: String,
+    val ruleLink: String,
+    val details: List<String>,
+    val region: Region,
+    val fix: List<Fix>,
+    val formatted: List<org.elm.workspace.compiler.Chunk>,
+    val suppressed: Boolean,
+    val originallySuppressed: Boolean
+)
+//data class Region(
+//    val start: Position,
+//    val end: Position
+//)
+
+data class Position(
+    val line: Int,
+    val column: Int
+)
+
+data class Fix(
+    val range: Region,
+    val string: String
+)
+
+data class FormattedText(
+    val string: String,
+    val color: String? = null,
+    val href: String? = null
+)
+
+
+
+data class ErrorReport(val errors: List<ElmReviewError>)
+
+fun readErrorReport(text: String): List<ElmReviewError> {
+    val gson = Gson()
+    val fromJson2 = gson.fromJson(text, Root::class.java)
+    val transformed: List<ElmReviewError> = fromJson2.errors.flatMap {
+        it.errors.map { errorDetail ->
+            ElmReviewError(
+                suppressed = errorDetail.suppressed,
+                path = it.path,
+                rule = errorDetail.rule,
+                message = errorDetail.message,
+                region = errorDetail.region,
+                html = org.elm.workspace.compiler.chunksToHtml(errorDetail.formatted)
+            )
+        }
+    }
+    return transformed
 }
 
 fun JsonReader.readErrorReport(): List<ElmReviewError> {
