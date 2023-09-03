@@ -85,6 +85,12 @@
                          enabledByDefault="true" level="ERROR"
                          implementationClass="org.elm.ide.inspections.ElmTypeInferenceInspection"/>
 
+        <globalInspection language="Elm" groupName="Elm"
+                          enabledByDefault="true" level="ERROR"
+                          implementationClass="org.elm.ide.inspections.ElmReviewInspection"
+                          shortName="ElmReviewInspection"
+                          displayName="elm-review inspection" />
+
         <localInspection language="Elm" groupName="Elm"
                          displayName="Type declaration checker"
                          enabledByDefault="true" level="ERROR"
@@ -131,10 +137,6 @@
                          enabledByDefault="true" level="ERROR"
                          implementationClass="org.elm.ide.inspections.ElmTopLevelDestructuringInspection"/>
 
-        <localInspection language="Elm" groupName="Elm"
-                         displayName="elm-review error"
-                         enabledByDefault="true" level="WARNING"
-                         implementationClass="org.elm.ide.inspections.ElmReviewInspection"/>
         <localInspection language="JSON" groupName="Elm"
                          enabledByDefault="true"
                          level="WARNING"

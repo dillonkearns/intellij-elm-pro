@@ -91,6 +91,68 @@ class ElmReviewCLI(val elmReviewExecutablePath: Path) {
         }
     }
 
+    fun runReviewForInspection(project: Project, elmProject: ElmProject, elmCompiler: ElmCLI?, currentFile: VirtualFile? = null): List<ElmReviewError> {
+
+        // This option makes the CLI output non-JSON output, but can be useful to debug what is happening
+        // "--debug",
+
+        val arguments = listOf("--report=json", "--namespace=intellij-elm") +
+                if (elmProject is ElmApplicationProject) "--config=./review" else "" +
+                        if (elmCompiler == null) "" else "--compiler=${elmCompiler.elmExecutablePath}"
+
+        val generalCommandLine = GeneralCommandLine(elmReviewExecutablePath).withWorkDirectory(elmProject.projectDirPath.toString()).withParameters(arguments)
+
+
+//            indicator.text = "reviewing ${elmProject.projectDirPath}"
+            val handler = CapturingProcessHandler(generalCommandLine)
+            val processKiller = Disposable { handler.destroyProcess() }
+
+//            Disposer.register(project, processKiller)
+//            try {
+                val output = handler.runProcess()
+                val alreadyDisposed = runReadAction { project.isDisposed }
+                if (alreadyDisposed) {
+                    throw ExecutionException("External command failed to start")
+                }
+                if (output.exitCode != 0) {
+                    log.warn("elm-review exited with code ${output.exitCode} and output ${output.stdoutLines}")
+                }
+                val json = output.stderr.ifEmpty {
+                    output.stdout
+                }
+                if (json.isEmpty())
+                    return emptyList()
+                else {
+                    val reader = JsonReader(json.byteInputStream().bufferedReader())
+                    reader.isLenient = true
+                    val msgs = readErrorReport(json).sortedWith(
+                        compareBy(
+                            { it.path },
+                            { it.region!!.start!!.line },
+                            { it.region!!.start!!.column }
+                        ))
+                    return if (currentFile != null) {
+                        val predicate: (ElmReviewError) -> Boolean = { it.path == currentFile.pathRelative(project).toString() }
+                        val sortedMessages = msgs.filter(predicate) + msgs.filterNot(predicate)
+                        sortedMessages
+                    } else msgs
+                }
+//                if (!isUnitTestMode) {
+////                    indicator.text = "review finished"
+////                    ApplicationManager.getApplication().invokeLater {
+////                        project.messageBus.syncPublisher(ELM_REVIEW_ERRORS_TOPIC).update(elmProject.projectDirPath, messages, null, 0)
+////                    }
+//                }
+//                return null!!
+//            }
+//            finally {
+////                Disposer.dispose(processKiller)
+//
+////                return null!!
+//            }
+    }
+
+
     fun watchReview(project: Project, elmProject: ElmProject, elmCompiler: ElmCLI?) {
 
         // This option makes the CLI output non-JSON output, but can be useful to debug what is happening

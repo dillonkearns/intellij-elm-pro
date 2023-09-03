@@ -40,6 +40,7 @@ data class ElmToolchain(
     val elmTestCLI: ElmTestCLI? = elmTestPath?.let { ElmTestCLI(it) }
 
     val elmReviewCLI: ElmReviewCLI? = elmReviewPath?.let { ElmReviewCLI(it) }
+        get() = field
 
     val presentableLocation: String =
             elmCompilerPath?.toString() ?: "unknown location"

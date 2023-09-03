@@ -1,104 +1,175 @@
 package org.elm.ide.inspections
 
-import com.intellij.codeInspection.ProblemHighlightType
-import com.intellij.codeInspection.ProblemsHolder
+import com.intellij.codeInspection.*
+import com.intellij.codeInspection.ex.GlobalInspectionContextImpl
+import com.intellij.codeInspection.ex.GlobalInspectionContextUtil
+import com.intellij.codeInspection.reference.RefElement
+import com.intellij.codeInspection.ui.InspectionToolPresentation
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.Key
+import com.intellij.profile.codeInspection.InspectionProjectProfileManager
 import com.intellij.psi.PsiElement
-import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.search.PsiSearchHelper
-import com.intellij.psi.search.PsiSearchHelper.SearchCostResult.TOO_MANY_OCCURRENCES
-import com.intellij.psi.search.searches.ReferencesSearch
-import org.elm.lang.core.psi.*
-import org.elm.lang.core.psi.elements.*
+import com.intellij.psi.PsiFile
+import com.intellij.util.containers.ContainerUtil
+import org.elm.lang.core.psi.ElmFile
+import org.elm.lang.core.psi.ancestorOrSelf
+import org.elm.workspace.elmToolchain
 
-/**
- * Report findings from elm-review
- */
-class ElmReviewInspection : ElmLocalInspection() {
 
-    override fun visitElement(element: ElmPsiElement, holder: ProblemsHolder, isOnTheFly: Boolean) {
-        if (element !is ElmNameIdentifierOwner) return
-        val project = element.project
-        val scope = element.useScope
-        val name = element.name
+//import org.rust.RsBundle
+//import org.rust.cargo.project.model.CargoProject
+//import org.rust.cargo.project.model.cargoProjects
+//import org.rust.cargo.project.settings.toolchain
+//import org.rust.cargo.project.workspace.PackageOrigin
+//import org.rust.cargo.runconfig.command.workingDirectory
+//import org.rust.cargo.toolchain.impl.Applicability
+//import org.rust.cargo.toolchain.tools.CargoCheckArgs
+//import org.rust.ide.annotator.RsExternalLinterResult
+//import org.rust.ide.annotator.RsExternalLinterUtils
+//import org.rust.ide.annotator.addHighlightsForFile
+//import org.rust.ide.annotator.createDisposableOnAnyPsiChange
+//import org.rust.lang.core.crate.asNotFake
+//import org.rust.lang.core.psi.ElmFile
+//import org.rust.lang.core.psi.ext.ancestorOrSelf
 
-        // ignore certain kinds of declarations which we don't want to inspect
-        if (element is ElmTypeAliasDeclaration ||
-                element is ElmTypeDeclaration ||
-                element is ElmTypeVariable ||
-                element is ElmFieldType ||
-                element is ElmLowerPattern && element.parent is ElmRecordPattern) {
-            // TODO revisit: implementation for types is a little tricky since
-            //      type annotations are optional; punting for now
-            return
-        }
+class ElmReviewInspection : GlobalSimpleInspectionTool() {
 
-        if (isProgramEntryPoint(element)) return
+    override fun inspectionStarted(
+        manager: InspectionManager,
+        globalContext: GlobalInspectionContext,
+        problemDescriptionsProcessor: ProblemDescriptionsProcessor
+    ) {
+        globalContext.putUserData(ANALYZED_FILES, ContainerUtil.newConcurrentSet())
+    }
 
-        if (scope is GlobalSearchScope) {
-            // to keep inspection/analysis time brief, bail out if 'Find Usages' will be slow
-            val searchCost = PsiSearchHelper.getInstance(project).isCheapEnoughToSearch(name, scope, null, null)
-            if (searchCost == TOO_MANY_OCCURRENCES) return
-        }
+    override fun checkFile(
+        file: PsiFile,
+        manager: InspectionManager,
+        problemsHolder: ProblemsHolder,
+        globalContext: GlobalInspectionContext,
+        problemDescriptionsProcessor: ProblemDescriptionsProcessor
+    ) {
+        if (file !is ElmFile) return
+        val analyzedFiles = globalContext.getUserData(ANALYZED_FILES) ?: return
+        analyzedFiles.add(file)
+    }
 
-        // perform Find Usages
-        val usages = ReferencesSearch.search(element).findAll()
-                .filterNot { it.element is ElmTypeAnnotation || it.element is ElmExposedItemTag }
+    override fun inspectionFinished(
+        manager: InspectionManager,
+        globalContext: GlobalInspectionContext,
+        problemDescriptionsProcessor: ProblemDescriptionsProcessor
+    ) {
+        if (globalContext !is GlobalInspectionContextImpl) return
+        val analyzedFiles = globalContext.getUserData(ANALYZED_FILES) ?: return
 
-        if (usages.isEmpty()) {
-            markAsUnused(holder, element, name)
+        val project = manager.project
+        val currentProfile = InspectionProjectProfileManager.getInstance(project).currentProfile
+        val toolWrapper = currentProfile.getInspectionTool(SHORT_NAME, project) ?: return
+
+        while (true) {
+            val disposable = project.messageBus.createDisposableOnAnyPsiChange()
+                .also { Disposer.register(project, it) }
+//            val cargoProjects = run {
+//                val allProjects = project.cargoProjects.allProjects
+//                if (allProjects.size == 1) {
+//                    setOf(allProjects.first())
+//                } else {
+//                    analyzedFiles.mapNotNull { it.cargoProject }.toSet()
+//                }
+//            }
+            val futures = listOf(project).map {
+                ApplicationManager.getApplication().executeOnPooledThread<RsExternalLinterResult?> {
+                    checkProjectLazily(it, disposable)?.value
+                }
+            }
+            val annotationResults = futures.mapNotNull { it.get() }
+
+            val exit = runReadAction {
+                ProgressManager.checkCanceled()
+                if (Disposer.isDisposed(disposable)) return@runReadAction false
+//                if (annotationResults.size < cargoProjects.size) return@runReadAction true
+                for (annotationResult in annotationResults) {
+                    val problemDescriptors = getProblemDescriptors(analyzedFiles, annotationResult)
+                    val presentation = globalContext.getPresentation(toolWrapper)
+                    presentation.addProblemDescriptors(problemDescriptors, globalContext)
+                }
+                true
+            }
+
+            if (exit) break
         }
     }
 
-    private fun isProgramEntryPoint(element: ElmNameIdentifierOwner): Boolean {
-        return when (element) {
-            is ElmFunctionDeclarationLeft -> element.name == "main" || element.isElmTestEntryPoint()
-            is ElmPortAnnotation -> isExposed(element)
-            else -> false
+    override fun getDisplayName(): String = "elm-review inspection"
+
+    override fun getShortName(): String = SHORT_NAME
+
+    companion object {
+        const val SHORT_NAME: String = "ElmReviewInspection"
+
+        private val ANALYZED_FILES: Key<MutableSet<ElmFile>> = Key.create("ANALYZED_FILES")
+
+        private fun checkProjectLazily(
+            cargoProject: Project,
+            disposable: Disposable
+        ): Lazy<RsExternalLinterResult?>? = runReadAction {
+            ElmReviewUtils.checkLazily(
+                cargoProject.elmToolchain ?: return@runReadAction null,
+//                cargoProject.project,
+                cargoProject,
+                disposable,
+//                cargoProject.workingDirectory,
+//                CargoCheckArgs.forCargoProject(cargoProject)
+            )
+        }
+
+        @OptIn(ExperimentalStdlibApi::class)
+        private fun getProblemDescriptors(
+            analyzedFiles: Set<ElmFile>,
+            annotationResult: RsExternalLinterResult
+        ): List<ProblemDescriptor> = buildList {
+            return analyzedFiles.flatMap { file ->
+                if (!file.isValid) { emptyList()}
+                else {
+                    highlightsForFile(file, annotationResult).mapNotNull { ProblemDescriptorUtil.toProblemDescriptor(file, it!!) }
+//                    highlights.mapNotNull { ProblemDescriptorUtil.toProblemDescriptor(file, it) }
+                }
+            }
+        }
+
+        private fun InspectionToolPresentation.addProblemDescriptors(
+            descriptors: List<ProblemDescriptor>,
+            context: GlobalInspectionContext
+        ) {
+            if (descriptors.isEmpty()) return
+            val problems = hashMapOf<RefElement, MutableList<ProblemDescriptor>>()
+
+            for (descriptor in descriptors) {
+                val element = descriptor.psiElement ?: continue
+                val refElement = getProblemElement(element, context) ?: continue
+                val elementProblems = problems.getOrPut(refElement) { mutableListOf() }
+                elementProblems.add(descriptor)
+            }
+
+            for ((refElement, problemDescriptors) in problems) {
+                val descriptions = problemDescriptors.toTypedArray<CommonProblemDescriptor>()
+                addProblemElement(refElement, false, *descriptions)
+            }
+        }
+
+        private fun getProblemElement(element: PsiElement, context: GlobalInspectionContext): RefElement? {
+            val problemElement = element.ancestorOrSelf<ElmFile>()
+            val refElement = context.refManager.getReference(problemElement)
+            return if (refElement == null && problemElement != null) {
+                GlobalInspectionContextUtil.retrieveRefElement(element, context)
+            } else {
+                refElement
+            }
         }
     }
-
-
-    private fun markAsUnused(holder: ProblemsHolder, element: ElmNameIdentifierOwner, name: String) {
-        val fixes = when (element) {
-            is ElmLowerPattern -> arrayOf(ApplyElmReviewFix())
-            else -> emptyArray()
-        }
-        holder.registerProblem(
-                element.nameIdentifier,
-                "'$name' is never used",
-                ProblemHighlightType.LIKE_UNUSED_SYMBOL,
-                *fixes
-        )
-    }
-}
-
-private class ApplyElmReviewFix : NamedQuickFix("Apply elm-review fix") {
-    override fun applyFix(element: PsiElement, project: Project) {
-        (element.parent as? ElmLowerPattern)
-                ?.replace(ElmPsiFactory(project).createAnythingPattern())
-    }
-}
-
-private fun ElmFunctionDeclarationLeft.isElmTestEntryPoint(): Boolean {
-    val decl = parentOfType<ElmValueDeclaration>() ?: return false
-    if (!decl.isTopLevel) return false
-    val typeAnnotation = decl.typeAnnotation ?: return false
-
-    // HACK: string suffix match is very naive, but it's cheap and easy to test.
-    // The right thing to do would be to verify that the type resolves to
-    // a type declared in the `elm-test` package. But setting that up for
-    // `ElmUnusedSymbolInspectionTest` is a pain.
-    // TODO revisit this later
-    if (!typeAnnotation.text.endsWith(" : Test") && !typeAnnotation.text.endsWith(" : Test.Test"))
-        return false
-
-    // The elm-test runner requires that the entry-point be exposed by the module
-    return isExposed(this)
-}
-
-
-private fun isExposed(decl: ElmExposableTag): Boolean {
-    val exposingList = decl.elmFile.getModuleDecl()?.exposingList ?: return false
-    return exposingList.exposes(decl)
 }

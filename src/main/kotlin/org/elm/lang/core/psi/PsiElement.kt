@@ -35,12 +35,9 @@ import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilCore
-import com.intellij.psi.util.siblings
 import com.intellij.util.SmartList
 import org.elm.lang.core.lexer.ElmLayoutLexer
 import org.elm.lang.core.psi.ElmTypes.VIRTUAL_END_DECL
-import org.elm.lang.core.psi.elements.ElmLetInExpr
-import org.elm.lang.core.psi.elements.ElmTypeAnnotation
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.stubs.ElmFileStub
 
@@ -66,6 +63,9 @@ val PsiElement.elementType: IElementType
 
 inline fun <reified T : PsiElement> PsiElement.parentOfType(strict: Boolean = true, minStartOffset: Int = -1): T? =
         PsiTreeUtil.getParentOfType(this, T::class.java, strict, minStartOffset)
+
+inline fun <reified T : PsiElement> PsiElement.ancestorOrSelf(): T? =
+    PsiTreeUtil.getParentOfType(this, T::class.java, /* strict */ false)
 
 inline fun <reified T : PsiElement> PsiElement.parentOfType(strict: Boolean = true, stopAt: Class<out PsiElement>): T? =
         PsiTreeUtil.getParentOfType(this, T::class.java, strict, stopAt)
