@@ -94,7 +94,7 @@ class ElmReviewInspection : GlobalSimpleInspectionTool() {
                 if (Disposer.isDisposed(disposable)) return@runReadAction false
 //                if (annotationResults.size < cargoProjects.size) return@runReadAction true
                 for (annotationResult in annotationResults) {
-                    val problemDescriptors = getProblemDescriptors(analyzedFiles, annotationResult)
+                    val problemDescriptors = getProblemDescriptors(project, analyzedFiles, annotationResult)
                     val presentation = globalContext.getPresentation(toolWrapper)
                     presentation.addProblemDescriptors(problemDescriptors, globalContext)
                 }
@@ -128,19 +128,12 @@ class ElmReviewInspection : GlobalSimpleInspectionTool() {
             )
         }
 
-        @OptIn(ExperimentalStdlibApi::class)
         private fun getProblemDescriptors(
+            project: Project,
             analyzedFiles: Set<ElmFile>,
             annotationResult: RsExternalLinterResult
-        ): List<ProblemDescriptor> = buildList {
-            return analyzedFiles.flatMap { file ->
-                if (!file.isValid) { emptyList()}
-                else {
-                    highlightsForFile(file, annotationResult).mapNotNull { ProblemDescriptorUtil.toProblemDescriptor(file, it!!) }
-//                    highlights.mapNotNull { ProblemDescriptorUtil.toProblemDescriptor(file, it) }
-                }
-            }
-        }
+        ): List<ProblemDescriptor> = highlightsForFile(project, annotationResult).mapNotNull { (file,info) -> ProblemDescriptorUtil.toProblemDescriptor(file, info) }
+
 
         private fun InspectionToolPresentation.addProblemDescriptors(
             descriptors: List<ProblemDescriptor>,

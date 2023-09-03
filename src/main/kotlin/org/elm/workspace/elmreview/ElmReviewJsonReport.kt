@@ -3,6 +3,8 @@ package org.elm.workspace.elmreview
 import com.google.gson.Gson
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
+import com.intellij.openapi.editor.Document
+import com.intellij.openapi.util.TextRange
 
 data class ElmReviewError(
     // TODO Add a optional fix field (For later)
@@ -17,7 +19,28 @@ data class ElmReviewError(
 data class Region(
     var start: Location? = null,
     var end: Location? = null
-)
+) {
+    fun toTextRange(document: Document): TextRange? {
+        val startOffset = toOffset(document, start?.line!!, start?.column!!)
+        val endOffset = toOffset(document, end?.line!!, end?.column!!)
+        return if (startOffset != null && endOffset != null && startOffset < endOffset) {
+            TextRange(startOffset, endOffset)
+        } else {
+            null
+        }
+    }
+
+    companion object {
+        @Suppress("NAME_SHADOWING")
+        fun toOffset(document: Document, line: Int, column: Int): Int? {
+            val line = line - 1
+            val column = column - 1
+            if (line < 0 || line >= document.lineCount) return null
+            return (document.getLineStartOffset(line) + column)
+                .takeIf { it <= document.textLength }
+        }
+    }
+}
 
 data class Location(
     var line: Int = 0,

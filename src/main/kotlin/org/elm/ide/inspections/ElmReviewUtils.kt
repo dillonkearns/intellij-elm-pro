@@ -5,23 +5,6 @@
 
 package org.elm.ide.inspections
 
-//import org.rust.RsBundle
-//import org.rust.cargo.project.workspace.PackageOrigin
-//import org.rust.cargo.toolchain.RsToolchainBase
-//import org.rust.cargo.toolchain.impl.*
-//import org.rust.cargo.toolchain.tools.CargoCheckArgs
-//import org.rust.cargo.toolchain.tools.cargoOrWrapper
-//import org.rust.ide.annotator.RsExternalLinterFilteredMessage.Companion.filterMessage
-//import org.rust.ide.annotator.RsExternalLinterUtils.TEST_MESSAGE
-//import org.rust.ide.inspections.lints.RsLint
-//import org.rust.ide.inspections.lints.RsSuppressQuickFix.Companion.createSuppressFixes
-//import org.rust.ide.status.ElmExternalFormatAction
-//import org.rust.lang.RsConstants
-//import org.rust.lang.core.psi.RsFile
-//import org.rust.lang.core.psi.ext.containingCargoPackage
-//import org.rust.openapiext.JsonUtils.tryParseJsonObject
-//import org.rust.stdext.capitalized
-//import org.rust.stdext.unwrapOrElse
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType
 import com.intellij.openapi.Disposable
@@ -35,17 +18,19 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.findDocument
 import com.intellij.openapi.wm.WindowManager
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.AnyPsiChangeListener
 import com.intellij.psi.impl.PsiManagerImpl
 import com.intellij.psi.util.PsiModificationTracker
-import com.intellij.util.DocumentUtil
 import com.intellij.util.io.URLUtil
 import com.intellij.util.messages.MessageBus
 import org.elm.ElmBundle
 import org.elm.ide.status.ElmReviewWidget
-import org.elm.lang.core.psi.ElmFile
 import org.elm.openapiext.ProjectCache
 import org.elm.openapiext.checkReadAccessAllowed
 import org.elm.workspace.ElmProject
@@ -194,18 +179,34 @@ fun MessageBus.createDisposableOnAnyPsiChange(): Disposable {
 }
 
 fun highlightsForFile(
-    file: ElmFile,
+//    file: ElmFile,
+    project: Project,
     annotationResult: RsExternalLinterResult,
 //    minApplicability: Applicability
-): List<HighlightInfo?> {
+): List<Pair<PsiFile, HighlightInfo>> {
 //    val cargoPackageOrigin = file.containingCargoPackage?.origin
 //    if (cargoPackageOrigin != PackageOrigin.WORKSPACE) return
 
-    val doc = file.viewProvider.document
-        ?: error("Can't find document for $file in external linter")
+//    val project = file.project
+//    project.
+//    FileDocumentManager.getInstance().
+//    val doc = file.viewProvider.document
+//        ?: error("Can't find document for $file in external linter")
 
     return annotationResult.messages.mapNotNull { message ->
-        if (!file.originalFile.virtualFile.canonicalPath?.contains(message.path.toString())!!) return@mapNotNull null
+//        if (!file.originalFile.virtualFile.canonicalPath?.contains(message.path.toString())!!) return@mapNotNull null
+
+//        val fileWithError: VirtualFile = FilenameIndex.getVirtualFilesByName(message.path!!, GlobalSearchScope.allScope(project)).first()
+        val fileWithError: VirtualFile = LocalFileSystem.getInstance().findFileByPath(Path.of(project.basePath, message.path!!).toString())!!
+        val psiFile = PsiManager.getInstance(project).findFile(fileWithError)
+
+
+//        ElmFile.fromVirtualFile
+//        val doc = ( fileWithError as ElmFile ).viewProvider.document
+//            ?: error("Can't find document for $file in external linter")
+        val doc = fileWithError.findDocument()
+            ?: error("Can't find document for $fileWithError in external linter")
+
         // We can't control what messages cargo generates, so we can't test them well.
         // Let's use the special message for tests to distinguish annotation from external linter
         val highlightBuilder = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
@@ -214,9 +215,10 @@ fun highlightsForFile(
             .description(message.message!!)
             .escapedToolTip(message.html!!)
             .range(message.region.let {
-                TextRange(DocumentUtil.calculateOffset(doc, it!!.start!!.line, it.start!!.column, 4)
-                    ,DocumentUtil.calculateOffset(doc, it.end!!.line, it.end!!.column, 4)
-                )
+//                TextRange(DocumentUtil.calculateOffset(doc, it!!.start!!.line, it.start!!.column, 4)
+//                    ,DocumentUtil.calculateOffset(doc, it.end!!.line, it.end!!.column, 4)
+//                )
+                message.region?.toTextRange(doc)!!
             })
 
             .needsUpdateOnTyping(true)
@@ -234,7 +236,8 @@ fun highlightsForFile(
 //                highlightBuilder.registerFix(fix, options, displayName, fix.textRange, key)
 //            }
 
-        highlightBuilder.create()
+//        doc.findVirtualFile()
+        Pair(psiFile!!, highlightBuilder.create()!!)
     }
 }
 
