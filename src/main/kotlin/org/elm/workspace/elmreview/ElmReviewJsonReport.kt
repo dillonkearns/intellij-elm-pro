@@ -13,7 +13,9 @@ data class ElmReviewError(
     var rule: String? = null,
     var message: String? = null,
     var region: Region? = null,
-    var html: String? = null
+    var html: String? = null,
+    val fix: List<Fix>?,
+
 )
 
 data class Region(
@@ -142,7 +144,8 @@ fun readErrorReport(text: String): List<ElmReviewError> {
                 rule = errorDetail.rule,
                 message = errorDetail.message,
                 region = errorDetail.region,
-                html = org.elm.workspace.compiler.chunksToHtml(errorDetail.formatted)
+                html = org.elm.workspace.compiler.chunksToHtml(errorDetail.formatted),
+                fix = errorDetail.fix
             )
         }
     }
@@ -171,7 +174,7 @@ fun JsonReader.readErrorReport(): List<ElmReviewError> {
                                     "errors" -> {
                                         beginArray()
                                         while (hasNext()) {
-                                            val elmReviewError = ElmReviewError(path = currentPath)
+                                            val elmReviewError = ElmReviewError(path = currentPath, fix = emptyList())
                                             readProperties { property ->
                                                 when (property) {
                                                     "suppressed" -> elmReviewError.suppressed = nextBoolean()
@@ -211,7 +214,7 @@ fun JsonReader.readErrorReport(): List<ElmReviewError> {
                                     "problems" -> {
                                         beginArray()
                                         while (hasNext()) {
-                                            val elmReviewError = ElmReviewError(path = currentPath)
+                                            val elmReviewError = ElmReviewError(path = currentPath, fix = emptyList())
                                             readProperties { property ->
                                                 when (property) {
                                                     "title" -> elmReviewError.rule = nextString()
@@ -236,7 +239,7 @@ fun JsonReader.readErrorReport(): List<ElmReviewError> {
             }
             else -> {
                 // TODO make resilient against property order, title is expected first !
-                val elmReviewError = ElmReviewError(rule = nextString())
+                val elmReviewError = ElmReviewError(rule = nextString(), fix = emptyList())
                 while (hasNext()) {
                     when (nextName()) {
                         "path" -> elmReviewError.path = nextString()
