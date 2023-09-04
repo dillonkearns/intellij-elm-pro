@@ -5,6 +5,7 @@
 
 package org.elm.ide.inspections
 
+import com.intellij.codeInsight.daemon.HighlightDisplayKey
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType
 import com.intellij.openapi.Disposable
@@ -22,6 +23,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findDocument
 import com.intellij.openapi.wm.WindowManager
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.AnyPsiChangeListener
@@ -31,6 +33,8 @@ import com.intellij.util.io.URLUtil
 import com.intellij.util.messages.MessageBus
 import org.elm.ElmBundle
 import org.elm.ide.status.ElmReviewWidget
+import org.elm.lang.core.psi.ElmPsiFactory
+import org.elm.lang.core.psi.elements.ElmLowerPattern
 import org.elm.openapiext.ProjectCache
 import org.elm.openapiext.checkReadAccessAllowed
 import org.elm.workspace.ElmProject
@@ -206,6 +210,7 @@ fun highlightsForFile(
 //            ?: error("Can't find document for $file in external linter")
         val doc = fileWithError.findDocument()
             ?: error("Can't find document for $fileWithError in external linter")
+        if (!psiFile!!.isValid) {return emptyList()}
 
         // We can't control what messages cargo generates, so we can't test them well.
         // Let's use the special message for tests to distinguish annotation from external linter
@@ -223,23 +228,29 @@ fun highlightsForFile(
 
             .needsUpdateOnTyping(true)
 
-        // TODO add quick fixes
-//        message.quickFixes
-////            .singleOrNull { it.applicability <= minApplicability }
-//            ?.let { fix ->
-//                val element = fix.startElement ?: fix.endElement
-//                val lint = message.lint
-//                val actions =  if (element != null && lint != null) createSuppressFixes(element, lint) else emptyArray()
-//                val options = convertBatchToSuppressIntentionActions(actions).toList()
-//                val displayName = "elm-review"
-//                val key = HighlightDisplayKey.findOrRegister(RUST_EXTERNAL_LINTER_ID, displayName)
-//                highlightBuilder.registerFix(fix, options, displayName, fix.textRange, key)
-//            }
+        message.fix?.singleOrNull()
+            ?.let { fix ->
+                val textRange = fix.range.toTextRange(doc)!!
+                val startElement: PsiElement = psiFile.findElementAt(textRange.startOffset)!!
+                val endElement: PsiElement = psiFile.findElementAt(textRange.endOffset - 1)!!
+                val options = null
+                val displayName = "elm-review"
+                val key = HighlightDisplayKey.findOrRegister(RUST_EXTERNAL_LINTER_ID, displayName)
+                val action= ApplySuggestionFix("Apply elm-review fix", fix.string, startElement, endElement, textRange)
+                highlightBuilder.registerFix(action, options, displayName, textRange, key)
+            }
 
-//        doc.findVirtualFile()
-        Pair(psiFile!!, highlightBuilder.create()!!)
+        Pair(psiFile, highlightBuilder.create()!!)
     }
 }
+
+private class ElmReviewQuickFix : NamedQuickFix("Apply elm-review fix") {
+    override fun applyFix(element: PsiElement, project: Project) {
+        (element.parent as? ElmLowerPattern)
+            ?.replace(ElmPsiFactory(project).createAnythingPattern())
+    }
+}
+
 
 private const val RUST_EXTERNAL_LINTER_ID: String = "ElmReviewOptions"
 
