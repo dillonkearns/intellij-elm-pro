@@ -91,6 +91,8 @@
                           shortName="ElmReviewInspection"
                           displayName="elm-review inspection" />
 
+        <highlightingPassFactory implementation="org.elm.ide.annotator.ElmHighlightingPassFactoryRegistrar"/>
+
         <localInspection language="Elm" groupName="Elm"
                          displayName="Type declaration checker"
                          enabledByDefault="true" level="ERROR"

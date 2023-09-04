@@ -214,18 +214,12 @@ fun highlightsForFile(
 
         // We can't control what messages cargo generates, so we can't test them well.
         // Let's use the special message for tests to distinguish annotation from external linter
-        val highlightBuilder = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
+        val highlightBuilder = HighlightInfo.newHighlightInfo(HighlightInfoType.WARNING)
 //            .severity(message.severity)
 //            .description(if (isUnitTestMode) TEST_MESSAGE else message.message)
             .description(message.message!!)
             .escapedToolTip(message.html!!)
-            .range(message.region.let {
-//                TextRange(DocumentUtil.calculateOffset(doc, it!!.start!!.line, it.start!!.column, 4)
-//                    ,DocumentUtil.calculateOffset(doc, it.end!!.line, it.end!!.column, 4)
-//                )
-                message.region?.toTextRange(doc)!!
-            })
-
+            .range(message.region.let { message.region?.toTextRange(doc)!! })
             .needsUpdateOnTyping(true)
 
         message.fix?.singleOrNull()
