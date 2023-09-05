@@ -8,6 +8,7 @@ package org.elm.ide.inspections
 import com.intellij.codeInsight.daemon.HighlightDisplayKey
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType
+import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.diagnostic.Logger
@@ -214,11 +215,16 @@ fun highlightsForFile(
 
         // We can't control what messages cargo generates, so we can't test them well.
         // Let's use the special message for tests to distinguish annotation from external linter
-        val highlightBuilder = HighlightInfo.newHighlightInfo(HighlightInfoType.WARNING)
-//            .severity(message.severity)
-//            .description(if (isUnitTestMode) TEST_MESSAGE else message.message)
+        val severity = if (message.rule!!.startsWith("NoUnused.")) {
+            HighlightInfoType.UNUSED_SYMBOL
+        } else {
+            HighlightInfoType.WARNING
+        }
+        val tooltipHtml = "<h2><a href=\"${message.ruleLink}\">elm-review ${message.rule}</a></h2><p>${message.message}</p><br /><p>${message.details?.joinToString("\n")}</p>"
+        val highlightBuilder = HighlightInfo.newHighlightInfo(severity)
+            .severity(HighlightSeverity.WARNING)
             .description(message.message!!)
-            .escapedToolTip(message.html!!)
+            .escapedToolTip(tooltipHtml)
             .range(message.region.let { message.region?.toTextRange(doc)!! })
             .needsUpdateOnTyping(true)
 

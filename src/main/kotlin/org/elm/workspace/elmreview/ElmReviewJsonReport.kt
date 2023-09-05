@@ -11,8 +11,10 @@ data class ElmReviewError(
     var suppressed: Boolean? = null,
     var path: String? = null,
     var rule: String? = null,
+    var ruleLink: String? = null,
     var message: String? = null,
     var region: Region? = null,
+    val details: List<String>? = null,
     var html: String? = null,
     val fix: List<Fix>?,
 
@@ -144,6 +146,8 @@ fun readErrorReport(text: String): List<ElmReviewError> {
                 rule = errorDetail.rule,
                 message = errorDetail.message,
                 region = errorDetail.region,
+                ruleLink = errorDetail.ruleLink,
+                details = errorDetail.details,
                 html = org.elm.workspace.compiler.chunksToHtml(errorDetail.formatted),
                 fix = errorDetail.fix
             )
