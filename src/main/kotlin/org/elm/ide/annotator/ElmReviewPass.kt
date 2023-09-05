@@ -37,14 +37,6 @@ import org.elm.ide.inspections.highlightsForFile
 import org.elm.lang.core.psi.ElmFile
 import org.elm.workspace.elmToolchain
 
-//import org.rust.cargo.project.settings.externalLinterSettings
-//import org.rust.cargo.project.settings.toolchain
-//import org.rust.cargo.project.workspace.PackageOrigin
-//import org.rust.cargo.toolchain.impl.Applicability
-//import org.rust.cargo.toolchain.tools.CargoCheckArgs
-//import org.rust.ide.notifications.RsExternalLinterSlowRunNotifier
-//import org.rust.lang.core.psi.ext.containingCargoTarget
-//import org.rust.openapiext.isUnitTestMode
 
 class ElmReviewPass(
     private val factory: ElmReviewPassFactory,
