@@ -144,7 +144,7 @@ object ElmReviewUtils {
 
         val elmProject: ElmProject = project.elmWorkspace.allProjects.first() // TODO which project should be chosen?
         val output: List<ElmReviewError> = toolchain
-            .elmReviewCLI!!.runReviewForInspection(project, elmProject, toolchain.elmCLI)
+            .elmReviewCLI?.runReviewForInspection(project, elmProject, toolchain.elmCLI).orEmpty()
 //            .checkProject(project, owner, args)
 //            .unwrapOrElse { e ->
 //                LOG.error(e)
