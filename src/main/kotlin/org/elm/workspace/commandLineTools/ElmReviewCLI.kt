@@ -16,6 +16,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.util.messages.Topic
+import io.ktor.utils.io.streams.*
 import org.elm.openapiext.*
 import org.elm.workspace.*
 import org.elm.workspace.elmreview.ElmReviewError
@@ -51,34 +52,23 @@ class ElmReviewCLI(val elmReviewExecutablePath: Path) {
 
             Disposer.register(project, processKiller)
             try {
-                val output = handler.runProcess()
+                handler.runProcess()
                 val alreadyDisposed = runReadAction { project.isDisposed }
                 if (alreadyDisposed) {
                     throw ExecutionException("External command failed to start")
                 }
-                if (output.exitCode != 0) {
-                    log.warn("elm-review exited with code ${output.exitCode} and output ${output.stdoutLines}")
-                }
-                val json = output.stderr.ifEmpty {
-                    output.stdout
-                }
-                val messages = if (json.isEmpty())
-                    emptyList()
-                else {
-                    val reader = JsonReader(json.byteInputStream().bufferedReader())
-                    reader.isLenient = true
-                    val msgs = readErrorReport(json).sortedWith(
-                        compareBy(
-                            { it.path },
-                            { it.region!!.start!!.line },
-                            { it.region!!.start!!.column }
-                        ))
-                    if (currentFile != null) {
-                        val predicate: (ElmReviewError) -> Boolean = { it.path == currentFile.pathRelative(project).toString() }
-                        val sortedMessages = msgs.filter(predicate) + msgs.filterNot(predicate)
-                        sortedMessages
-                    } else msgs
-                }
+
+                val msgs = readErrorReport(streamOutputToString(handler)).sortedWith(
+                    compareBy(
+                        { it.path },
+                        { it.region!!.start!!.line },
+                        { it.region!!.start!!.column }
+                    ))
+                 val messages = if (currentFile != null) {
+                    val predicate: (ElmReviewError) -> Boolean = { it.path == currentFile.pathRelative(project).toString() }
+                    val sortedMessages = msgs.filter(predicate) + msgs.filterNot(predicate)
+                    sortedMessages
+                } else msgs
                 if (!isUnitTestMode) {
                     indicator.text = "review finished"
                     ApplicationManager.getApplication().invokeLater {
@@ -109,23 +99,11 @@ class ElmReviewCLI(val elmReviewExecutablePath: Path) {
 
 //            Disposer.register(project, processKiller)
 //            try {
-                val output = handler.runProcess()
                 val alreadyDisposed = runReadAction { project.isDisposed }
                 if (alreadyDisposed) {
                     throw ExecutionException("External command failed to start")
                 }
-                if (output.exitCode != 0) {
-                    log.warn("elm-review exited with code ${output.exitCode} and output ${output.stdoutLines}")
-                }
-                val json = output.stderr.ifEmpty {
-                    output.stdout
-                }
-                if (json.isEmpty())
-                    return emptyList()
-                else {
-                    val reader = JsonReader(json.byteInputStream().bufferedReader())
-                    reader.isLenient = true
-                    val msgs = readErrorReport(json).sortedWith(
+                    val msgs = readErrorReport(streamOutputToString(handler)).sortedWith(
                         compareBy(
                             { it.path },
                             { it.region!!.start!!.line },
@@ -136,7 +114,6 @@ class ElmReviewCLI(val elmReviewExecutablePath: Path) {
                         val sortedMessages = msgs.filter(predicate) + msgs.filterNot(predicate)
                         sortedMessages
                     } else msgs
-                }
 //                if (!isUnitTestMode) {
 ////                    indicator.text = "review finished"
 ////                    ApplicationManager.getApplication().invokeLater {
@@ -249,6 +226,18 @@ fun executeReviewAsync(
 }
 
 val ELM_REVIEW_ERRORS_TOPIC = Topic("elm-review errors", ElmReviewErrorsListener::class.java)
+
+fun streamOutputToString(handler: CapturingProcessHandler): String {
+    val content = StringBuilder()
+    handler.process.inputStream.bufferedReader().use { reader ->
+        var line = reader.readLine()
+        while (line != null) {
+            content.append(line)
+            line = reader.readLine()
+        }
+    }
+    return content.toString()
+}
 
 interface ElmReviewErrorsListener {
     fun update(baseDirPath: Path, messages: List<ElmReviewError>, targetPath: String?, offset: Int)

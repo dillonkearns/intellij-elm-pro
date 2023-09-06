@@ -103,7 +103,7 @@ data class ErrorDetail(
     val rule: String,
     val message: String,
     val ruleLink: String,
-    val details: List<String>,
+    val details: List<String>?,
     val region: Region,
     val fix: List<Fix>,
     val formatted: List<org.elm.workspace.compiler.Chunk>,
@@ -136,9 +136,7 @@ data class FormattedText(
 data class ErrorReport(val errors: List<ElmReviewError>)
 
 fun readErrorReport(text: String): List<ElmReviewError> {
-    val gson = Gson()
-    val fromJson2 = gson.fromJson(text, Root::class.java)
-    val transformed: List<ElmReviewError> = fromJson2.errors.flatMap {
+    return Gson().fromJson(text, Root::class.java).errors.flatMap {
         it.errors.map { errorDetail ->
             ElmReviewError(
                 suppressed = errorDetail.suppressed,
@@ -153,7 +151,6 @@ fun readErrorReport(text: String): List<ElmReviewError> {
             )
         }
     }
-    return transformed
 }
 
 fun JsonReader.readErrorReport(): List<ElmReviewError> {
