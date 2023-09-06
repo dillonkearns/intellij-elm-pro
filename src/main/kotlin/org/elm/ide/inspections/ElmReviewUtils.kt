@@ -217,6 +217,8 @@ fun highlightsForFile(
         // Let's use the special message for tests to distinguish annotation from external linter
         val severity = if (message.rule!!.startsWith("NoUnused.")) {
             HighlightInfoType.UNUSED_SYMBOL
+        } else if (message.rule.equals("NoDeprecated")) {
+            HighlightInfoType.DEPRECATED
         } else {
             HighlightInfoType.WARNING
         }
