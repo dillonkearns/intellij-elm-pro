@@ -230,11 +230,10 @@ val ELM_REVIEW_ERRORS_TOPIC = Topic("elm-review errors", ElmReviewErrorsListener
 fun streamOutputToString(handler: CapturingProcessHandler): String {
     val content = StringBuilder()
     handler.process.inputStream.bufferedReader().use { reader ->
-        var line = reader.readLine()
-        while (line != null) {
-            content.append(line)
-            line = reader.readLine()
-        }
+        val iterator = reader.lineSequence().iterator()
+          while (iterator.hasNext()) {
+              content.append(iterator.next())
+          }
     }
     return content.toString()
 }
