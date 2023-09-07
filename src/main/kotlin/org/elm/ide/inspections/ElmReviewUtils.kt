@@ -238,7 +238,7 @@ fun highlightsForFile(
                 val options = null
                 val displayName = "elm-review"
                 val key = HighlightDisplayKey.findOrRegister(RUST_EXTERNAL_LINTER_ID, displayName)
-                val action= ApplySuggestionFix("Apply elm-review fix", fix.string, startElement, endElement, textRange)
+                val action= ApplySuggestionFix("Apply elm-review ${message.rule} fix", fix.string, startElement, endElement, textRange)
                 highlightBuilder.registerFix(action, options, displayName, textRange, key)
             }
 
