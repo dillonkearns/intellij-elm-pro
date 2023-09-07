@@ -34,8 +34,10 @@ import com.intellij.util.io.URLUtil
 import com.intellij.util.messages.MessageBus
 import org.elm.ElmBundle
 import org.elm.ide.status.ElmReviewWidget
+import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.elements.ElmLowerPattern
+import org.elm.lang.core.psi.hasErrors
 import org.elm.openapiext.ProjectCache
 import org.elm.openapiext.checkReadAccessAllowed
 import org.elm.workspace.ElmProject
@@ -63,6 +65,7 @@ object ElmReviewUtils {
         toolchain: ElmToolchain,
         project: Project,
         owner: Disposable,
+        currentFile: ElmFile? = null,
 //        workingDirectory: Path,
 //        args: CargoCheckArgs
     ): Lazy<RsExternalLinterResult?> {
@@ -88,7 +91,7 @@ object ElmReviewUtils {
                 // This code will be executed out of read action in background thread
                 // TODO restore unit test mode
 //                if (!isUnitTestMode) checkReadAccessNotAllowed()
-                checkWrapped(toolchain, project, owner, workingDirectory)
+                checkWrapped(toolchain, project, owner, workingDirectory, currentFile)
             }
         }
     }
@@ -100,6 +103,7 @@ object ElmReviewUtils {
         project: Project,
         owner: Disposable,
         workingDirectory: Path,
+        currentFile: ElmFile?,
 //        args: CargoCheckArgs
     ): RsExternalLinterResult? {
         val widget = WriteAction.computeAndWait<ElmReviewWidget?, Throwable> {
@@ -114,7 +118,7 @@ object ElmReviewUtils {
 
             override fun run(indicator: ProgressIndicator) {
                 widget?.inProgress = true
-                future.complete(check(toolchain, project, owner, workingDirectory ))
+                future.complete(check(toolchain, project, owner, workingDirectory, currentFile))
             }
 
             override fun onFinished() {
@@ -130,8 +134,9 @@ object ElmReviewUtils {
         project: Project,
         owner: Disposable,
         workingDirectory: Path,
+        currentFile: ElmFile?,
 //        args: CargoCheckArgs
-    ): RsExternalLinterResult? {
+    ): RsExternalLinterResult {
         ProgressManager.checkCanceled()
         val started = Instant.now()
 //        val output = toolchain
@@ -143,6 +148,7 @@ object ElmReviewUtils {
 //            }
 
         val elmProject: ElmProject = project.elmWorkspace.allProjects.first() // TODO which project should be chosen?
+        if (currentFile != null && currentFile.hasErrors) { return RsExternalLinterResult(emptyList(), 0) }
         val output: List<ElmReviewError> = toolchain
             .elmReviewCLI?.runReviewForInspection(project, elmProject, toolchain.elmCLI).orEmpty()
 //            .checkProject(project, owner, args)
@@ -198,7 +204,7 @@ fun highlightsForFile(
 //    val doc = file.viewProvider.document
 //        ?: error("Can't find document for $file in external linter")
 
-    return annotationResult.messages.mapNotNull { message ->
+    return annotationResult.messages.map { message ->
 //        if (!file.originalFile.virtualFile.canonicalPath?.contains(message.path.toString())!!) return@mapNotNull null
 
 //        val fileWithError: VirtualFile = FilenameIndex.getVirtualFilesByName(message.path!!, GlobalSearchScope.allScope(project)).first()
@@ -211,7 +217,7 @@ fun highlightsForFile(
 //            ?: error("Can't find document for $file in external linter")
         val doc = fileWithError.findDocument()
             ?: error("Can't find document for $fileWithError in external linter")
-        if (!psiFile!!.isValid) {return emptyList()}
+        if (psiFile == null || psiFile.hasErrors) { return emptyList() }
 
         // We can't control what messages cargo generates, so we can't test them well.
         // Let's use the special message for tests to distinguish annotation from external linter
