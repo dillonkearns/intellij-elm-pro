@@ -31,6 +31,7 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.stubs.StubIndex
 import com.intellij.psi.stubs.StubIndexKey
+import org.elm.ide.components.ElmFormatOnFileSaveComponent
 import org.jdom.Element
 import org.jdom.input.SAXBuilder
 import java.nio.file.Path
@@ -191,6 +192,19 @@ fun refreshAndFindFileByPathTestAware(path: Path): VirtualFile? {
 val isUnitTestMode: Boolean get() = ApplicationManager.getApplication().isUnitTestMode
 
 fun saveAllDocuments() = FileDocumentManager.getInstance().saveAllDocuments()
+
+fun saveAllDocumentsAsTheyAre(reformatLater: Boolean = true) {
+    val documentManager = FileDocumentManager.getInstance()
+    val elmFormatWatcher = ElmFormatOnFileSaveComponent.getInstanceIfCreated()
+    elmFormatWatcher?.withoutReformatting {
+        for (document in documentManager.unsavedDocuments) {
+            documentManager.saveDocumentAsIs(document)
+//            documentManager.stripDocumentLater(document)
+//            if (reformatLater) rustfmtWatcher.reformatDocumentLater(document)
+        }
+    }
+}
+
 
 fun <T> runWithCheckCanceled(callable: () -> T): T =
     ApplicationUtil.runWithCheckCanceled(callable, ProgressManager.getInstance().progressIndicator)

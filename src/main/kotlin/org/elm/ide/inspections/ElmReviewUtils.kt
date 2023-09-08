@@ -40,6 +40,8 @@ import org.elm.lang.core.psi.elements.ElmLowerPattern
 import org.elm.lang.core.psi.hasErrors
 import org.elm.openapiext.ProjectCache
 import org.elm.openapiext.checkReadAccessAllowed
+import org.elm.openapiext.saveAllDocumentsAsTheyAre
+import org.elm.openapiext.toPsiFile
 import org.elm.workspace.ElmProject
 import org.elm.workspace.ElmToolchain
 import org.elm.workspace.elmWorkspace
@@ -106,9 +108,12 @@ object ElmReviewUtils {
         currentFile: ElmFile?,
 //        args: CargoCheckArgs
     ): RsExternalLinterResult? {
+        val file = currentFile ?: project.workspaceFile?.toPsiFile(project)
+        if (file != null && file.hasErrors) {
+            return null
+        }
         val widget = WriteAction.computeAndWait<ElmReviewWidget?, Throwable> {
-//            saveAllDocumentsAsTheyAre()
-            saveAllDocuments()
+            saveAllDocumentsAsTheyAre()
             val statusBar = WindowManager.getInstance().getStatusBar(project)
             statusBar?.getWidget(ElmReviewWidget.ID) as? ElmReviewWidget
         }

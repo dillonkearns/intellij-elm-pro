@@ -2,6 +2,8 @@ package org.elm.ide.components
 
 import com.intellij.AppTopics
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.components.service
+import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener
@@ -16,12 +18,30 @@ import org.elm.workspace.elmWorkspace
 
 class ElmFormatOnFileSaveComponent(val project: Project) {
 
-    init {
+    private var isSuppressed: Boolean = false
+    fun withoutReformatting(action: () -> Unit) {
+        val oldStatus = isSuppressed
+        try {
+            isSuppressed = true
+            action()
+        } finally {
+            isSuppressed = oldStatus
+        }
+    }
+    companion object {
+        fun getInstance(): ElmFormatOnFileSaveComponent = service()
+        fun getInstanceIfCreated(): ElmFormatOnFileSaveComponent? = serviceIfCreated()
+    }
+
+
+        init {
         with(project.messageBus.connect()) {
             subscribe(
                 AppTopics.FILE_DOCUMENT_SYNC,
                 object : FileDocumentManagerListener {
                     override fun beforeDocumentSaving(document: Document) {
+                        val isSuppressed = getInstanceIfCreated()?.isSuppressed == true
+                        if (isSuppressed) return
                         if (!project.elmSettings.toolchain.isElmFormatOnSaveEnabled) return
                         val vFile = FileDocumentManager.getInstance().getFile(document) ?: return
                         if (!vFile.isElmFile) return
