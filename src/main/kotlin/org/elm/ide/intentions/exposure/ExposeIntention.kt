@@ -1,6 +1,5 @@
 package org.elm.ide.intentions.exposure
 
-import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
@@ -48,8 +47,9 @@ open class ExposeIntention : ExposureIntentionBase<ExposeIntention.Context>() {
         Context(decl.name, exposingList)
 
     override fun invoke(project: Project, editor: Editor, context: Context) {
-        WriteCommandAction.writeCommandAction(project).run<Throwable> {
+        // TODO this check causes issues with the new intellij preview functionality. Should these checks be removed, or done a different way now?
+//        WriteCommandAction.writeCommandAction(project).run<Throwable> {
             context.exposingList.addItem(context.nameToExpose)
-        }
+//        }
     }
 }

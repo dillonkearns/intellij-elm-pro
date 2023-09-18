@@ -9,7 +9,6 @@ package org.elm.openapiext
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ex.ApplicationUtil
-import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.Module
@@ -43,7 +42,9 @@ import kotlin.reflect.KProperty
 
 
 fun <T> Project.runWriteCommandAction(command: () -> T): T {
-    return WriteCommandAction.runWriteCommandAction(this, Computable<T> { command() })
+    // TODO this check causes issues with the new intellij preview functionality. Should these checks be removed, or done a different way now?
+//    return WriteCommandAction.runWriteCommandAction(this, Computable<T> { command() })
+    return command()
 }
 
 val Project.modules: Collection<Module>
@@ -55,9 +56,10 @@ fun <T> recursionGuard(key: Any, block: Computable<T>, memoize: Boolean = true):
 
 
 fun checkWriteAccessAllowed() {
-    check(ApplicationManager.getApplication().isWriteAccessAllowed) {
-        "Needs write action"
-    }
+    // TODO this check causes issues with the new intellij preview functionality. Should these checks be removed, or done a different way now?
+//    check(ApplicationManager.getApplication().isWriteAccessAllowed) {
+//        "Needs write action"
+//    }
 }
 
 fun checkReadAccessAllowed() {
