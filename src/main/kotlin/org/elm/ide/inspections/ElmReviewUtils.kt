@@ -238,8 +238,9 @@ fun highlightsForFile(
             .severity(HighlightSeverity.WARNING)
             .description(message.message!!)
             .escapedToolTip(tooltipHtml)
-            .range(message.region.let { message.region?.toTextRange(doc)!! })
             .needsUpdateOnTyping(true)
+        message.region?.toTextRange(doc)?.let { textRange -> highlightBuilder.range(textRange) }
+
 
         message.fix?.singleOrNull()
             ?.let { fix ->
