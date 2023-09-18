@@ -152,10 +152,13 @@ object ElmReviewUtils {
 //                return null
 //            }
 
-        val elmProject: ElmProject = project.elmWorkspace.allProjects.first() // TODO which project should be chosen?
+        val elmProject: ElmProject? = project.elmWorkspace.allProjects.firstOrNull() // TODO which project should be chosen?
         if (currentFile != null && currentFile.hasErrors) { return RsExternalLinterResult(emptyList(), 0) }
-        val output: List<ElmReviewError> = toolchain
-            .elmReviewCLI?.runReviewForInspection(project, elmProject, toolchain.elmCLI).orEmpty()
+        val output: List<ElmReviewError> =
+            elmProject?.let {
+            toolchain
+            .elmReviewCLI?.runReviewForInspection(project, it, toolchain.elmCLI)
+            }.orEmpty()
 //            .checkProject(project, owner, args)
 //            .unwrapOrElse { e ->
 //                LOG.error(e)
