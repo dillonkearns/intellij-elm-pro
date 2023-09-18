@@ -5,37 +5,32 @@
 
 package org.elm.ide.inspections
 
-import com.intellij.codeInspection.LocalQuickFixAndIntentionActionOnPsiElement
+import com.intellij.codeInsight.intention.FileModifier
+import com.intellij.codeInspection.IntentionAndQuickFixAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import org.elm.ElmBundle
-import org.elm.lang.core.psi.endOffset
-import org.elm.lang.core.psi.startOffset
 
 class ApplySuggestionFix(
     private val message: String,
     private val replacement: String,
-//    val applicability: Applicability,
-    startElement: PsiElement,
-    endElement: PsiElement,
+    // read-only PSI-related properties need to be marked as safe: https://plugins.jetbrains.com/docs/intellij/code-intentions-preview.html#preparation-for-the-default-diff-preview
+    @FileModifier.SafeFieldForPreview
     val textRange: TextRange
-) : LocalQuickFixAndIntentionActionOnPsiElement(startElement, endElement) {
+) : IntentionAndQuickFixAction() {
     override fun getFamilyName(): String = ElmBundle.message("intention.family.name.apply.suggested.replacement.made.by.external.linter")
-    override fun getText(): String = ElmBundle.message("intention.name.external.linter", message)
-
-    override fun invoke(
-        project: Project,
-        file: PsiFile,
-        editor: Editor?,
-        startElement: PsiElement,
-        endElement: PsiElement
-    ) {
-        val document = editor?.document ?: file.viewProvider.document ?: return
-        document.replaceString(startElement.startOffset, endElement.endOffset, replacement)
+    override fun getName(): String {
+        return message
     }
+
+    override fun applyFix(project: Project, file: PsiFile?, editor: Editor?) {
+        val document = editor?.document ?: file?.viewProvider?.document ?: return
+        document.replaceString(textRange.startOffset, textRange.endOffset, replacement)
+    }
+
+    override fun getText(): String = ElmBundle.message("intention.name.external.linter", message)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -45,8 +40,7 @@ class ApplySuggestionFix(
 
         if (message != other.message) return false
         if (replacement != other.replacement) return false
-        if (myStartElement != other.myStartElement) return false
-        if (myEndElement != other.myEndElement) return false
+        if (textRange != other.textRange) return false
 
         return true
     }
@@ -54,8 +48,7 @@ class ApplySuggestionFix(
     override fun hashCode(): Int {
         var result = message.hashCode()
         result = 31 * result + replacement.hashCode()
-        result = 31 * result + (myStartElement?.hashCode() ?: 0)
-        result = 31 * result + (myEndElement?.hashCode() ?: 0)
+        result = 31 * result + (textRange.hashCode())
         return result
     }
 }
