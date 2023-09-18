@@ -243,14 +243,17 @@ fun highlightsForFile(
 
         message.fix?.singleOrNull()
             ?.let { fix ->
-                val textRange = fix.range.toTextRange(doc)!!
-                val startElement: PsiElement = psiFile.findElementAt(textRange.startOffset)!!
-                val endElement: PsiElement = psiFile.findElementAt(textRange.endOffset - 1)!!
-                val options = null
-                val displayName = "elm-review"
-                val key = HighlightDisplayKey.findOrRegister(RUST_EXTERNAL_LINTER_ID, displayName)
-                val action= ApplySuggestionFix("Apply elm-review ${message.rule} fix", fix.string, startElement, endElement, textRange)
-                highlightBuilder.registerFix(action, options, displayName, textRange, key)
+                fix.range.toTextRange(doc)?.let { textRange ->
+                    val options = null
+                    val displayName = "elm-review"
+                    val key = HighlightDisplayKey.findOrRegister(RUST_EXTERNAL_LINTER_ID, displayName)
+                    val action = ApplySuggestionFix(
+                        "Apply elm-review ${message.rule} fix",
+                        fix.string,
+                        textRange
+                    )
+                    highlightBuilder.registerFix(action, options, displayName, textRange, key)
+                }
             }
 
         Pair(psiFile, highlightBuilder.create()!!)
