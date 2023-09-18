@@ -135,6 +135,10 @@ data class FormattedText(
 
 data class ErrorReport(val errors: List<ElmReviewError>)
 
+fun readErrorReportLine(text: String): ElmReviewError? {
+    return Gson().fromJson(text, ElmReviewError::class.java)
+}
+
 fun readErrorReport(text: String): List<ElmReviewError> {
     return Gson().fromJson(text, Root::class.java)?.errors.orEmpty().flatMap {
         it.errors.map { errorDetail ->

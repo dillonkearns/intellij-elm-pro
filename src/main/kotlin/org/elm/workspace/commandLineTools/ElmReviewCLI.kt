@@ -1,5 +1,6 @@
 package org.elm.workspace.commandLineTools
 
+import com.google.gson.JsonSyntaxException
 import com.google.gson.stream.JsonReader
 import com.intellij.execution.ExecutionException
 import com.intellij.execution.process.CapturingProcessHandler
@@ -22,8 +23,10 @@ import org.elm.workspace.*
 import org.elm.workspace.elmreview.ElmReviewError
 import org.elm.workspace.elmreview.parseReviewJsonStream
 import org.elm.workspace.elmreview.readErrorReport
+import org.elm.workspace.elmreview.readErrorReportLine
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
+import kotlin.streams.toList
 
 private val log = logger<ElmReviewCLI>()
 
@@ -86,7 +89,7 @@ class ElmReviewCLI(val elmReviewExecutablePath: Path) {
         // This option makes the CLI output non-JSON output, but can be useful to debug what is happening
         // "--debug",
 
-        val arguments = listOf("--report=json", "--namespace=intellij-elm") +
+        val arguments = listOf("--report=ndjson", "--namespace=intellij-elm") +
                 if (elmProject is ElmApplicationProject) "--config=./review" else "" +
                         if (elmCompiler == null) "" else "--compiler=${elmCompiler.elmExecutablePath}"
 
@@ -97,13 +100,24 @@ class ElmReviewCLI(val elmReviewExecutablePath: Path) {
             val handler = CapturingProcessHandler(generalCommandLine)
             val processKiller = Disposable { handler.destroyProcess() }
 
-//            Disposer.register(project, processKiller)
-//            try {
+            Disposer.register(project, processKiller)
+            try {
                 val alreadyDisposed = runReadAction { project.isDisposed }
                 if (alreadyDisposed) {
                     throw ExecutionException("External command failed to start")
                 }
-                    val msgs = readErrorReport(streamOutputToString(handler)).sortedWith(
+
+                val msgs = handler.process.inputStream.bufferedReader().lines().map {
+                    if (project.isDisposed) {
+                        null
+                    } else {
+                        try {
+                            readErrorReportLine(it)
+                        } catch (e: JsonSyntaxException) {
+                            null
+                        }
+                    }
+                    }.toList().filterNotNull().sortedWith(
                         compareBy(
                             { it.path },
                             { it.region!!.start!!.line },
@@ -121,12 +135,15 @@ class ElmReviewCLI(val elmReviewExecutablePath: Path) {
 ////                    }
 //                }
 //                return null!!
-//            }
-//            finally {
-////                Disposer.dispose(processKiller)
+            }
+            catch (e: Exception) {
+                return emptyList()
+            }
+            finally {
+                Disposer.dispose(processKiller)
 //
 ////                return null!!
-//            }
+            }
     }
 
 
