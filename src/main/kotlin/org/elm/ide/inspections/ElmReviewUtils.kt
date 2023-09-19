@@ -245,16 +245,19 @@ fun highlightsForFile(
         message.region?.toTextRange(doc)?.let { textRange -> highlightBuilder.range(textRange) }
 
 
-        message.fix?.singleOrNull()
-            ?.let { fix ->
-                fix.range.toTextRange(doc)?.let { textRange ->
+        message.fix.orEmpty()
+            .let { fixes ->
+                message.region?.toTextRange(doc)?.let { textRange ->
+                    val fixPatches = fixes.map { fix ->
+                        Pair(fix.string, fix.range) //.toTextRange(doc)
+                    }
                     val options = null
                     val displayName = "elm-review"
                     val key = HighlightDisplayKey.findOrRegister(RUST_EXTERNAL_LINTER_ID, displayName)
                     val action = ApplySuggestionFix(
                         "Apply elm-review ${message.rule} fix",
-                        fix.string,
-                        textRange
+                        fixPatches,
+                        doc
                     )
                     highlightBuilder.registerFix(action, options, displayName, textRange, key)
                 }
