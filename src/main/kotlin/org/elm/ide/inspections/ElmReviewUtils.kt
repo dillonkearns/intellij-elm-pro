@@ -216,6 +216,7 @@ fun highlightsForFile(
 //        if (!file.originalFile.virtualFile.canonicalPath?.contains(message.path.toString())!!) return@mapNotNull null
 
 //        val fileWithError: VirtualFile = FilenameIndex.getVirtualFilesByName(message.path!!, GlobalSearchScope.allScope(project)).first()
+        // TODO fix NPE
         val fileWithError: VirtualFile = LocalFileSystem.getInstance().findFileByPath(Path.of(project.basePath, message.path!!).toString())!!
         val psiFile = PsiManager.getInstance(project).findFile(fileWithError)
 
