@@ -4,6 +4,7 @@ import com.google.gson.JsonSyntaxException
 import com.google.gson.stream.JsonReader
 import com.intellij.execution.ExecutionException
 import com.intellij.execution.process.CapturingProcessHandler
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
@@ -18,6 +19,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.util.messages.Topic
 import io.ktor.utils.io.streams.*
+import org.elm.ide.notifications.showBalloon
 import org.elm.openapiext.*
 import org.elm.workspace.*
 import org.elm.workspace.elmreview.ElmReviewError
@@ -107,13 +109,16 @@ class ElmReviewCLI(val elmReviewExecutablePath: Path) {
                     throw ExecutionException("External command failed to start")
                 }
 
+                var line = 0
                 val msgs = handler.process.inputStream.bufferedReader().lines().map {
                     if (project.isDisposed) {
                         null
                     } else {
+                        line += 1
                         try {
                             readErrorReportLine(it)
                         } catch (e: JsonSyntaxException) {
+                            project.showBalloon("elm-review truncated JSON on line $line.", NotificationType.ERROR)
                             null
                         }
                     }
