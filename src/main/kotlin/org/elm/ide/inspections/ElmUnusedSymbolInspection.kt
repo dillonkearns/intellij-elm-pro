@@ -10,7 +10,6 @@ import com.intellij.psi.search.PsiSearchHelper.SearchCostResult.TOO_MANY_OCCURRE
 import com.intellij.psi.search.searches.ReferencesSearch
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
-import org.elm.lang.core.psi.elements.ElmTypeAnnotation
 
 /**
  * Find unused functions, parameters, etc.
@@ -63,7 +62,9 @@ class ElmUnusedSymbolInspection : ElmLocalInspection() {
     private fun markAsUnused(holder: ProblemsHolder, element: ElmNameIdentifierOwner, name: String) {
         val fixes = when (element) {
             is ElmLowerPattern -> arrayOf(RenameToWildcardFix())
-            else -> arrayOf(RemoveUnusedFix())
+            else -> emptyArray()
+            // TODO should I re-enable RemoveUnused, or is it obsolete with elm-review integration?
+//            else -> arrayOf(RemoveUnusedFix())
         }
         holder.registerProblem(
                 element.nameIdentifier,
