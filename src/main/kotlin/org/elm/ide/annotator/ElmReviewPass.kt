@@ -177,7 +177,7 @@ class ElmReviewPassFactory(
     )
 
     override fun createHighlightingPass(file: PsiFile, editor: Editor): TextEditorHighlightingPass? {
-        FileStatusMap.getDirtyTextRange(editor, passId) ?: return null
+        FileStatusMap.getDirtyTextRange(editor.document, file, passId) ?: return null
         return ElmReviewPass(this, file, editor)
     }
 
