@@ -10,6 +10,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
@@ -108,10 +109,6 @@ object ElmReviewUtils {
         currentFile: ElmFile?,
 //        args: CargoCheckArgs
     ): RsExternalLinterResult? {
-        val file = currentFile ?: project.workspaceFile?.toPsiFile(project)
-        if (file != null && file.hasErrors) {
-            return null
-        }
         val widget = WriteAction.computeAndWait<ElmReviewWidget?, Throwable> {
             saveAllDocumentsAsTheyAre()
             val statusBar = WindowManager.getInstance().getStatusBar(project)
@@ -122,6 +119,12 @@ object ElmReviewUtils {
         val task = object : Task.Backgroundable(project, ElmBundle.message("progress.title.analyzing.project.with"), true) {
 
             override fun run(indicator: ProgressIndicator) {
+                ApplicationManager.getApplication().runReadAction {
+                    val file = currentFile ?: project.workspaceFile?.toPsiFile(project)
+                    if (file != null && file.hasErrors) {
+                        future.complete(null)
+                    }
+                }
                 widget?.inProgress = true
                 future.complete(check(toolchain, project, owner, workingDirectory, currentFile))
             }
