@@ -13,6 +13,7 @@ import com.intellij.codeInsight.daemon.impl.FileStatusMap
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.UpdateHighlightersUtil
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runReadAction
@@ -22,20 +23,18 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFile
 import com.intellij.util.ui.update.MergingUpdateQueue
 import com.intellij.util.ui.update.Update
-import org.elm.ide.inspections.ElmReviewUtils
 import org.elm.ide.inspections.RsExternalLinterResult
-import org.elm.ide.inspections.createDisposableOnAnyPsiChange
 import org.elm.ide.inspections.highlightsForFile
 import org.elm.lang.core.psi.ElmFile
-import org.elm.workspace.elmToolchain
+import org.elm.workspace.ElmReviewService
+import org.elm.workspace.elmreview.ElmReviewError
+import java.nio.file.Path
 
 
 class ElmReviewPass(
@@ -45,8 +44,8 @@ class ElmReviewPass(
 ) : TextEditorHighlightingPass(file.project, editor.document), DumbAware {
     private var highlights: List<Pair<PsiFile, HighlightInfo>> = emptyList()
     @Volatile
-    private var annotationInfo: Lazy<RsExternalLinterResult?>? = null
-    private val annotationResult: RsExternalLinterResult? get() = annotationInfo?.value
+    private var annotationInfo: RsExternalLinterResult? = null
+    private val annotationResult: RsExternalLinterResult? get() = annotationInfo
     @Volatile
     private var disposable: Disposable = myProject
 
@@ -54,24 +53,32 @@ class ElmReviewPass(
 //        highlights.clear()
         if (file !is ElmFile || !isAnnotationPassEnabled) return
 
+
 //        val cargoTarget = file.containingCargoTarget ?: return
 //        if (cargoTarget.pkg.origin != PackageOrigin.WORKSPACE) return
 
 
         val moduleOrProject: Disposable = ModuleUtil.findModuleForFile(file) ?: myProject
-        disposable = myProject.messageBus.createDisposableOnAnyPsiChange()
-            .also { Disposer.register(moduleOrProject, it) }
+//        disposable = myProject.messageBus.createDisposableOnAnyPsiChange()
+//            .also { Disposer.register(moduleOrProject, it) }
 
 //        val args = CargoCheckArgs.forTarget(myProject, cargoTarget)
-        val args = emptyArray<String>()
-        annotationInfo = ElmReviewUtils.checkLazily(
-            myProject.elmToolchain ?: return,
-            myProject,
-            disposable,
-            file
-//            cargoTarget.pkg.workspace.contentRoot,
-//            args
-        )
+        val service = editor.project?.getService(ElmReviewService::class.java)
+        service?.start()
+
+        editor.project?.messageBus?.connect()?.apply {
+//            Disposer.register(moduleOrProject, this)
+            subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
+                override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
+                    annotationInfo = RsExternalLinterResult(messages, 0)
+                    ApplicationManager.getApplication().runReadAction {
+                        highlights = highlightsForFile(file.project, annotationInfo!!)
+                        doFinish(highlights)
+                    }
+
+                }
+            }
+            )}
     }
 
     override fun doApplyInformationToEditor() {
@@ -82,10 +89,7 @@ class ElmReviewPass(
             doFinish(emptyList())
             return
         }
-
-        class RsUpdate: Update(file) {
-            val updateFile: ElmFile = file
-
+        class WatchModeUpdate(messages: List<ElmReviewError>) : Update(messages) {
             override fun setRejected() {
                 super.setRejected()
                 doFinish(highlights)
@@ -95,32 +99,40 @@ class ElmReviewPass(
                 BackgroundTaskUtil.runUnderDisposeAwareIndicator(disposable, Runnable {
                     val annotationResult = annotationResult ?: return@Runnable
                     // TODO do I need this?
-//                    myProject.service<RsExternalLinterSlowRunNotifier>().reportDuration(annotationResult.executionTime)
+                    // myProject.service<RsExternalLinterSlowRunNotifier>().reportDuration(annotationResult.executionTime)
                     runReadAction {
-                        ProgressManager.checkCanceled()
+//                        ProgressManager.checkCanceled()
                         doApply(annotationResult)
-                        ProgressManager.checkCanceled()
+//                        ProgressManager.checkCanceled()
                         doFinish(highlights)
                     }
                 })
             }
-
-            override fun canEat(update: Update): Boolean = updateFile == (update as? RsUpdate)?.updateFile
         }
 
-        val update = RsUpdate()
+
+        //        val update = RsUpdate()
         // TODO update use this for unit test mode
 //        if (isUnitTestMode) {
 //            update.run()
 //        } else {
-            factory.scheduleExternalActivity(update)
+//            factory.scheduleExternalActivity(update)
 //        }
+        editor.project!!.messageBus.connect().apply {
+            subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
+                override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
+                    factory.scheduleExternalActivity(WatchModeUpdate(messages))
+                }
+            }
+            )}
     }
 
     private fun doApply(annotationResult: RsExternalLinterResult) {
         if (file !is ElmFile || !file.isValid) return
         try {
-            highlights = highlightsForFile(file.project, annotationResult)
+            ApplicationManager.getApplication().runReadAction {
+                highlights = highlightsForFile(file.project, annotationResult)
+            }
         } catch (t: Throwable) {
             if (t is ProcessCanceledException) throw t
             LOG.error(t)
@@ -130,7 +142,7 @@ class ElmReviewPass(
     private fun doFinish(highlights: List<Pair<PsiFile, HighlightInfo>>) {
         invokeLater(ModalityState.stateForComponent(editor.component)) {
             val thing: List<HighlightInfo> = highlights.groupBy { it.first.name }[file.name]?.map { it.second }.orEmpty()
-            if (Disposer.isDisposed(disposable)) return@invokeLater
+//            if (Disposer.isDisposed(disposable)) return@invokeLater
             UpdateHighlightersUtil.setHighlightersToEditor(
                 myProject,
                 document,
