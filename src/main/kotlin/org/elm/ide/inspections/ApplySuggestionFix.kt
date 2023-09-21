@@ -6,6 +6,7 @@
 package org.elm.ide.inspections
 
 import com.intellij.codeInsight.intention.FileModifier
+import com.intellij.codeInsight.intention.HighPriorityAction
 import com.intellij.codeInspection.IntentionAndQuickFixAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -22,7 +23,7 @@ class ApplySuggestionFix(
     val patches: List<Pair<String, Region>>,
     @FileModifier.SafeFieldForPreview
     val doc: Document
-) : IntentionAndQuickFixAction() {
+) : IntentionAndQuickFixAction(), HighPriorityAction {
     override fun getFamilyName(): String = ElmBundle.message("intention.family.name.apply.suggested.replacement.made.by.external.linter")
     override fun getName(): String {
         return message
