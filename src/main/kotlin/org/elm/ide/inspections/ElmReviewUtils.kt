@@ -25,7 +25,6 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findDocument
 import com.intellij.openapi.wm.WindowManager
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.AnyPsiChangeListener
@@ -36,8 +35,6 @@ import com.intellij.util.messages.MessageBus
 import org.elm.ElmBundle
 import org.elm.ide.status.ElmReviewWidget
 import org.elm.lang.core.psi.ElmFile
-import org.elm.lang.core.psi.ElmPsiFactory
-import org.elm.lang.core.psi.elements.ElmLowerPattern
 import org.elm.lang.core.psi.hasErrors
 import org.elm.openapiext.ProjectCache
 import org.elm.openapiext.checkReadAccessAllowed
@@ -271,13 +268,6 @@ fun highlightsForFile(
             }
 
         Pair(psiFile, highlightBuilder.create()!!)
-    }
-}
-
-private class ElmReviewQuickFix : NamedQuickFix("Apply elm-review fix") {
-    override fun applyFix(element: PsiElement, project: Project) {
-        (element.parent as? ElmLowerPattern)
-            ?.replace(ElmPsiFactory(project).createAnythingPattern())
     }
 }
 
