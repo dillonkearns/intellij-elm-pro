@@ -21,10 +21,7 @@ class ElmReviewService(val project: Project) {
         start()
     }
 
-
     var activeWatchmodeProcess: Process? = null
-
-    // PERSISTENT STATE
 
     interface ElmReviewWatchListener {
         fun update(
