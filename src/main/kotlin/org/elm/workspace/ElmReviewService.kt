@@ -2,6 +2,7 @@ package org.elm.workspace
 
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
@@ -16,6 +17,7 @@ import kotlin.io.path.absolutePathString
 private val log = logger<ElmReviewService>()
 
 @State(name = "ElmReview")
+@Service(Service.Level.PROJECT)
 class ElmReviewService(val project: Project) {
     init {
         start()
