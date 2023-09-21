@@ -8,8 +8,10 @@ package org.elm.ide.inspections
 import com.intellij.codeInsight.intention.FileModifier
 import com.intellij.codeInsight.intention.HighPriorityAction
 import com.intellij.codeInspection.IntentionAndQuickFixAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
@@ -71,6 +73,9 @@ sealed class PatchLocation : Comparable<PatchLocation> {
                     document.insertString(patchLocation.value, replacement)
                 }
             }
+        }
+        if (ApplicationManager.getApplication().isWriteAccessAllowed && editor != null) {
+            FileDocumentManager.getInstance().saveDocument(editor.document)
         }
     }
 
