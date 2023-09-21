@@ -52,7 +52,12 @@ sealed class PatchLocation : Comparable<PatchLocation> {
             return if (region.start?.line == region.end?.line && region.start?.column == region.end?.column) {
                 Point(Region.toOffset(document, region.start?.line!!, region.start?.column!!)!!)
             } else {
-                Range(region.toTextRange(document)!!)
+                val textRange = region.toTextRange(document)
+                if (textRange == null) {
+                    error("region is null")
+                } else {
+                    Range(textRange)
+                }
             }
         }
         }
