@@ -4,8 +4,7 @@
 
 ## [Unreleased]
 
-## [5.0.0]
+## [1.0.0-beta1]
+
 ### Added
-- Initial scaffold created from [IntelliJ Platform Plugin Template](https://github.com/JetBrains/intellij-platform-plugin-template)
-- initial Lamdera support
 
