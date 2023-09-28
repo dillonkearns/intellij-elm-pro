@@ -1,5 +1,6 @@
 package org.elm.ide.inspections
 
+import org.junit.Ignore
 
 
 class ElmUnusedSymbolInspectionTest : ElmInspectionsTestBase(ElmUnusedSymbolInspection()) {
@@ -174,6 +175,7 @@ class ElmUnusedSymbolInspectionTest : ElmInspectionsTestBase(ElmUnusedSymbolInsp
 
     // REMOVE FIX
 
+    @Ignore("Delete action is disabled since it duplicates elm-review unused actions.")
     fun `test deletes unused`() = checkFixByText("Delete",
             """import Html exposing (text)
 
@@ -199,6 +201,7 @@ a =
 
             """.trimIndent())
 
+    @Ignore
     fun `test delete unused value with annotation`() = checkFixByText("Delete",
             """import Html exposing (text)
 
@@ -228,6 +231,7 @@ a =
 
             """.trimIndent())
 
+    @Ignore
     fun `test delete single unused let binding`() = checkFixByText("Delete",
             """import Html exposing (text)
 
@@ -262,6 +266,7 @@ a =
     c
             """.trimIndent())
 
+    @Ignore
     fun `test delete unused let binding with no other bindings left`() = checkFixByText("Delete",
             """import Html exposing (text)
 
