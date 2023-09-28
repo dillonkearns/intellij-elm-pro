@@ -68,7 +68,7 @@ object ElmReviewUtils {
         currentFile: ElmFile? = null,
 //        workingDirectory: Path,
 //        args: CargoCheckArgs
-    ): Lazy<RsExternalLinterResult?> {
+    ): Lazy<ElmReviewResult?> {
         checkReadAccessAllowed()
         val workingDirectory = Path.of(project.projectFilePath)
         return externalLinterLazyResultCache.getOrPut(project, Key(workingDirectory)) {
@@ -105,14 +105,14 @@ object ElmReviewUtils {
         workingDirectory: Path,
         currentFile: ElmFile?,
 //        args: CargoCheckArgs
-    ): RsExternalLinterResult? {
+    ): ElmReviewResult? {
         val widget = WriteAction.computeAndWait<ElmReviewWidget?, Throwable> {
             saveAllDocumentsAsTheyAre()
             val statusBar = WindowManager.getInstance().getStatusBar(project)
             statusBar?.getWidget(ElmReviewWidget.ID) as? ElmReviewWidget
         }
 
-        val future = CompletableFuture<RsExternalLinterResult?>()
+        val future = CompletableFuture<ElmReviewResult?>()
         val task = object : Task.Backgroundable(project, ElmBundle.message("progress.title.analyzing.project.with"), true) {
 
             override fun run(indicator: ProgressIndicator) {
@@ -141,7 +141,7 @@ object ElmReviewUtils {
         workingDirectory: Path,
         currentFile: ElmFile?,
 //        args: CargoCheckArgs
-    ): RsExternalLinterResult {
+    ): ElmReviewResult {
         ProgressManager.checkCanceled()
         val started = Instant.now()
 //        val output = toolchain
@@ -153,7 +153,7 @@ object ElmReviewUtils {
 //            }
 
         val elmProject: ElmProject? = project.elmWorkspace.allProjects.firstOrNull() // TODO which project should be chosen?
-        if (currentFile != null && currentFile.hasErrors) { return RsExternalLinterResult(emptyList(), 0) }
+        if (currentFile != null && currentFile.hasErrors) { return ElmReviewResult(emptyList(), 0) }
         val output: List<ElmReviewError> =
             elmProject?.let {
             toolchain
@@ -167,7 +167,7 @@ object ElmReviewUtils {
         val finish = Instant.now()
         ProgressManager.checkCanceled()
 //        if (output.isCancelled) return null
-        return RsExternalLinterResult(output, Duration.between(started, finish).toMillis())
+        return ElmReviewResult(output, Duration.between(started, finish).toMillis())
     }
 
     private data class Key(
@@ -177,7 +177,7 @@ object ElmReviewUtils {
     )
 
     private val externalLinterLazyResultCache =
-        ProjectCache<Key, Lazy<RsExternalLinterResult?>>("externalLinterLazyResultCache") {
+        ProjectCache<Key, Lazy<ElmReviewResult?>>("externalLinterLazyResultCache") {
             PsiModificationTracker.MODIFICATION_COUNT
         }
 }
@@ -200,7 +200,7 @@ fun MessageBus.createDisposableOnAnyPsiChange(): Disposable {
 fun highlightsForFile(
 //    file: ElmFile,
     project: Project,
-    annotationResult: RsExternalLinterResult,
+    annotationResult: ElmReviewResult,
 //    minApplicability: Applicability
 ): List<Pair<PsiFile, HighlightInfo>> {
 //    val cargoPackageOrigin = file.containingCargoPackage?.origin
@@ -274,7 +274,7 @@ fun highlightsForFile(
 
 private const val RUST_EXTERNAL_LINTER_ID: String = "ElmReviewOptions"
 
-class RsExternalLinterResult(val messages: List<ElmReviewError>, val executionTime: Long) {
+class ElmReviewResult(val messages: List<ElmReviewError>, val executionTime: Long) {
     companion object {
     }
 }

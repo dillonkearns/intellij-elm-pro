@@ -67,7 +67,7 @@ class ElmReviewInspection : GlobalSimpleInspectionTool() {
 //                }
 //            }
             val futures = listOf(project).map {
-                ApplicationManager.getApplication().executeOnPooledThread<RsExternalLinterResult?> {
+                ApplicationManager.getApplication().executeOnPooledThread<ElmReviewResult?> {
                     checkProjectLazily(it, disposable)?.value
                 }
             }
@@ -101,7 +101,7 @@ class ElmReviewInspection : GlobalSimpleInspectionTool() {
         private fun checkProjectLazily(
             cargoProject: Project,
             disposable: Disposable
-        ): Lazy<RsExternalLinterResult?> = runReadAction {
+        ): Lazy<ElmReviewResult?> = runReadAction {
             ElmReviewUtils.checkLazily(
                 cargoProject.elmToolchain,
                 cargoProject,
@@ -111,7 +111,7 @@ class ElmReviewInspection : GlobalSimpleInspectionTool() {
 
         private fun getProblemDescriptors(
             project: Project,
-            annotationResult: RsExternalLinterResult
+            annotationResult: ElmReviewResult
         ): List<ProblemDescriptor> = highlightsForFile(project, annotationResult).mapNotNull { (file,info) -> ProblemDescriptorUtil.toProblemDescriptor(file, info) }
 
 

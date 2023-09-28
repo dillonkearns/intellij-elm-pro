@@ -29,7 +29,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import com.intellij.util.ui.update.MergingUpdateQueue
 import com.intellij.util.ui.update.Update
-import org.elm.ide.inspections.RsExternalLinterResult
+import org.elm.ide.inspections.ElmReviewResult
 import org.elm.ide.inspections.highlightsForFile
 import org.elm.lang.core.psi.ElmFile
 import org.elm.workspace.ElmReviewService
@@ -44,8 +44,8 @@ class ElmReviewPass(
 ) : TextEditorHighlightingPass(file.project, editor.document), DumbAware {
     private var highlights: List<Pair<PsiFile, HighlightInfo>> = emptyList()
     @Volatile
-    private var annotationInfo: RsExternalLinterResult? = null
-    private val annotationResult: RsExternalLinterResult? get() = annotationInfo
+    private var annotationInfo: ElmReviewResult? = null
+    private val annotationResult: ElmReviewResult? get() = annotationInfo
     @Volatile
     private var disposable: Disposable = myProject
 
@@ -70,7 +70,7 @@ class ElmReviewPass(
 //            Disposer.register(moduleOrProject, this)
             subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
                 override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
-                    annotationInfo = RsExternalLinterResult(messages, 0)
+                    annotationInfo = ElmReviewResult(messages, 0)
                     ApplicationManager.getApplication().runReadAction {
                         highlights = highlightsForFile(file.project, annotationInfo!!)
                         doFinish(highlights)
@@ -127,7 +127,7 @@ class ElmReviewPass(
             )}
     }
 
-    private fun doApply(annotationResult: RsExternalLinterResult) {
+    private fun doApply(annotationResult: ElmReviewResult) {
         if (file !is ElmFile || !file.isValid) return
         try {
             ApplicationManager.getApplication().runReadAction {
