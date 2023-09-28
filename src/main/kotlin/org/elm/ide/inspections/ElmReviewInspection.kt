@@ -21,22 +21,6 @@ import org.elm.lang.core.psi.ancestorOrSelf
 import org.elm.workspace.elmToolchain
 
 
-//import org.rust.RsBundle
-//import org.rust.cargo.project.model.CargoProject
-//import org.rust.cargo.project.model.cargoProjects
-//import org.rust.cargo.project.settings.toolchain
-//import org.rust.cargo.project.workspace.PackageOrigin
-//import org.rust.cargo.runconfig.command.workingDirectory
-//import org.rust.cargo.toolchain.impl.Applicability
-//import org.rust.cargo.toolchain.tools.CargoCheckArgs
-//import org.rust.ide.annotator.RsExternalLinterResult
-//import org.rust.ide.annotator.RsExternalLinterUtils
-//import org.rust.ide.annotator.addHighlightsForFile
-//import org.rust.ide.annotator.createDisposableOnAnyPsiChange
-//import org.rust.lang.core.crate.asNotFake
-//import org.rust.lang.core.psi.ElmFile
-//import org.rust.lang.core.psi.ext.ancestorOrSelf
-
 class ElmReviewInspection : GlobalSimpleInspectionTool() {
 
     override fun inspectionStarted(
@@ -117,14 +101,11 @@ class ElmReviewInspection : GlobalSimpleInspectionTool() {
         private fun checkProjectLazily(
             cargoProject: Project,
             disposable: Disposable
-        ): Lazy<RsExternalLinterResult?>? = runReadAction {
+        ): Lazy<RsExternalLinterResult?> = runReadAction {
             ElmReviewUtils.checkLazily(
-                cargoProject.elmToolchain ?: return@runReadAction null,
-//                cargoProject.project,
+                cargoProject.elmToolchain,
                 cargoProject,
                 disposable,
-//                cargoProject.workingDirectory,
-//                CargoCheckArgs.forCargoProject(cargoProject)
             )
         }
 
