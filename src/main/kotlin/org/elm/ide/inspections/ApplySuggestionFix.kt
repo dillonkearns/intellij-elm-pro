@@ -27,6 +27,10 @@ class ApplySuggestionFix(
     val doc: Document
 ) : IntentionAndQuickFixAction(), HighPriorityAction {
     override fun getFamilyName(): String = ElmBundle.message("intention.family.name.apply.suggested.replacement.made.by.external.linter")
+    override fun availableInBatchMode(): Boolean {
+        return false
+    }
+
     override fun getName(): String {
         return message
     }
