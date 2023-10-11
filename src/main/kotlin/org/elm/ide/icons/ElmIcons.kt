@@ -21,7 +21,15 @@ object ElmIcons {
      * Monochromatic Elm icon suitable for toolwindow (it's also smaller than the normal icons)
      */
     val TOOL_WINDOW = getIcon("elm-toolwindow.png")
-    val ELM_ANIMATED = AnimatedIcon(AnimatedIcon.Default.DELAY, TOOL_WINDOW, TOOL_WINDOW.rotated(15.0), TOOL_WINDOW.rotated(30.0), TOOL_WINDOW.rotated(45.0))
+    val ELM_ANIMATED = AnimatedIcon(AnimatedIcon.Default.DELAY, TOOL_WINDOW, TOOL_WINDOW.rotated(15.0), TOOL_WINDOW.rotated(30.0), TOOL_WINDOW.rotated(45.0),
+        TOOL_WINDOW.rotated(60.0), TOOL_WINDOW.rotated(75.0), TOOL_WINDOW.rotated(90.0),
+        TOOL_WINDOW.rotated(105.0), TOOL_WINDOW.rotated(120.0), TOOL_WINDOW.rotated(135.0),
+        TOOL_WINDOW.rotated(150.0), TOOL_WINDOW.rotated(165.0), TOOL_WINDOW.rotated(180.0),
+        TOOL_WINDOW.rotated(195.0), TOOL_WINDOW.rotated(210.0), TOOL_WINDOW.rotated(225.0),
+        TOOL_WINDOW.rotated(240.0), TOOL_WINDOW.rotated(255.0), TOOL_WINDOW.rotated(270.0),
+        TOOL_WINDOW.rotated(285.0), TOOL_WINDOW.rotated(300.0), TOOL_WINDOW.rotated(315.0),
+        TOOL_WINDOW.rotated(330.0), TOOL_WINDOW.rotated(345.0), TOOL_WINDOW.rotated(360.0)
+    )
 
 
 
