@@ -215,6 +215,11 @@
                              id="language.elm"
                              groupId="language"/>
         <editorNotificationProvider implementation="org.elm.ide.notifications.ElmNeedsConfigNotificationProvider"/>
+        <statusBarWidgetFactory id="elmReviewWidget"
+                                implementation="org.elm.ide.status.ElmReviewWidgetFactory"
+                                order="first"/>
+
+
         <toolWindow id="Elm" anchor="right" icon="/icons/elm-toolwindow.png"
                     factoryClass="org.elm.ide.toolwindow.ElmToolWindowFactory"/>
         <toolWindow id="Elm Compiler" anchor="bottom" icon="/icons/elm-toolwindow.png"
@@ -250,6 +255,11 @@
             <implementation-class>org.elm.ide.components.ElmFormatOnFileSaveComponent</implementation-class>
         </component>
     </project-components>
+
+    <projectListeners>
+        <listener class="org.elm.ide.status.ElmReviewLinterWidgetUpdater"
+                  topic="org.elm.workspace.ElmReviewService$ElmReviewWatchListener"/>
+    </projectListeners>
 
     <actions>
         <action id="Elm.NewFile"

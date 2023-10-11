@@ -12,6 +12,7 @@ package org.elm.ide.status
 //import org.rust.ide.icons.RsIcons
 //import org.rust.ide.notifications.ElmReviewLinterTooltipService
 //import org.rust.openapiext.showSettingsDialog
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.CustomStatusBarWidget
@@ -19,8 +20,15 @@ import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.openapi.wm.impl.status.TextPanel
+import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetsManager
+import com.intellij.ui.ClickListener
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import org.elm.ide.icons.ElmIcons
+import org.elm.workspace.ElmReviewService
+import org.elm.workspace.elmreview.ElmReviewError
+import java.awt.event.MouseEvent
+import java.nio.file.Path
 import javax.swing.JComponent
 
 class ElmReviewWidgetFactory : StatusBarWidgetFactory {
@@ -32,12 +40,12 @@ class ElmReviewWidgetFactory : StatusBarWidgetFactory {
     override fun canBeEnabledOn(statusBar: StatusBar): Boolean = true
 }
 
-//class ElmReviewLinterWidgetUpdater(private val project: Project) : CargoProjectsService.CargoProjectsListener {
-//    override fun cargoProjectsUpdated(service: CargoProjectsService, projects: Collection<CargoProject>) {
-//        val manager = project.service<StatusBarWidgetsManager>()
-//        manager.updateWidget(ElmReviewWidgetFactory::class.java)
-//    }
-//}
+class ElmReviewLinterWidgetUpdater(private val project: Project) : ElmReviewService.ElmReviewWatchListener {
+    override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
+        val manager = project.service<StatusBarWidgetsManager>()
+        manager.updateWidget(ElmReviewWidgetFactory::class.java)
+    }
+}
 
 class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrows(), CustomStatusBarWidget {
     private var statusBar: StatusBar? = null
@@ -45,7 +53,7 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
 //    private val linter: ExternalLinter get() = project.externalLinterSettings.tool
 //    private val turnedOn: Boolean get() = project.externalLinterSettings.runOnTheFly
 
-    var inProgress: Boolean = false
+    var inProgress: Boolean = true
         set(value) {
             field = value
             update()
@@ -61,16 +69,16 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
     override fun install(statusBar: StatusBar) {
         this.statusBar = statusBar
 
-//        if (!project.isDisposed) {
-//            object : ClickListener() {
-//                override fun onClick(event: MouseEvent, clickCount: Int): Boolean {
-//                    if (!project.isDisposed) {
+        if (!project.isDisposed) {
+            object : ClickListener() {
+                override fun onClick(event: MouseEvent, clickCount: Int): Boolean {
+                    if (!project.isDisposed) {
 //                        project.showSettingsDialog<ElmReviewLinterConfigurable>()
-//                    }
-//                    return true
-//                }
-//            }.installOn(this, true)
-//
+                    }
+                    return true
+                }
+            }.installOn(this, true)
+
 //            project.messageBus.connect(this).subscribe(RUST_SETTINGS_TOPIC, object : RsSettingsListener {
 //                override fun <T : RsProjectSettingsBase<T>> settingsChanged(e: SettingsChangedEventBase<T>) {
 //                    if (e !is ElmReviewLinterProjectSettingsService.SettingsChangedEvent) return
@@ -80,9 +88,17 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
 //                    }
 //                }
 //            })
-//
-//            project.service<ElmReviewLinterTooltipService>().showTooltip(this)
-//        }
+            project.messageBus.connect().apply {
+                subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
+                    override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
+                        update()
+                    }
+                }
+                )}
+
+
+//            project.service<ElmReviewTool>().showTooltip(this)
+        }
 
         update()
         statusBar.updateWidget(ID())
@@ -99,14 +115,17 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
         if (project.isDisposed) return
         UIUtil.invokeLaterIfNeeded {
             if (project.isDisposed) return@invokeLaterIfNeeded
-//            text = linter.title
+            text = "elm-review"
 //            val status = if (turnedOn) ElmBundle.message("on") else ElmBundle.message("off")
 //            toolTipText = ElmBundle.message("0.2.choice.0.is.in.progress.1.on.the.fly.analysis.is.turned.1", linter.title, status, if (inProgress) 0 else 1)
+            val status = "Running"
+            toolTipText = "Running..."
 //            icon = when {
 //                !turnedOn -> RsIcons.GEAR_OFF
 //                inProgress -> RsIcons.GEAR_ANIMATED
 //                else -> RsIcons.GEAR
 //            }
+            icon = ElmIcons.TOOL_WINDOW
             repaint()
         }
     }
