@@ -12,7 +12,10 @@ package org.elm.ide.status
 //import org.rust.ide.icons.RsIcons
 //import org.rust.ide.notifications.ElmReviewLinterTooltipService
 //import org.rust.openapiext.showSettingsDialog
+import com.intellij.AppTopics
 import com.intellij.openapi.components.service
+import com.intellij.openapi.editor.Document
+import com.intellij.openapi.fileEditor.FileDocumentManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.CustomStatusBarWidget
@@ -24,6 +27,7 @@ import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetsManager
 import com.intellij.ui.ClickListener
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import org.elm.ElmBundle
 import org.elm.ide.icons.ElmIcons
 import org.elm.workspace.ElmReviewService
 import org.elm.workspace.elmreview.ElmReviewError
@@ -53,7 +57,7 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
 //    private val linter: ExternalLinter get() = project.externalLinterSettings.tool
 //    private val turnedOn: Boolean get() = project.externalLinterSettings.runOnTheFly
 
-    var inProgress: Boolean = true
+    var inProgress: Boolean = false
         set(value) {
             field = value
             update()
@@ -88,9 +92,21 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
 //                    }
 //                }
 //            })
+            with(project.messageBus.connect()) {
+                subscribe(
+                    AppTopics.FILE_DOCUMENT_SYNC,
+                    object : FileDocumentManagerListener {
+                        override fun beforeDocumentSaving(document: Document) {
+                            inProgress = true
+                            update()
+                        }
+                    }
+                )
+            }
             project.messageBus.connect().apply {
                 subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
                     override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
+                        inProgress = false
                         update()
                     }
                 }
@@ -116,16 +132,15 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
         UIUtil.invokeLaterIfNeeded {
             if (project.isDisposed) return@invokeLaterIfNeeded
             text = "elm-review"
-//            val status = if (turnedOn) ElmBundle.message("on") else ElmBundle.message("off")
-//            toolTipText = ElmBundle.message("0.2.choice.0.is.in.progress.1.on.the.fly.analysis.is.turned.1", linter.title, status, if (inProgress) 0 else 1)
-            val status = "Running"
+            val turnedOn = true
+            val status = if (turnedOn) ElmBundle.message("on") else ElmBundle.message("off")
+            toolTipText = ElmBundle.message("is.in.progress.1.on.the.fly.analysis.is.turned.1", status, if (inProgress) 0 else 1)
             toolTipText = "Running..."
-//            icon = when {
-//                !turnedOn -> RsIcons.GEAR_OFF
-//                inProgress -> RsIcons.GEAR_ANIMATED
-//                else -> RsIcons.GEAR
-//            }
-            icon = ElmIcons.TOOL_WINDOW
+            icon = when {
+//                !turnedOn -> ElmIcons.GEAR_OFF
+                inProgress -> ElmIcons.ELM_ANIMATED
+                else -> ElmIcons.TOOL_WINDOW
+            }
             repaint()
         }
     }
