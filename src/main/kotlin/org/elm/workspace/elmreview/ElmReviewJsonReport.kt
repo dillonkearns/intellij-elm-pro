@@ -3,7 +3,9 @@ package org.elm.workspace.elmreview
 import com.google.gson.Gson
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Document
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 
 data class ElmReviewError(
@@ -139,22 +141,49 @@ fun readErrorReportLine(text: String): ElmReviewError? {
     return Gson().fromJson(text, ElmReviewError::class.java)
 }
 
-fun readErrorReport(text: String): List<ElmReviewError> {
-    return Gson().fromJson(text, Root::class.java)?.errors.orEmpty().flatMap {
-        it.errors.map { errorDetail ->
-            ElmReviewError(
-                suppressed = errorDetail.suppressed,
-                path = it.path,
-                rule = errorDetail.rule,
-                message = errorDetail.message,
-                region = errorDetail.region,
-                ruleLink = errorDetail.ruleLink,
-                details = errorDetail.details,
-                html = org.elm.workspace.compiler.chunksToHtml(errorDetail.formatted),
-                fix = errorDetail.fix
-            )
+fun readErrorReport(text: String, disposable: Disposable): List<ElmReviewError> {
+    val result = mutableListOf<ElmReviewError>()
+    val reader = Gson().newJsonReader(text.reader())
+    reader.beginObject()
+
+
+    while (reader.hasNext()) {
+        when (reader.nextName()) {
+            "errors" -> {
+                reader.beginArray()
+
+                while (reader.hasNext()) {
+                    if (Disposer.isDisposed(disposable)) {
+                        return emptyList()
+                    }
+
+                    Gson().fromJson<ErrorEntry>(reader, ErrorEntry::class.java).let {
+                        result.addAll(it.errors.map { errorDetail ->
+                            if (Disposer.isDisposed(disposable)) {
+                                return emptyList()
+                            }
+                            ElmReviewError(
+                                suppressed = errorDetail.suppressed,
+                                path = it.path,
+                                rule = errorDetail.rule,
+                                message = errorDetail.message,
+                                region = errorDetail.region,
+                                ruleLink = errorDetail.ruleLink,
+                                details = errorDetail.details,
+                                html = org.elm.workspace.compiler.chunksToHtml(errorDetail.formatted),
+                                fix = errorDetail.fix
+                            )
+                        })
+                    }
+                }
+                reader.endArray()
+            }
+            else -> {
+                reader.skipValue()
+            }
         }
     }
+    return result.toList()
 }
 
 fun JsonReader.readErrorReport(): List<ElmReviewError> {

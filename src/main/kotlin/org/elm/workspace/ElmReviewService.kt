@@ -5,7 +5,9 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.util.messages.Topic
 import org.elm.ide.notifications.showBalloon
 import org.elm.workspace.elmreview.ElmReviewError
@@ -50,10 +52,16 @@ class ElmReviewService(val project: Project) {
             val command: List<String> = listOf(elmReviewExecutablePath.absolutePathString(), *arguments.toTypedArray())
             ApplicationManager.getApplication().executeOnPooledThread {
                 activeWatchmodeProcess = startProcess(command, elmProject, project)
+                val disposable = Disposer.newDisposable("New elm-review input")
+
                 activeWatchmodeProcess!!.inputStream.bufferedReader().forEachLine { line ->
-                    val reviewErrors = readErrorReport(line)
-                    project.messageBus.syncPublisher(ELM_REVIEW_WATCH_TOPIC)
-                        .update(elmProject.projectDirPath, reviewErrors)
+                    // if we're still parsing output from a previous run, cancel it
+                    disposable.dispose()
+                    BackgroundTaskUtil.runUnderDisposeAwareIndicator(disposable) {
+                        val reviewErrors = readErrorReport(line, disposable)
+                        project.messageBus.syncPublisher(ELM_REVIEW_WATCH_TOPIC)
+                            .update(elmProject.projectDirPath, reviewErrors)
+                    }
                 }
 
             }
