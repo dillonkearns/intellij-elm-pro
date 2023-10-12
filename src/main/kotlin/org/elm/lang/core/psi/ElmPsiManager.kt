@@ -109,27 +109,3 @@ val ElmFile.globalModificationTracker: Any
     }
 val Project.elmStructureModificationTracker: ModificationTracker
     get() = elmPsiManager.modificationTracker
-
-
-/**
- * Returns [RsPsiManager.elmStructureModificationTracker] or [PsiModificationTracker.MODIFICATION_COUNT]
- * if `this` element is inside language injection
- */
-val ElmPsiElement.rustStructureOrAnyPsiModificationTracker: ModificationTracker
-    get() {
-        val containingFile = containingFile
-        return when {
-            // The case of injected language. Injected PSI doesn't have its own event system, so can only
-            // handle evens from outer PSI. For example, Rust language is injected to Kotlin's string
-            // literal. If a user change the literal, we can only be notified that the literal is changed.
-            // So we have to invalidate the cached value on any PSI change
-            containingFile.virtualFile is VirtualFileWindow ->
-                PsiManager.getInstance(containingFile.project).modificationTracker
-
-            // TODO is this relevant?
-//            containingFile.containingElmFileSkippingCodeFragments?.crate?.origin == PackageOrigin.WORKSPACE ->
-//                containingFile.project.rustStructureModificationTracker
-
-            else -> containingFile.project.elmPsiManager.modificationTracker
-        }
-    }
