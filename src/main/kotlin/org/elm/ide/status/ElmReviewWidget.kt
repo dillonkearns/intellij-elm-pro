@@ -44,7 +44,7 @@ class ElmReviewWidgetFactory : StatusBarWidgetFactory {
     override fun canBeEnabledOn(statusBar: StatusBar): Boolean = true
 }
 
-class ElmReviewLinterWidgetUpdater(private val project: Project) : ElmReviewService.ElmReviewWatchListener {
+class ElmReviewWidgetUpdater(private val project: Project) : ElmReviewService.ElmReviewWatchListener {
     override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
         val manager = project.service<StatusBarWidgetsManager>()
         manager.updateWidget(ElmReviewWidgetFactory::class.java)

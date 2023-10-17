@@ -257,7 +257,7 @@
     </project-components>
 
     <projectListeners>
-        <listener class="org.elm.ide.status.ElmReviewLinterWidgetUpdater"
+        <listener class="org.elm.ide.status.ElmReviewWidgetUpdater"
                   topic="org.elm.workspace.ElmReviewService$ElmReviewWatchListener"/>
     </projectListeners>
 
