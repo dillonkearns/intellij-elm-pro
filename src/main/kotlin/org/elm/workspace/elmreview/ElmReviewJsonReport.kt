@@ -72,18 +72,6 @@ enum class ReviewOutputType(val label: String) {
     }
 }
 
-fun parseReviewJsonStream(reader: JsonReader, process: Process, emit: (List<ElmReviewError>) -> Unit): Int {
-    reader.use {
-        while (process.isAlive) {
-            if (it.hasNext()) {
-                val errors = it.readErrorReport()
-                emit(errors)
-            }
-        }
-    }
-    return process.exitValue()
-}
-
 fun JsonReader.readProperties(propertyHandler: (String) -> Unit) {
     beginObject()
     while (hasNext()) {
@@ -112,30 +100,10 @@ data class ErrorDetail(
     val suppressed: Boolean,
     val originallySuppressed: Boolean
 )
-//data class Region(
-//    val start: Position,
-//    val end: Position
-//)
-
-data class Position(
-    val line: Int,
-    val column: Int
-)
-
 data class Fix(
     val range: Region,
     val string: String
 )
-
-data class FormattedText(
-    val string: String,
-    val color: String? = null,
-    val href: String? = null
-)
-
-
-
-data class ErrorReport(val errors: List<ElmReviewError>)
 
 fun readErrorReportLine(text: String): ElmReviewError? {
     return Gson().fromJson(text, ElmReviewError::class.java)
