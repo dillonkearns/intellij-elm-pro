@@ -1,6 +1,7 @@
 package org.elm.workspace.elmreview
 
 import com.google.gson.stream.JsonReader
+import com.intellij.openapi.Disposable
 import junit.framework.TestCase
 import org.elm.lang.ElmTestBase
 import org.intellij.lang.annotations.Language
@@ -134,8 +135,8 @@ class ElmReviewJsonReportTest : ElmTestBase() {
   "extracts": {}
         }""".trimIndent()
 
-        TestCase.assertEquals(
-            listOf(
+        expectDecoded(
+            json, listOf(
                 ElmReviewError(
                     suppressed = false,
                     path = "src/Frontend.elm",
@@ -148,7 +149,12 @@ class ElmReviewJsonReportTest : ElmTestBase() {
                     region = Region(Location(56, 13), Location(56, 22)),
                     html = """<html><body style="font-family: monospace; font-weight: bold"><span style="color: #33BBC8;">(fix)&nbsp;</span><span style="color: #FF0000;">NoDebug.Log</span><span style="color: #4F9DA6">:&nbsp;Remove&nbsp;the&nbsp;use&nbsp;of&nbsp;`Debug.log`&nbsp;before&nbsp;shipping&nbsp;to&nbsp;production<br><br>55|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NoOpFrontendMsg&nbsp;-><br>56|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Debug.log&nbsp;"BBBB"&nbsp;(&nbsp;model,&nbsp;Cmd.none&nbsp;)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #FF0000;">^^^^^^^^^</span><span style="color: #4F9DA6"><br><br>`Debug.log`&nbsp;is&nbsp;useful&nbsp;when&nbsp;developing,&nbsp;but&nbsp;is&nbsp;not&nbsp;meant&nbsp;to&nbsp;be&nbsp;shipped&nbsp;to&nbsp;production&nbsp;or&nbsp;published&nbsp;in&nbsp;a&nbsp;package.&nbsp;I&nbsp;suggest&nbsp;removing&nbsp;its&nbsp;use&nbsp;before&nbsp;committing&nbsp;and&nbsp;attempting&nbsp;to&nbsp;push&nbsp;to&nbsp;production.</span></body></html>""",
                     fix = listOf(
-                        Fix(range=Region(start=Location(line=56, column=13), end=Location(line=56, column=30)), string="")
+                        Fix(
+                            range = Region(
+                                start = Location(line = 56, column = 13),
+                                end = Location(line = 56, column = 30)
+                            ), string = ""
+                        )
                     )
                 ),
                 ElmReviewError(
@@ -161,12 +167,23 @@ class ElmReviewJsonReportTest : ElmTestBase() {
                     region = Region(Location(53, 17), Location(53, 26)),
                     html = """<html><body style="font-family: monospace; font-weight: bold"><span style="color: #33BBC8;">(fix)&nbsp;</span><span style="color: #FF0000;">NoDebug.Log</span><span style="color: #4F9DA6">:&nbsp;Remove&nbsp;the&nbsp;use&nbsp;of&nbsp;`Debug.log`&nbsp;before&nbsp;shipping&nbsp;to&nbsp;production<br><br>52|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;UrlChanged&nbsp;url&nbsp;-><br>53|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Debug.log&nbsp;"AAAA"&nbsp;(&nbsp;model,&nbsp;Cmd.none&nbsp;)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #FF0000;">^^^^^^^^^</span><span style="color: #4F9DA6"><br><br>`Debug.log`&nbsp;is&nbsp;useful&nbsp;when&nbsp;developing,&nbsp;but&nbsp;is&nbsp;not&nbsp;meant&nbsp;to&nbsp;be&nbsp;shipped&nbsp;to&nbsp;production&nbsp;or&nbsp;published&nbsp;in&nbsp;a&nbsp;package.&nbsp;I&nbsp;suggest&nbsp;removing&nbsp;its&nbsp;use&nbsp;before&nbsp;committing&nbsp;and&nbsp;attempting&nbsp;to&nbsp;push&nbsp;to&nbsp;production.</span></body></html>""",
                     fix = listOf(
-                                Fix(range=Region(start=Location(line=53, column=17), end=Location(line=53, column=34)), string="")
+                        Fix(
+                            range = Region(
+                                start = Location(line = 53, column = 17),
+                                end = Location(line = 53, column = 34)
+                            ), string = ""
+                        )
 
                     )
                 )
-            ),
-            readErrorReport(json)
+            )
+        )
+    }
+
+    private fun expectDecoded(json: String, expected: List<ElmReviewError>) {
+        assertEquals(
+            expected,
+            readErrorReport(json, Disposable {})
         )
     }
 
