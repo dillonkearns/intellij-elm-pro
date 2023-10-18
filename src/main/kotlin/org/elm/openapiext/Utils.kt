@@ -55,10 +55,9 @@ fun <T> recursionGuard(key: Any, block: Computable<T>, memoize: Boolean = true):
 
 
 fun checkWriteAccessAllowed() {
-    // TODO this check causes issues with the new intellij preview functionality. Should these checks be removed, or done a different way now?
-//    check(ApplicationManager.getApplication().isWriteAccessAllowed) {
-//        "Needs write action"
-//    }
+    check(ApplicationManager.getApplication().isWriteAccessAllowed) {
+        "Needs write action"
+    }
 }
 
 fun checkReadAccessAllowed() {
