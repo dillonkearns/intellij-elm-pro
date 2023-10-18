@@ -166,8 +166,8 @@ class ElmReviewPassFactory(
         -1
     )
 
-    private val externalLinterQueue = MergingUpdateQueue(
-        "RsExternalLinterQueue",
+    private val elmReviewQueue = MergingUpdateQueue(
+        "ElmReviewQueue",
         TIME_SPAN,
         true,
         MergingUpdateQueue.ANY_COMPONENT,
@@ -183,7 +183,7 @@ class ElmReviewPassFactory(
 
     override fun getPassId(): Int = myPassId
 
-    fun scheduleExternalActivity(update: Update) = externalLinterQueue.queue(update)
+    fun scheduleExternalActivity(update: Update) = elmReviewQueue.queue(update)
 
     companion object {
         private const val TIME_SPAN: Int = 300
