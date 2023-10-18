@@ -46,8 +46,8 @@ abstract class ElmProjectSettingsServiceBase<T : ElmProjectSettingsServiceBase.E
     }
 
     companion object {
-        val RUST_SETTINGS_TOPIC: Topic<ElmSettingsListener> = Topic.create(
-            "rust settings changes",
+        val ELM_SETTINGS_TOPIC: Topic<ElmSettingsListener> = Topic.create(
+            "Elm settings changes",
             ElmSettingsListener::class.java,
             Topic.BroadcastDirection.TO_PARENT
         )
@@ -60,7 +60,7 @@ abstract class ElmProjectSettingsServiceBase<T : ElmProjectSettingsServiceBase.E
     protected abstract fun createSettingsChangedEvent(oldEvent: T, newEvent: T): SettingsChangedEventBase<T>
 
     protected open fun notifySettingsChanged(event: SettingsChangedEventBase<T>) {
-        project.messageBus.syncPublisher(RUST_SETTINGS_TOPIC).settingsChanged(event)
+        project.messageBus.syncPublisher(ELM_SETTINGS_TOPIC).settingsChanged(event)
 
         if (event.affectsHighlighting) {
             DaemonCodeAnalyzer.getInstance(project).restart()

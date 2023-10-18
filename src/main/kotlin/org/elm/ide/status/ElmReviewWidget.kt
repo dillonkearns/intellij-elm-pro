@@ -1,21 +1,12 @@
 package org.elm.ide.status
 
-//import org.rust.cargo.project.configurable.ElmReviewLinterConfigurable
-//import org.rust.cargo.project.model.CargoProject
-//import org.rust.cargo.project.model.CargoProjectsService
-//import org.rust.cargo.project.settings.ElmReviewLinterProjectSettingsService
-//import org.rust.cargo.project.settings.RsProjectSettingsServiceBase.*
-//import org.rust.cargo.project.settings.RsProjectSettingsServiceBase.Companion.RUST_SETTINGS_TOPIC
-//import org.rust.cargo.project.settings.externalLinterSettings
-//import org.rust.cargo.runconfig.hasCargoProject
-//import org.rust.cargo.toolchain.ExternalLinter
-//import org.rust.ide.icons.RsIcons
-//import org.rust.ide.notifications.ElmReviewLinterTooltipService
-//import org.rust.openapiext.showSettingsDialog
 import com.intellij.AppTopics
+import com.intellij.icons.AllIcons.Actions.OfflineMode
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener
+import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.CustomStatusBarWidget
@@ -29,6 +20,11 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import org.elm.ElmBundle
 import org.elm.ide.icons.ElmIcons
+import org.elm.ide.settings.ElmExternalLinterConfigurable
+import org.elm.ide.settings.ElmExternalLinterProjectSettingsService
+import org.elm.ide.settings.ElmProjectSettingsServiceBase
+import org.elm.ide.settings.ElmProjectSettingsServiceBase.Companion.ELM_SETTINGS_TOPIC
+import org.elm.ide.settings.experimentalFlags
 import org.elm.workspace.ElmReviewService
 import org.elm.workspace.elmreview.ElmReviewError
 import java.awt.event.MouseEvent
@@ -54,8 +50,7 @@ class ElmReviewWidgetUpdater(private val project: Project) : ElmReviewService.El
 class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrows(), CustomStatusBarWidget {
     private var statusBar: StatusBar? = null
 
-//    private val linter: ExternalLinter get() = project.externalLinterSettings.tool
-//    private val turnedOn: Boolean get() = project.externalLinterSettings.runOnTheFly
+    private val turnedOn: Boolean get() = project.experimentalFlags.elmReviewOnTheFlyEnabled
 
     var inProgress: Boolean = false
         set(value) {
@@ -77,21 +72,21 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
             object : ClickListener() {
                 override fun onClick(event: MouseEvent, clickCount: Int): Boolean {
                     if (!project.isDisposed) {
-//                        project.showSettingsDialog<ElmReviewLinterConfigurable>()
+                        project.showSettingsDialog<ElmExternalLinterConfigurable>()
                     }
                     return true
                 }
             }.installOn(this, true)
 
-//            project.messageBus.connect(this).subscribe(RUST_SETTINGS_TOPIC, object : RsSettingsListener {
-//                override fun <T : RsProjectSettingsBase<T>> settingsChanged(e: SettingsChangedEventBase<T>) {
-//                    if (e !is ElmReviewLinterProjectSettingsService.SettingsChangedEvent) return
-//                    if (e.isChanged(ElmReviewLinterProjectSettingsService.ElmReviewLinterProjectSettings::tool) ||
-//                        e.isChanged(ElmReviewLinterProjectSettingsService.ElmReviewLinterProjectSettings::runOnTheFly)) {
-//                        update()
-//                    }
-//                }
-//            })
+            project.messageBus.connect(this).subscribe(ELM_SETTINGS_TOPIC, object :
+                ElmProjectSettingsServiceBase.ElmSettingsListener {
+                override fun <T : ElmProjectSettingsServiceBase.ElmProjectSettingsBase<T>> settingsChanged(e: ElmProjectSettingsServiceBase.SettingsChangedEventBase<T>) {
+                    if (e !is ElmExternalLinterProjectSettingsService.SettingsChangedEvent) return
+                    if (e.isChanged(ElmExternalLinterProjectSettingsService.ElmExternalLinterProjectSettings::enableElmReviewOnTheFly)) {
+                        update()
+                    }
+                }
+            })
             with(project.messageBus.connect()) {
                 subscribe(
                     AppTopics.FILE_DOCUMENT_SYNC,
@@ -111,9 +106,6 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
                     }
                 }
                 )}
-
-
-//            project.service<ElmReviewTool>().showTooltip(this)
         }
 
         update()
@@ -132,12 +124,11 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
         UIUtil.invokeLaterIfNeeded {
             if (project.isDisposed) return@invokeLaterIfNeeded
             text = "elm-review"
-            val turnedOn = true
             val status = if (turnedOn) ElmBundle.message("on") else ElmBundle.message("off")
             toolTipText = ElmBundle.message("is.in.progress.1.on.the.fly.analysis.is.turned.1", status, if (inProgress) 0 else 1)
             toolTipText = "Running..."
             icon = when {
-//                !turnedOn -> ElmIcons.GEAR_OFF
+                !turnedOn -> OfflineMode
                 inProgress -> ElmIcons.ELM_ANIMATED
                 else -> ElmIcons.TOOL_WINDOW
             }
@@ -148,4 +139,7 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
     companion object {
         const val ID: String = "elmReviewWidget"
     }
+}
+inline fun <reified T: Configurable> Project.showSettingsDialog() {
+    ShowSettingsUtil.getInstance().showSettingsDialog(this, T::class.java)
 }
