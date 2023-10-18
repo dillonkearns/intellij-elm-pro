@@ -122,13 +122,13 @@ class ElmReviewPass(
 
     private fun doFinish(highlights: List<Pair<PsiFile, HighlightInfo>>) {
         invokeLater(ModalityState.stateForComponent(editor.component)) {
-            val thing: List<HighlightInfo> = highlights.groupBy { it.first.name }[file.name]?.map { it.second }.orEmpty()
+            val groupedHighlights: List<HighlightInfo> = highlights.groupBy { it.first.name }[file.name]?.map { it.second }.orEmpty()
             UpdateHighlightersUtil.setHighlightersToEditor(
                 myProject,
                 document,
                 0,
                 file.textLength,
-                thing,
+                groupedHighlights,
                 colorsScheme,
                 id
             )
