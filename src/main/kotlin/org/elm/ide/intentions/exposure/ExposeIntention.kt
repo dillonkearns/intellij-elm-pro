@@ -47,9 +47,6 @@ open class ExposeIntention : ExposureIntentionBase<ExposeIntention.Context>() {
         Context(decl.name, exposingList)
 
     override fun invoke(project: Project, editor: Editor, context: Context) {
-        // TODO this check causes issues with the new intellij preview functionality. Should these checks be removed, or done a different way now?
-//        WriteCommandAction.writeCommandAction(project).run<Throwable> {
-            context.exposingList.addItem(context.nameToExpose)
-//        }
+        context.exposingList.addItem(context.nameToExpose)
     }
 }
