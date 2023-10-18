@@ -20,7 +20,6 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.util.BackgroundTaskUtil
@@ -50,24 +49,13 @@ class ElmReviewPass(
     private var disposable: Disposable = myProject
 
     override fun doCollectInformation(progress: ProgressIndicator) {
-//        highlights.clear()
         if (file !is ElmFile || !isAnnotationPassEnabled) return
 
 
-//        val cargoTarget = file.containingCargoTarget ?: return
-//        if (cargoTarget.pkg.origin != PackageOrigin.WORKSPACE) return
-
-
-        val moduleOrProject: Disposable = ModuleUtil.findModuleForFile(file) ?: myProject
-//        disposable = myProject.messageBus.createDisposableOnAnyPsiChange()
-//            .also { Disposer.register(moduleOrProject, it) }
-
-//        val args = CargoCheckArgs.forTarget(myProject, cargoTarget)
         val service = editor.project?.getService(ElmReviewService::class.java)
         service?.start()
 
         editor.project?.messageBus?.connect()?.apply {
-//            Disposer.register(moduleOrProject, this)
             subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
                 override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
                     annotationInfo = ElmReviewResult(messages, 0)
