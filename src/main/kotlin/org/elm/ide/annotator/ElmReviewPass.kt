@@ -99,13 +99,6 @@ class ElmReviewPass(
         }
 
 
-        //        val update = RsUpdate()
-        // TODO update use this for unit test mode
-//        if (isUnitTestMode) {
-//            update.run()
-//        } else {
-//            factory.scheduleExternalActivity(update)
-//        }
         editor.project!!.messageBus.connect().apply {
             subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
                 override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
@@ -130,7 +123,6 @@ class ElmReviewPass(
     private fun doFinish(highlights: List<Pair<PsiFile, HighlightInfo>>) {
         invokeLater(ModalityState.stateForComponent(editor.component)) {
             val thing: List<HighlightInfo> = highlights.groupBy { it.first.name }[file.name]?.map { it.second }.orEmpty()
-//            if (Disposer.isDisposed(disposable)) return@invokeLater
             UpdateHighlightersUtil.setHighlightersToEditor(
                 myProject,
                 document,
