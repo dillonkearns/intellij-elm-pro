@@ -19,7 +19,7 @@ import org.elm.ide.settings.ELmProjectSettingsService.ELmProjectSettings
 //import org.elm.ide.toolchain.ElmToolchainProvider
 //import org.elm.openapiext.showSettingsDialog
 
-val Project.rustSettings: ELmProjectSettingsService
+val Project.elmSettings: ELmProjectSettingsService
     get() = service<ELmProjectSettingsService>()
 
 //val Project.toolchain: ElmToolchainBase?
@@ -62,6 +62,8 @@ class ELmProjectSettingsService(
         var explicitPathToStdlib by string()
         // BACKCOMPAT: 2023.1
 //        var externalLinter by enum(ExternalLinter.DEFAULT)
+        @AffectsHighlighting
+        var enableElmReviewOnTheFly by property(true)
         // BACKCOMPAT: 2023.1
         var enableDebugIntention by property(false)
         // BACKCOMPAT: 2023.1

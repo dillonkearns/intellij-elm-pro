@@ -5,14 +5,11 @@
 
 package org.elm.ide.settings
 
-import com.intellij.execution.configuration.EnvironmentVariablesComponent
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
-import com.intellij.ui.components.Label
-import com.intellij.ui.dsl.builder.*
+import com.intellij.ui.dsl.builder.bindSelected
+import com.intellij.ui.dsl.builder.panel
 import org.elm.ElmBundle
-import org.elm.openapiext.fullWidthCell
-import javax.swing.JLabel
 
 class ElmExternalLinterConfigurable(project: Project) : ElmConfigurableBase(project, ElmBundle.message("settings.rust.external.linters.name")) {
 
@@ -20,6 +17,12 @@ class ElmExternalLinterConfigurable(project: Project) : ElmConfigurableBase(proj
     override fun createPanel(): DialogPanel = panel {
         val settings = project.experimentalFlags
         val state = settings.state.copy()
+
+        row {
+            checkBox(ElmBundle.message("settings.elm.feature.elm-review-on-the-fly.label"))
+                .comment(ElmBundle.message("settings.elm.feature.elm-review-on-the-fly.comment"))
+                .bindSelected(state::enableElmReviewOnTheFly)
+        }
 
         row {
             checkBox(ElmBundle.message("settings.elm.feature.unstable.add-debug.label"))
@@ -38,6 +41,7 @@ class ElmExternalLinterConfigurable(project: Project) : ElmConfigurableBase(proj
                 it.additionalArguments = state.additionalArguments
                 it.enableDebugIntention = state.enableDebugIntention
                 it.enableExtractVariable = state.enableExtractVariable
+                it.enableElmReviewOnTheFly = state.enableElmReviewOnTheFly
             }
         }
     }

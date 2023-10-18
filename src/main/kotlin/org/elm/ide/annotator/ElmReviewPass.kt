@@ -30,6 +30,7 @@ import com.intellij.util.ui.update.MergingUpdateQueue
 import com.intellij.util.ui.update.Update
 import org.elm.ide.inspections.ElmReviewResult
 import org.elm.ide.inspections.highlightsForFile
+import org.elm.ide.settings.experimentalFlags
 import org.elm.lang.core.psi.ElmFile
 import org.elm.workspace.ElmReviewService
 import org.elm.workspace.elmreview.ElmReviewError
@@ -137,9 +138,7 @@ class ElmReviewPass(
     }
 
     private val isAnnotationPassEnabled: Boolean
-        get() = true
-        // TODO
-//        get() = myProject.externalLinterSettings.runOnTheFly
+        get() = myProject.experimentalFlags.elmReviewOnTheFlyEnabled
 
     companion object {
         private val LOG: Logger = logger<ElmReviewPass>()

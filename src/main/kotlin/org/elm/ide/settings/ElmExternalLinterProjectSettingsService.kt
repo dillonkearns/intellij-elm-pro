@@ -10,9 +10,6 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.StoragePathMacros
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-//import org.elm.settings.ElmExternalLinterProjectSettingsService.ElmExternalLinterProjectSettings
-//import org.elm.cargo.toolchain.ExternalLinter
-//import org.elm.cargo.toolchain.RustChannel
 
 val Project.experimentalFlags: ElmExternalLinterProjectSettingsService
     get() = service<ElmExternalLinterProjectSettingsService>()
@@ -26,22 +23,20 @@ class ElmExternalLinterProjectSettingsService(
     val additionalArguments: String get() = state.additionalArguments
     val debugIntentionEnabled: Boolean get() = state.enableDebugIntention
     val extractVariableEnabled: Boolean get() = state.enableExtractVariable
+    val elmReviewOnTheFlyEnabled: Boolean get() = state.enableElmReviewOnTheFly
 
     override fun noStateLoaded() {
-        val unstableFlags = project.rustSettings
+        val unstableFlags = project.elmSettings
         state.additionalArguments = unstableFlags.state.externalLinterArguments
         state.enableDebugIntention = unstableFlags.state.enableDebugIntention
+        state.enableElmReviewOnTheFly = unstableFlags.state.enableElmReviewOnTheFly
     }
 
     class ElmExternalLinterProjectSettings : ElmProjectSettingsBase<ElmExternalLinterProjectSettings>() {
-//        @AffectsHighlighting
         var additionalArguments by property("") { it.isEmpty() }
 
-//        @AffectsHighlighting
-//        var channel by enum(RustChannel.DEFAULT)
-//        @AffectsHighlighting
-//        var envs by map<String, String>()
-//        @AffectsHighlighting
+        @AffectsHighlighting
+        var enableElmReviewOnTheFly by property(true)
         var enableDebugIntention by property(false)
         var enableExtractVariable by property(false)
 
