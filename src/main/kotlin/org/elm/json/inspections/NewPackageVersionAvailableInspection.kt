@@ -14,6 +14,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
+import com.intellij.util.asSafely
 import com.intellij.util.io.HttpRequests
 import org.elm.ide.notifications.showBalloon
 import org.elm.openapiext.runWithCheckCanceled
@@ -27,7 +28,7 @@ class NewPackageVersionAvailableInspection : LocalInspectionTool() {
                 when (element) {
                     is JsonFile -> {
                         val versions = packageVersions(holder.project)
-                        val root = element.topLevelValue as JsonObject
+                        val root = element.topLevelValue.asSafely<JsonObject>() ?: return
                         val projectType = (root.findProperty("type")?.value as? JsonStringLiteral)?.value
                         if (projectType == "application") {
                             (((root.findProperty("dependencies")?.value as JsonObject)).findProperty(
