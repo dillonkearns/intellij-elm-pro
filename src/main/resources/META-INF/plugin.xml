@@ -20,7 +20,7 @@
                              bundle="messages.ElmBundle" key="settings.rust.external.linters.name"/>
         <lang.documentationProvider language="Elm" implementationClass="org.elm.ide.docs.ElmDocumentationProvider"/>
         <projectService serviceImplementation="org.elm.ide.settings.ElmExternalLinterProjectSettingsService"/>
-        <projectService serviceImplementation="org.elm.ide.settings.ELmProjectSettingsService"/>
+        <projectService serviceImplementation="org.elm.ide.settings.ElmProjectSettingsService"/>
 
 
         <enterHandlerDelegate implementation="org.elm.ide.typing.ElmOnEnterIndentHandler"/>

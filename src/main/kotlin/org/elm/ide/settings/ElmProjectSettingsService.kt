@@ -13,14 +13,14 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiManager
 import com.intellij.util.ThreeState
 //import org.elm.ide.settings.ElmProjectConfigurable
-import org.elm.ide.settings.ELmProjectSettingsService.ELmProjectSettings
+import org.elm.ide.settings.ElmProjectSettingsService.ELmProjectSettings
 //import org.elm.ide.toolchain.ExternalLinter
 //import org.elm.ide.toolchain.ElmToolchainBase
 //import org.elm.ide.toolchain.ElmToolchainProvider
 //import org.elm.openapiext.showSettingsDialog
 
-val Project.elmSettings: ELmProjectSettingsService
-    get() = service<ELmProjectSettingsService>()
+val Project.elmSettings: ElmProjectSettingsService
+    get() = service<ElmProjectSettingsService>()
 
 //val Project.toolchain: ElmToolchainBase?
 //    get() {
@@ -38,7 +38,7 @@ private const val SERVICE_NAME: String = "ELmProjectSettings"
     Storage(StoragePathMacros.WORKSPACE_FILE),
     Storage("misc.xml", deprecated = true)
 ])
-class ELmProjectSettingsService(
+class ElmProjectSettingsService(
     project: Project
 ) : ElmProjectSettingsServiceBase<ELmProjectSettings>(project, ELmProjectSettings()) {
 //    val toolchain: ElmToolchainBase? get() = state.toolchain
