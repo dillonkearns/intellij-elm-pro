@@ -98,7 +98,6 @@ object ElmReviewUtils {
     private fun saveAllDocuments() = FileDocumentManager.getInstance().saveAllDocuments()
 
     private fun checkWrapped(
-//        toolchain: RsToolchainBase,
         toolchain: ElmToolchain,
         project: Project,
         owner: Disposable,
@@ -226,7 +225,7 @@ fun highlightsForFile(
 //            ?: error("Can't find document for $file in external linter")
         val doc = fileWithError.findDocument()
             ?: error("Can't find document for $fileWithError in external linter")
-        if (psiFile == null || psiFile.hasErrors) { return emptyList() }
+        if (psiFile == null) { return emptyList() }
 
         // We can't control what messages cargo generates, so we can't test them well.
         // Let's use the special message for tests to distinguish annotation from external linter
