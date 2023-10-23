@@ -47,7 +47,6 @@ class ElmProjectSettingsService(
     val autoUpdateEnabled: Boolean get() = state.autoUpdateEnabled
     val compileAllTargets: Boolean get() = state.compileAllTargets
     val useOffline: Boolean get() = state.useOffline
-    val macroExpansionEngine: MacroExpansionEngine get() = state.macroExpansionEngine
     val doctestInjectionEnabled: Boolean get() = state.doctestInjectionEnabled
 
     class ELmProjectSettings : ElmProjectSettingsBase<ELmProjectSettings>() {
@@ -71,7 +70,6 @@ class ElmProjectSettingsService(
         @AffectsHighlighting
         var compileAllTargets by property(true)
         var useOffline by property(false)
-        var macroExpansionEngine by enum(defaultMacroExpansionEngine)
         @AffectsHighlighting
         var doctestInjectionEnabled by property(true)
 
@@ -91,9 +89,6 @@ class ElmProjectSettingsService(
     }
 
     override fun loadState(state: ELmProjectSettings) {
-        if (state.macroExpansionEngine == MacroExpansionEngine.OLD) {
-            state.macroExpansionEngine = MacroExpansionEngine.NEW
-        }
         super.loadState(state)
     }
 
@@ -122,15 +117,4 @@ class ElmProjectSettingsService(
 //    fun configureToolchain() {
 //        project.showSettingsDialog<ElmProjectConfigurable>()
 //    }
-
-    enum class MacroExpansionEngine {
-        DISABLED,
-        OLD, // `OLD` can't be selected by a user anymore, it exists for backcompat with saved user settings
-        NEW
-    }
-
-    companion object {
-        private val defaultMacroExpansionEngine: MacroExpansionEngine
-            get() = MacroExpansionEngine.NEW
-    }
 }
