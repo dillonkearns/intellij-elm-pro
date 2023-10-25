@@ -12,43 +12,67 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.impl.ContentImpl
 import com.intellij.util.ui.MessageCategory
 import org.elm.openapiext.findFileByPath
+import org.elm.workspace.ElmProject
 import org.elm.workspace.ElmReviewService
 import org.elm.workspace.elmreview.ElmReviewError
 import java.nio.file.Path
 
 class ElmReviewToolWindowFactory : ToolWindowFactory {
+    private var newlyOpened = true
+    private fun paintMessages(
+        project: Project,
+        toolWindow: ToolWindow,
+        messages: List<ElmReviewError>,
+        baseDirPath: Path
 
+    ) {
+        this.newlyOpened = false
+        invokeLater {
+            val errorTreeViewPanel =
+                ElmErrorTreeViewPanel(
+                    project,
+                    "elm-review",
+                    createExitAction = false,
+                    createToolbar = true
+                )
+
+            messages.forEachIndexed { index, elmReviewError ->
+                val sourceLocation = elmReviewError.path!!
+                val virtualFile = baseDirPath.resolve(sourceLocation).let {
+                    LocalFileSystem.getInstance().findFileByPath(it)
+                }
+                val encodedIndex = "\u200B".repeat(index)
+                updateErrorTree(errorTreeViewPanel, encodedIndex, elmReviewError, virtualFile)
+            }
+
+            toolWindow.contentManager.removeAllContents(true)
+            toolWindow.contentManager.addContent(
+                ContentImpl(
+                    errorTreeViewPanel,
+                    "Elm-Review watchmode result",
+                    true
+                )
+            )
+            if (toolWindow.isVisible || this.newlyOpened) {
+                toolWindow.show(null)
+                errorTreeViewPanel.expandAll()
+                errorTreeViewPanel.requestFocus()
+                focusEditor(project)
+            }
+        }
+    }
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+        val service = project.getService(ElmReviewService::class.java)
+        service?.start()
+        (project as? ElmProject)?.let {
+            paintMessages(project, toolWindow, service.messages, it.projectDirPath)
+        }
         with(project.messageBus.connect()) {
             subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
                 override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
-                    invokeLater {
-                        val errorTreeViewPanel =
-                            ElmErrorTreeViewPanel(project, "elm-review", createExitAction = false, createToolbar = true)
-
-                        messages.forEachIndexed { index, elmReviewError ->
-                            val sourceLocation = elmReviewError.path!!
-                            val virtualFile = baseDirPath.resolve(sourceLocation).let {
-                                LocalFileSystem.getInstance().findFileByPath(it)
-                            }
-                            val encodedIndex = "\u200B".repeat(index)
-                            updateErrorTree(errorTreeViewPanel, encodedIndex, elmReviewError, virtualFile)
-                        }
-
-                        toolWindow.contentManager.removeAllContents(true)
-                        toolWindow.contentManager.addContent(
-                            ContentImpl(
-                                errorTreeViewPanel,
-                                "Elm-Review watchmode result",
-                                true
-                            )
-                        )
-                        toolWindow.show(null)
-                        errorTreeViewPanel.expandAll()
-                        errorTreeViewPanel.requestFocus()
-                        focusEditor(project)
-                    }
+                    paintMessages(project, toolWindow, messages, baseDirPath)
                 }
+
             })
         }
     }
