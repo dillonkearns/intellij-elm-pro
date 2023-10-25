@@ -2,6 +2,7 @@ package org.elm.ide.toolwindow
 
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
@@ -21,23 +22,32 @@ class ElmReviewToolWindowFactory : ToolWindowFactory {
         with(project.messageBus.connect()) {
             subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
                 override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
-                    val errorTreeViewPanel = ElmErrorTreeViewPanel(project, "elm-review", createExitAction = false, createToolbar = true)
+                    invokeLater {
+                        val errorTreeViewPanel =
+                            ElmErrorTreeViewPanel(project, "elm-review", createExitAction = false, createToolbar = true)
 
-                    messages.forEachIndexed { index, elmReviewError ->
-                        val sourceLocation = elmReviewError.path!!
-                        val virtualFile = baseDirPath.resolve(sourceLocation).let {
-                            LocalFileSystem.getInstance().findFileByPath(it)
+                        messages.forEachIndexed { index, elmReviewError ->
+                            val sourceLocation = elmReviewError.path!!
+                            val virtualFile = baseDirPath.resolve(sourceLocation).let {
+                                LocalFileSystem.getInstance().findFileByPath(it)
+                            }
+                            val encodedIndex = "\u200B".repeat(index)
+                            updateErrorTree(errorTreeViewPanel, encodedIndex, elmReviewError, virtualFile)
                         }
-                        val encodedIndex = "\u200B".repeat(index)
-                        updateErrorTree(errorTreeViewPanel, encodedIndex, elmReviewError, virtualFile)
-                    }
 
-                    toolWindow.contentManager.removeAllContents(true)
-                    toolWindow.contentManager.addContent(ContentImpl(errorTreeViewPanel, "Elm-Review watchmode result", true))
-                    toolWindow.show(null)
-                    errorTreeViewPanel.expandAll()
-                    errorTreeViewPanel.requestFocus()
-                    focusEditor(project)
+                        toolWindow.contentManager.removeAllContents(true)
+                        toolWindow.contentManager.addContent(
+                            ContentImpl(
+                                errorTreeViewPanel,
+                                "Elm-Review watchmode result",
+                                true
+                            )
+                        )
+                        toolWindow.show(null)
+                        errorTreeViewPanel.expandAll()
+                        errorTreeViewPanel.requestFocus()
+                        focusEditor(project)
+                    }
                 }
             })
         }
