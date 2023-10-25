@@ -1,10 +1,7 @@
 package org.elm.ide.toolwindow
 
-import com.intellij.ide.DataManager
-import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.impl.ContentImpl
@@ -46,15 +43,6 @@ class ElmCompilerToolWindowFactory : ToolWindowFactory {
                     focusEditor(project)
                 }
             })
-        }
-    }
-}
-
-fun focusEditor(project: Project) {
-    DataManager.getInstance().dataContextFromFocusAsync.then {
-        val editor = it.getData(CommonDataKeys.EDITOR)
-        if (editor != null) {
-            IdeFocusManager.getInstance(project).requestFocus(editor.contentComponent, true)
         }
     }
 }
