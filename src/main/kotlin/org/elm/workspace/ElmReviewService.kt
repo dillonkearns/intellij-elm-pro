@@ -26,6 +26,7 @@ class ElmReviewService(val project: Project) {
     }
 
     var activeWatchmodeProcess: Process? = null
+    var messages = listOf<ElmReviewError>()
 
     interface ElmReviewWatchListener {
         fun update(
@@ -59,6 +60,7 @@ class ElmReviewService(val project: Project) {
                     disposable.dispose()
                     BackgroundTaskUtil.runUnderDisposeAwareIndicator(disposable) {
                         val reviewErrors = readErrorReport(line, disposable)
+                        this.messages = reviewErrors
                         project.messageBus.syncPublisher(ELM_REVIEW_WATCH_TOPIC)
                             .update(elmProject.projectDirPath, reviewErrors)
                     }

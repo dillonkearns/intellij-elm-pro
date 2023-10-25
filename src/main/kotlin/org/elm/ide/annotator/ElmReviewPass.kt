@@ -55,19 +55,29 @@ class ElmReviewPass(
 
         val service = editor.project?.getService(ElmReviewService::class.java)
         service?.start()
+        if (service != null) {
+            updateHighlighting(service.messages, file)
+        }
 
         editor.project?.messageBus?.connect()?.apply {
             subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
                 override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
-                    annotationInfo = ElmReviewResult(messages, 0)
-                    ApplicationManager.getApplication().runReadAction {
-                        highlights = highlightsForFile(file.project, annotationInfo!!)
-                        doFinish(highlights)
-                    }
+                    updateHighlighting(messages, file)
 
                 }
             }
             )}
+    }
+
+    private fun updateHighlighting(
+        messages: List<ElmReviewError>,
+        file: ElmFile
+    ) {
+        annotationInfo = ElmReviewResult(messages, 0)
+        ApplicationManager.getApplication().runReadAction {
+            highlights = highlightsForFile(file.project, annotationInfo!!)
+            doFinish(highlights)
+        }
     }
 
     override fun doApplyInformationToEditor() {
