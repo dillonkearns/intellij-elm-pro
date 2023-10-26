@@ -26,7 +26,6 @@ class ElmReviewToolWindowFactory : ToolWindowFactory {
         baseDirPath: Path
 
     ) {
-        this.newlyOpened = false
         invokeLater {
             val errorTreeViewPanel =
                 ElmErrorTreeViewPanel(
@@ -59,6 +58,7 @@ class ElmReviewToolWindowFactory : ToolWindowFactory {
                 errorTreeViewPanel.requestFocus()
                 focusEditor(project)
             }
+            this.newlyOpened = false
         }
     }
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
