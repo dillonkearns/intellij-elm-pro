@@ -4,6 +4,7 @@ import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.io.toNioPath
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.IdeFocusManager
@@ -12,7 +13,6 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.impl.ContentImpl
 import com.intellij.util.ui.MessageCategory
 import org.elm.openapiext.findFileByPath
-import org.elm.workspace.ElmProject
 import org.elm.workspace.ElmReviewService
 import org.elm.workspace.elmreview.ElmReviewError
 import java.nio.file.Path
@@ -64,9 +64,7 @@ class ElmReviewToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val service = project.getService(ElmReviewService::class.java)
         service?.start()
-        (project as? ElmProject)?.let {
-            paintMessages(project, toolWindow, service.messages, it.projectDirPath)
-        }
+        paintMessages(project, toolWindow, service.messages, project.basePath!!.toNioPath())
         with(project.messageBus.connect()) {
             subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
                 override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
