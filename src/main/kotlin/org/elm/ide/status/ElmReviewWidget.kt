@@ -1,10 +1,7 @@
 package org.elm.ide.status
 
-import com.intellij.AppTopics
 import com.intellij.icons.AllIcons.Actions.OfflineMode
 import com.intellij.openapi.components.service
-import com.intellij.openapi.editor.Document
-import com.intellij.openapi.fileEditor.FileDocumentManagerListener
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
@@ -30,6 +27,7 @@ import org.elm.workspace.elmreview.ElmReviewError
 import java.awt.event.MouseEvent
 import java.nio.file.Path
 import javax.swing.JComponent
+
 
 class ElmReviewWidgetFactory : StatusBarWidgetFactory {
     override fun getId(): String = ElmReviewWidget.ID
@@ -87,25 +85,14 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
                     }
                 }
             })
-            with(project.messageBus.connect()) {
-                subscribe(
-                    AppTopics.FILE_DOCUMENT_SYNC,
-                    object : FileDocumentManagerListener {
-                        override fun beforeDocumentSaving(document: Document) {
-                            inProgress = true
-                            update()
-                        }
-                    }
-                )
-            }
-            project.messageBus.connect().apply {
-                subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
-                    override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
-                        inProgress = false
-                        update()
-                    }
-                }
-                )}
+//            project.messageBus.connect().apply {
+//                subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
+//                    override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
+//                        inProgress = false
+//                        update()
+//                    }
+//                }
+//                )}
         }
 
         update()
@@ -129,7 +116,8 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
             toolTipText = "Running..."
             icon = when {
                 !turnedOn -> OfflineMode
-                inProgress -> ElmIcons.ELM_ANIMATED
+                // TODO if elm-review --watch broadcasted a message when it was starting, we could accurately show inProgress. However, it's not feasible with the IntelliJ API because we can't read file changed timestamps from within the callbacks for document save events without causing runtime exceptions.
+//                inProgress -> ElmIcons.ELM_ANIMATED
                 else -> ElmIcons.TOOL_WINDOW
             }
             repaint()
