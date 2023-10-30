@@ -30,6 +30,7 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.AnyPsiChangeListener
 import com.intellij.psi.impl.PsiManagerImpl
 import com.intellij.psi.util.PsiModificationTracker
+import com.intellij.util.alsoIfNull
 import com.intellij.util.io.URLUtil
 import com.intellij.util.messages.MessageBus
 import org.elm.ElmBundle
@@ -242,7 +243,16 @@ fun highlightsForFile(
             .description(message.message!!)
             .escapedToolTip(tooltipHtml)
             .needsUpdateOnTyping(true)
-        message.region?.toTextRange(doc)?.let { textRange -> highlightBuilder.range(textRange) }
+        message.region?.toTextRange(doc)?.let { textRange ->
+            if (textRange.startOffset < 0 || textRange.startOffset > textRange.endOffset) {
+                return emptyList()
+            }
+            highlightBuilder.range(textRange)
+        }.alsoIfNull {
+            // if we get null from the TextRange, it means the document has changed since we got the elm-review results,
+            // so we should skip this highlighting pass and wait for it to re-run upon receiving fresh elm-review --watch results
+            return emptyList()
+        }
 
 
         message.fix.orEmpty()
