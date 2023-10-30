@@ -85,12 +85,6 @@
                          enabledByDefault="true" level="ERROR"
                          implementationClass="org.elm.ide.inspections.ElmTypeInferenceInspection"/>
 
-        <globalInspection language="Elm" groupName="Elm"
-                          enabledByDefault="true" level="ERROR"
-                          implementationClass="org.elm.ide.inspections.ElmReviewInspection"
-                          shortName="ElmReviewInspection"
-                          displayName="elm-review inspection" />
-
         <highlightingPassFactory implementation="org.elm.ide.annotator.ElmHighlightingPassFactoryRegistrar"/>
 
         <localInspection language="Elm" groupName="Elm"
