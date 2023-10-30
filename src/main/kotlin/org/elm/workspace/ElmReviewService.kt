@@ -8,12 +8,14 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.util.alsoIfNull
 import com.intellij.util.messages.Topic
 import org.elm.ide.notifications.showBalloon
 import org.elm.workspace.elmreview.ElmReviewError
 import org.elm.workspace.elmreview.readErrorReport
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.exists
 
 
 private val log = logger<ElmReviewService>()
@@ -38,8 +40,14 @@ class ElmReviewService(val project: Project) {
         val ELM_REVIEW_WATCH_TOPIC = Topic("elm-review errors", ElmReviewWatchListener::class.java)
     }
 
+    private fun reviewDirExists(): Boolean {
+        return project.basePath?.let { Path.of(it, "review") }?.exists().alsoIfNull {
+            showError(project, "Could not determine whether a review/ folder is present in this project.")
+        } ?: false
+    }
+
     fun start() {
-        if (activeWatchmodeProcess == null) {
+        if (activeWatchmodeProcess == null && reviewDirExists()) {
             // TODO handle multiple projects in one workspace (maybe through UI configuration?)
             val elmProject = project.elmWorkspace.allProjects.firstOrNull()
                 ?: return showError(project, "Could not determine active Elm project")
