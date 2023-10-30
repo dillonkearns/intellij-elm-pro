@@ -23,6 +23,7 @@ import org.elm.ide.settings.ElmProjectSettingsServiceBase
 import org.elm.ide.settings.ElmProjectSettingsServiceBase.Companion.ELM_SETTINGS_TOPIC
 import org.elm.ide.settings.experimentalFlags
 import org.elm.workspace.ElmReviewService
+import org.elm.workspace.elmWorkspace
 import org.elm.workspace.elmreview.ElmReviewError
 import java.awt.event.MouseEvent
 import java.nio.file.Path
@@ -32,10 +33,13 @@ import javax.swing.JComponent
 class ElmReviewWidgetFactory : StatusBarWidgetFactory {
     override fun getId(): String = ElmReviewWidget.ID
     override fun getDisplayName(): String = "elm-review"
+    override fun isAvailable(project: Project): Boolean = project.hasElmProject
     override fun createWidget(project: Project): StatusBarWidget = ElmReviewWidget(project)
     override fun disposeWidget(widget: StatusBarWidget) = Disposer.dispose(widget)
     override fun canBeEnabledOn(statusBar: StatusBar): Boolean = true
+    private val Project.hasElmProject: Boolean get() = this.elmWorkspace.allProjects.isNotEmpty()
 }
+
 
 class ElmReviewWidgetUpdater(private val project: Project) : ElmReviewService.ElmReviewWatchListener {
     override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
