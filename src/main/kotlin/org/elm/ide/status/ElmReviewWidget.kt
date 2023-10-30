@@ -88,14 +88,6 @@ class ElmReviewWidget(private val project: Project) : TextPanel.WithIconAndArrow
                     }
                 }
             })
-//            project.messageBus.connect().apply {
-//                subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
-//                    override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
-//                        inProgress = false
-//                        update()
-//                    }
-//                }
-//                )}
         }
 
         update()
