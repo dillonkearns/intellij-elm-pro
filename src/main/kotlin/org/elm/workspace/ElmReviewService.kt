@@ -45,7 +45,11 @@ class ElmReviewService(val project: Project) {
                 ?: return showError(project, "Could not determine active Elm project")
 
             val elmCompiler = project.elmToolchain.elmCLI
-            val elmReviewExecutablePath = project.elmToolchain.elmReviewPath!!
+            val elmReviewExecutablePath = project.elmToolchain.elmReviewPath ?: return showError(
+                project,
+                "Could not find elm-review executable",
+                true
+            )
             val arguments = listOf("--watch", "--report=json", "--namespace=intellij-elm") +
                     if (project is ElmProject) "--config=./review" else "" +
                             if (elmCompiler == null) "" else "--compiler=${elmCompiler.elmExecutablePath}"
