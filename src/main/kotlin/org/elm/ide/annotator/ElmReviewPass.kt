@@ -97,12 +97,8 @@ class ElmReviewPass(
             override fun run() {
                 BackgroundTaskUtil.runUnderDisposeAwareIndicator(disposable, Runnable {
                     val annotationResult = annotationResult ?: return@Runnable
-                    // TODO do I need this?
-                    // myProject.service<RsExternalLinterSlowRunNotifier>().reportDuration(annotationResult.executionTime)
                     runReadAction {
-//                        ProgressManager.checkCanceled()
                         doApply(annotationResult)
-//                        ProgressManager.checkCanceled()
                         doFinish(highlights)
                     }
                 })
