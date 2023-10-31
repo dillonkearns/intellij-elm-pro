@@ -47,7 +47,7 @@ class ElmReviewService(val project: Project) {
     }
 
     fun start() {
-        if (activeWatchmodeProcess == null && reviewDirExists()) {
+        if ((activeWatchmodeProcess == null || !activeWatchmodeProcess!!.isAlive) && reviewDirExists()) {
             // TODO handle multiple projects in one workspace (maybe through UI configuration?)
             val elmProject = project.elmWorkspace.allProjects.firstOrNull()
                 ?: return showError(project, "Could not determine active Elm project")
