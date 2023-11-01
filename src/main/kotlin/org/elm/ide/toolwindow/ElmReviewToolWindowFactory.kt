@@ -5,14 +5,15 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.io.toNioPath
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.impl.ContentImpl
 import com.intellij.util.ui.MessageCategory
+import org.elm.lang.core.psi.ElmFile
 import org.elm.openapiext.findFileByPath
 import org.elm.workspace.ElmReviewService
 import org.elm.workspace.elmreview.ElmReviewError
@@ -63,14 +64,13 @@ class ElmReviewToolWindowFactory : ToolWindowFactory {
         }
     }
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val service = project.getService(ElmReviewService::class.java)
-        val pathToListenFor = FileEditorManager.getInstance(project).selectedEditor?.file?.path?.toNioPath() ?: return
-        service?.start(pathToListenFor)
-        paintMessages(project, toolWindow, service.messagesForCurrentProject(pathToListenFor), project.basePath!!.toNioPath())
         with(project.messageBus.connect()) {
             subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
                 override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
-                    paintMessages(project, toolWindow, messages, baseDirPath)
+                    val pathToListenFor = (FileEditorManager.getInstance(project).selectedEditor?.file?.findPsiFile(project) as? ElmFile)?.elmProject?.projectDirPath ?: return
+                    if (pathToListenFor == baseDirPath) {
+                        paintMessages(project, toolWindow, messages, baseDirPath)
+                    }
                 }
 
             })
