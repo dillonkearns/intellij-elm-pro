@@ -3,6 +3,7 @@ package org.elm.ide.toolwindow
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -67,9 +68,11 @@ class ElmReviewToolWindowFactory : ToolWindowFactory {
         with(project.messageBus.connect()) {
             subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
                 override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
-                    val pathToListenFor = (FileEditorManager.getInstance(project).selectedEditor?.file?.findPsiFile(project) as? ElmFile)?.elmProject?.projectDirPath ?: return
-                    if (pathToListenFor == baseDirPath) {
-                        paintMessages(project, toolWindow, messages, baseDirPath)
+                    runInEdt {
+                        val pathToListenFor = (FileEditorManager.getInstance(project).selectedEditor?.file?.findPsiFile(project) as? ElmFile)?.elmProject?.projectDirPath
+                        if (pathToListenFor == baseDirPath) {
+                            paintMessages(project, toolWindow, messages, baseDirPath)
+                        }
                     }
                 }
 
