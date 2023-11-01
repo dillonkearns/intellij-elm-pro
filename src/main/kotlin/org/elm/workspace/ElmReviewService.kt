@@ -7,15 +7,19 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.currentOrDefaultProject
 import com.intellij.openapi.util.Disposer
 import com.intellij.util.alsoIfNull
 import com.intellij.util.messages.Topic
 import org.elm.ide.notifications.showBalloon
 import org.elm.workspace.elmreview.ElmReviewError
 import org.elm.workspace.elmreview.readErrorReport
+import org.jetbrains.annotations.NonNls
+import org.jetbrains.annotations.SystemIndependent
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
+
 
 
 private val log = logger<ElmReviewService>()
@@ -23,12 +27,12 @@ private val log = logger<ElmReviewService>()
 @State(name = "ElmReview")
 @Service(Service.Level.PROJECT)
 class ElmReviewService(val project: Project) {
-    init {
-        start()
-    }
+    private var watchers: HashMap<Path, Process> = hashMapOf()
+    var messages: HashMap<Path, List<ElmReviewError>> = hashMapOf()
 
-    var activeWatchmodeProcess: Process? = null
-    var messages = listOf<ElmReviewError>()
+    fun messagesForCurrentProject(path: Path): List<ElmReviewError> {
+        return messages[path] ?: emptyList()
+    }
 
     interface ElmReviewWatchListener {
         fun update(
@@ -41,17 +45,22 @@ class ElmReviewService(val project: Project) {
     }
 
     private fun reviewDirExists(): Boolean {
-        return project.basePath?.let { Path.of(it, "review") }?.exists().alsoIfNull {
+        return currentBasePath()?.let { Path.of(it, "review") }?.exists().alsoIfNull {
             showError(project, "Could not determine whether a review/ folder is present in this project.")
         } ?: false
     }
 
-    fun start() {
-        if ((activeWatchmodeProcess == null || !activeWatchmodeProcess!!.isAlive) && reviewDirExists()) {
-            // TODO handle multiple projects in one workspace (maybe through UI configuration?)
-            val elmProject = project.elmWorkspace.allProjects.firstOrNull()
-                ?: return showError(project, "Could not determine active Elm project")
+    private fun currentBasePath(): @SystemIndependent @NonNls String? = currentOrDefaultProject(project).basePath
 
+    fun isElmProject(projectBasePath: Path) = projectBasePath.resolve("elm.json").exists()
+
+    fun start(projectBasePath: Path) {
+        if (this.watchers == null) {
+            this.watchers = hashMapOf()
+        }
+        val currentWatcher: Process? = this.watchers[projectBasePath]
+
+        if ((currentWatcher == null || !currentWatcher.isAlive) && reviewDirExists() && isElmProject(projectBasePath)) {
             val elmCompiler = project.elmToolchain.elmCLI
             val elmReviewExecutablePath = project.elmToolchain.elmReviewPath ?: return showError(
                 project,
@@ -64,27 +73,29 @@ class ElmReviewService(val project: Project) {
 
             val command: List<String> = listOf(elmReviewExecutablePath.absolutePathString(), *arguments.toTypedArray())
             ApplicationManager.getApplication().executeOnPooledThread {
-                activeWatchmodeProcess = startProcess(command, elmProject, project)
+                val newWatcher = startWatcher(command, projectBasePath, project)
+                watchers[projectBasePath] = newWatcher
                 val disposable = Disposer.newDisposable("New elm-review input")
 
-                activeWatchmodeProcess!!.inputStream.bufferedReader().forEachLine { line ->
+                newWatcher.inputStream.bufferedReader().forEachLine { line ->
                     // if we're still parsing output from a previous run, cancel it
                     disposable.dispose()
                     BackgroundTaskUtil.runUnderDisposeAwareIndicator(disposable) {
                         val reviewErrors = readErrorReport(line, disposable)
-                        this.messages = reviewErrors
-                        project.messageBus.syncPublisher(ELM_REVIEW_WATCH_TOPIC)
-                            .update(elmProject.projectDirPath, reviewErrors)
+                        this.messages[projectBasePath] = reviewErrors
+                        if (!Disposer.isDisposed(disposable)) {
+                            project.messageBus.syncPublisher(ELM_REVIEW_WATCH_TOPIC)
+                                .update(projectBasePath, reviewErrors)
+                        }
                     }
                 }
-
             }
         }
     }
 
-    private fun startProcess(cmd: List<String>, elmProject: ElmProject, project: Project): Process =
+    private fun startWatcher(cmd: List<String>, basePath: Path, project: Project): Process =
         ProcessBuilder(cmd)
-            .directory(elmProject.projectDirPath.toFile())
+            .directory(basePath.toFile())
             .start()
 
     private fun showError(project: Project, message: String, includeFixAction: Boolean = false) {

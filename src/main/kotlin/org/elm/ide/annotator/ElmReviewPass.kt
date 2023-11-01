@@ -51,19 +51,20 @@ class ElmReviewPass(
 
     override fun doCollectInformation(progress: ProgressIndicator) {
         if (file !is ElmFile || !isAnnotationPassEnabled) return
-
+        val pathToListenFor: Path = file.elmProject?.projectDirPath ?: return
 
         val service = editor.project?.getService(ElmReviewService::class.java)
-        service?.start()
+        service?.start(pathToListenFor)
         if (service != null) {
-            updateHighlighting(service.messages, file)
+            updateHighlighting(service.messagesForCurrentProject(pathToListenFor), editor.project!!, pathToListenFor)
         }
 
         editor.project?.messageBus?.connect()?.apply {
             subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
                 override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
-                    updateHighlighting(messages, file)
-
+                    if (pathToListenFor == baseDirPath) {
+                        updateHighlighting(messages, editor.project!!, pathToListenFor)
+                    }
                 }
             }
             )}
@@ -71,11 +72,12 @@ class ElmReviewPass(
 
     private fun updateHighlighting(
         messages: List<ElmReviewError>,
-        file: ElmFile
+        project: Project,
+        basePath: Path
     ) {
-        annotationInfo = ElmReviewResult(messages, 0)
+        annotationInfo = ElmReviewResult(messages, basePath, 0)
         ApplicationManager.getApplication().runReadAction {
-            highlights = highlightsForFile(file.project, annotationInfo!!)
+            highlights = highlightsForFile(project, basePath, annotationInfo!!)
             doFinish(highlights)
         }
     }
@@ -98,7 +100,7 @@ class ElmReviewPass(
                 BackgroundTaskUtil.runUnderDisposeAwareIndicator(disposable, Runnable {
                     val annotationResult = annotationResult ?: return@Runnable
                     runReadAction {
-                        doApply(annotationResult)
+                        doApply(annotationResult, annotationResult.basePath)
                         doFinish(highlights)
                     }
                 })
@@ -115,11 +117,11 @@ class ElmReviewPass(
             )}
     }
 
-    private fun doApply(annotationResult: ElmReviewResult) {
+    private fun doApply(annotationResult: ElmReviewResult, basePath: Path) {
         if (file !is ElmFile || !file.isValid) return
         try {
             ApplicationManager.getApplication().runReadAction {
-                highlights = highlightsForFile(file.project, annotationResult)
+                highlights = highlightsForFile(file.project, basePath, annotationResult)
             }
         } catch (t: Throwable) {
             if (t is ProcessCanceledException) throw t

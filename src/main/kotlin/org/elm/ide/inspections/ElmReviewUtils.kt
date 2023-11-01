@@ -22,6 +22,7 @@ import java.nio.file.Path
 fun highlightsForFile(
 //    file: ElmFile,
     project: Project,
+    basePath: Path,
     annotationResult: ElmReviewResult,
 //    minApplicability: Applicability
 ): List<Pair<PsiFile, HighlightInfo>> {
@@ -39,7 +40,7 @@ fun highlightsForFile(
 
 //        val fileWithError: VirtualFile = FilenameIndex.getVirtualFilesByName(message.path!!, GlobalSearchScope.allScope(project)).first()
         // TODO fix NPE
-        val fileWithError: VirtualFile = LocalFileSystem.getInstance().findFileByPath(Path.of(project.basePath, message.path!!).toString())!!
+        val fileWithError: VirtualFile = LocalFileSystem.getInstance().findFileByPath(Path.of(basePath.toString(), message.path!!).toString())!!
         val psiFile = PsiManager.getInstance(project).findFile(fileWithError)
 
 
@@ -105,7 +106,7 @@ fun highlightsForFile(
 
 private const val RUST_EXTERNAL_LINTER_ID: String = "ElmReviewOptions"
 
-class ElmReviewResult(val messages: List<ElmReviewError>, val executionTime: Long) {
+class ElmReviewResult(val messages: List<ElmReviewError>, val basePath: Path, val executionTime: Long) {
     companion object {
     }
 }

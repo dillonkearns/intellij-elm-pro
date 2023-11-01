@@ -3,6 +3,7 @@ package org.elm.ide.toolwindow
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.toNioPath
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -63,8 +64,9 @@ class ElmReviewToolWindowFactory : ToolWindowFactory {
     }
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val service = project.getService(ElmReviewService::class.java)
-        service?.start()
-        paintMessages(project, toolWindow, service.messages, project.basePath!!.toNioPath())
+        val pathToListenFor = FileEditorManager.getInstance(project).selectedEditor?.file?.path?.toNioPath() ?: return
+        service?.start(pathToListenFor)
+        paintMessages(project, toolWindow, service.messagesForCurrentProject(pathToListenFor), project.basePath!!.toNioPath())
         with(project.messageBus.connect()) {
             subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
                 override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
