@@ -18,13 +18,11 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.openapi.roots.ex.ProjectRootManagerEx
 import com.intellij.openapi.startup.StartupManager
 import com.intellij.openapi.util.EmptyRunnable
 import com.intellij.openapi.util.SimpleModificationTracker
 import com.intellij.openapi.util.io.FileUtil
-import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.impl.source.resolve.ResolveCache
@@ -38,7 +36,6 @@ import org.elm.utils.runAsyncTask
 import org.elm.workspace.ElmToolchain.Companion.DEFAULT_FORMAT_ON_SAVE
 import org.elm.workspace.ElmToolchain.Companion.ELM_JSON
 import org.elm.workspace.commandLineTools.ElmCLI
-import org.elm.workspace.commandLineTools.LamderaCLI
 import org.elm.workspace.ui.ElmWorkspaceConfigurable
 import org.jdom.Element
 import java.io.FileNotFoundException
@@ -282,7 +279,7 @@ class ElmWorkspaceService(
         )
 
         val success =
-            if (dto.has("lamdera/core"))
+            if (!dto.has("lamdera/core"))
                 elmCLI.make(intellijProject, workDir = dir.toPath(), null, listOf(tmpEntryPoint)) // path = tempMain.toPath()
             else {
                 val lamderaCLI = settings.toolchain.lamderaCLI
