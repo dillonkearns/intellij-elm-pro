@@ -55,12 +55,10 @@ class ElmReviewToolWindowFactory : ToolWindowFactory {
                     true
                 )
             )
-            if (toolWindow.isVisible || this.newlyOpened) {
-                toolWindow.show(null)
-                errorTreeViewPanel.expandAll()
-                errorTreeViewPanel.requestFocus()
-                focusEditor(project)
-            }
+            toolWindow.show(null)
+            errorTreeViewPanel.expandAll()
+            errorTreeViewPanel.requestFocus()
+            focusEditor(project)
             this.newlyOpened = false
         }
     }
