@@ -100,9 +100,12 @@ fun readErrorReport(text: String, disposable: Disposable): List<ElmReviewError> 
                     }
 
                     Gson().fromJson<ErrorEntry>(reader, ErrorEntry::class.java).let {
-                        result.addAll(it.errors.map { errorDetail ->
+                        result.addAll(it.errors.mapNotNull { errorDetail ->
                             if (Disposer.isDisposed(disposable)) {
                                 return emptyList()
+                            }
+                            if (it.path == null) {
+                                return@mapNotNull null
                             }
                             ElmReviewError(
                                 suppressed = errorDetail.suppressed,

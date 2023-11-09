@@ -35,12 +35,13 @@ fun highlightsForFile(
 //    val doc = file.viewProvider.document
 //        ?: error("Can't find document for $file in external linter")
 
-    return annotationResult.messages.map { message ->
+    return annotationResult.messages.mapNotNull { message ->
 //        if (!file.originalFile.virtualFile.canonicalPath?.contains(message.path.toString())!!) return@mapNotNull null
 
 //        val fileWithError: VirtualFile = FilenameIndex.getVirtualFilesByName(message.path!!, GlobalSearchScope.allScope(project)).first()
-        // TODO fix NPE
-        val fileWithError: VirtualFile = LocalFileSystem.getInstance().findFileByPath(Path.of(basePath.toString(), message.path!!).toString())!!
+        // `path` is null for global messages, which usually indicate that elm-review is unable to run. Might make sense to short-circuit and return an empty list here instead
+        if (message.path == null) return@mapNotNull null
+        val fileWithError: VirtualFile = LocalFileSystem.getInstance().findFileByPath(Path.of(basePath.toString(), message.path).toString())!!
         val psiFile = PsiManager.getInstance(project).findFile(fileWithError)
 
 
