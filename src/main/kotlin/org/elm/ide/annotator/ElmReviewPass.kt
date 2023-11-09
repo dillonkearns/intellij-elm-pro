@@ -26,6 +26,8 @@ import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
+import com.intellij.psi.impl.AnyPsiChangeListener
+import com.intellij.psi.impl.PsiManagerImpl
 import com.intellij.util.ui.update.MergingUpdateQueue
 import com.intellij.util.ui.update.Update
 import org.elm.ide.inspections.ElmReviewResult
@@ -67,7 +69,18 @@ class ElmReviewPass(
                     }
                 }
             }
-            )}
+            )
+            subscribe(
+                PsiManagerImpl.ANY_PSI_CHANGE_TOPIC,
+                object : AnyPsiChangeListener {
+                    override fun beforePsiChanged(isPhysical: Boolean) {
+                        if (isPhysical) {
+                            updateHighlighting(emptyList(), editor.project!!, pathToListenFor)
+                        }
+                    }
+                }
+            )
+        }
     }
 
     private fun updateHighlighting(
@@ -114,7 +127,8 @@ class ElmReviewPass(
                     factory.scheduleExternalActivity(WatchModeUpdate(messages))
                 }
             }
-            )}
+            )
+        }
     }
 
     private fun doApply(annotationResult: ElmReviewResult, basePath: Path) {
