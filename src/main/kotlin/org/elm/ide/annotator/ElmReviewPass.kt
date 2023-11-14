@@ -26,8 +26,9 @@ import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import com.intellij.psi.impl.AnyPsiChangeListener
-import com.intellij.psi.impl.PsiManagerImpl
+import com.intellij.psi.PsiManager
+import com.intellij.psi.PsiTreeChangeEvent
+import com.intellij.psi.PsiTreeChangeListener
 import com.intellij.util.ui.update.MergingUpdateQueue
 import com.intellij.util.ui.update.Update
 import org.elm.ide.inspections.ElmReviewResult
@@ -56,12 +57,84 @@ class ElmReviewPass(
         val pathToListenFor: Path = file.elmProject?.projectDirPath ?: return
 
         val service = editor.project?.getService(ElmReviewService::class.java)
+        PsiManager.getInstance(editor.project!!).addPsiTreeChangeListener(object : PsiTreeChangeListener {
+            override fun beforeChildAddition(event: PsiTreeChangeEvent) {
+                if (event.file?.name == file.name) {
+                    updateHighlighting(emptyList(), editor.project!!, pathToListenFor)
+                }
+            }
+
+            override fun beforeChildRemoval(event: PsiTreeChangeEvent) {
+                if (event.file?.name == file.name) {
+                    updateHighlighting(emptyList(), editor.project!!, pathToListenFor)
+                }
+            }
+
+            override fun beforeChildReplacement(event: PsiTreeChangeEvent) {
+                if (event.file?.name == file.name) {
+                    updateHighlighting(emptyList(), editor.project!!, pathToListenFor)
+                }
+            }
+
+            override fun beforeChildMovement(event: PsiTreeChangeEvent) {
+                if (event.file?.name == file.name) {
+                    updateHighlighting(emptyList(), editor.project!!, pathToListenFor)
+                }
+            }
+
+            override fun beforeChildrenChange(event: PsiTreeChangeEvent) {
+                if (event.file?.name == file.name) {
+                    updateHighlighting(emptyList(), editor.project!!, pathToListenFor)
+                }
+            }
+
+            override fun beforePropertyChange(event: PsiTreeChangeEvent) {
+
+                if (event.file?.name == file.name) {
+                    updateHighlighting(emptyList(), editor.project!!, pathToListenFor)
+                }
+            }
+
+            override fun childAdded(event: PsiTreeChangeEvent) {
+                if (event.file?.name == file.name) {
+                    updateHighlighting(emptyList(), editor.project!!, pathToListenFor)
+                }
+            }
+
+            override fun childRemoved(event: PsiTreeChangeEvent) {
+                if (event.file?.name == file.name) {
+                    updateHighlighting(emptyList(), editor.project!!, pathToListenFor)
+                }
+            }
+
+            override fun childReplaced(event: PsiTreeChangeEvent) {
+                if (event.file?.name == file.name) {
+                    updateHighlighting(emptyList(), editor.project!!, pathToListenFor)
+                }
+            }
+
+            override fun childrenChanged(event: PsiTreeChangeEvent) {
+                if (event.file?.name == file.name) {
+                    updateHighlighting(emptyList(), editor.project!!, pathToListenFor)
+                }
+            }
+
+            override fun childMoved(event: PsiTreeChangeEvent) {
+                if (event.file?.name == file.name) {
+                    updateHighlighting(emptyList(), editor.project!!, pathToListenFor)
+                }
+            }
+
+            override fun propertyChanged(event: PsiTreeChangeEvent) {
+            }
+        }, disposable)
+
         service?.start(pathToListenFor)
         if (service != null) {
             updateHighlighting(service.messagesForCurrentProject(pathToListenFor), editor.project!!, pathToListenFor)
         }
 
-        editor.project?.messageBus?.connect()?.apply {
+        editor.project?.messageBus?.connect(editor.project!!)?.apply {
             subscribe(ElmReviewService.ELM_REVIEW_WATCH_TOPIC, object : ElmReviewService.ElmReviewWatchListener {
                 override fun update(baseDirPath: Path, messages: List<ElmReviewError>) {
                     if (pathToListenFor == baseDirPath) {
@@ -70,16 +143,7 @@ class ElmReviewPass(
                 }
             }
             )
-            subscribe(
-                PsiManagerImpl.ANY_PSI_CHANGE_TOPIC,
-                object : AnyPsiChangeListener {
-                    override fun beforePsiChanged(isPhysical: Boolean) {
-                        if (isPhysical) {
-                            updateHighlighting(emptyList(), editor.project!!, pathToListenFor)
-                        }
-                    }
-                }
-            )
+
         }
     }
 
@@ -145,7 +209,8 @@ class ElmReviewPass(
 
     private fun doFinish(highlights: List<Pair<PsiFile, HighlightInfo>>) {
         invokeLater(ModalityState.stateForComponent(editor.component)) {
-            val groupedHighlights: List<HighlightInfo> = highlights.groupBy { it.first.name }[file.name]?.map { it.second }.orEmpty()
+            val groupedHighlights: List<HighlightInfo> =
+                highlights.groupBy { it.first.name }[file.name]?.map { it.second }.orEmpty()
             UpdateHighlightersUtil.setHighlightersToEditor(
                 myProject,
                 document,
