@@ -7,6 +7,7 @@ import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.ParameterizedCachedValue
 import com.intellij.psi.util.PsiModificationTracker
+import org.elm.ide.hints.parameter.ElmInlayParameterHints
 import org.elm.lang.core.diagnostics.*
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.OperatorAssociativity.NON
@@ -378,20 +379,19 @@ private class InferenceScope(
                 }
             }
         }
-        val isPipeline = parts.any { it is ElmOperator && it.text == "|>"}
         val result = validateTree(BinaryExprTree.parse(parts, operatorPrecedences))
         expressionTypes[expr] = result.ty
-                if (isPipeline) {
-                    val length = parts.size / 2
-                    val map = (0..(length))
-                            .map { parts.dropLast(it * 2) }
-                            .map { validateTree(BinaryExprTree.parse(it, operatorPrecedences)) }
-                    val typed = map.map { it.end to it.ty }
-                    pipelineTypes[expr] = typed
-                    map
-                } else {
-                    emptyList()
-                }
+        if (ElmInlayParameterHints.enabled) {
+            val isPipeline = parts.any { it is ElmOperator && it.text == "|>" }
+            if (isPipeline) {
+                val length = parts.size / 2
+                val map = (0..(length))
+                        .map { parts.dropLast(it * 2) }
+                        .map { validateTree(BinaryExprTree.parse(it, operatorPrecedences)) }
+                val typed = map.map { it.end to it.ty }
+                pipelineTypes[expr] = typed
+            }
+        }
         return result.ty
     }
 
