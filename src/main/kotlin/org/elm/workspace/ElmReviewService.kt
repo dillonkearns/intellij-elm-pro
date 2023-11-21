@@ -75,17 +75,26 @@ class ElmReviewService(val project: Project) {
             ApplicationManager.getApplication().executeOnPooledThread {
                 val newWatcher = startWatcher(command, projectBasePath, project)
                 watchers[projectBasePath] = newWatcher
+                newWatcher.errorStream.reader().forEachLine {
+                    showError(project, it)
+                }
                 val disposable = Disposer.newDisposable("New elm-review input")
 
                 newWatcher.inputStream.bufferedReader().forEachLine { line ->
                     // if we're still parsing output from a previous run, cancel it
                     disposable.dispose()
-                    BackgroundTaskUtil.runUnderDisposeAwareIndicator(disposable) {
-                        val reviewErrors = readErrorReport(line, disposable)
-                        this.messages[projectBasePath] = reviewErrors
-                        if (!Disposer.isDisposed(disposable)) {
-                            project.messageBus.syncPublisher(ELM_REVIEW_WATCH_TOPIC)
-                                .update(projectBasePath, reviewErrors)
+                    if (!newWatcher.isAlive && newWatcher.exitValue() != 0) {
+                        // if the process has exited unsuccessfully, print any output as errors
+                        showError(project, line)
+                    }
+                    else {
+                        BackgroundTaskUtil.runUnderDisposeAwareIndicator(disposable) {
+                            val reviewErrors = readErrorReport(line, disposable)
+                            this.messages[projectBasePath] = reviewErrors
+                            if (!Disposer.isDisposed(disposable)) {
+                                project.messageBus.syncPublisher(ELM_REVIEW_WATCH_TOPIC)
+                                    .update(projectBasePath, reviewErrors)
+                            }
                         }
                     }
                 }
@@ -93,16 +102,17 @@ class ElmReviewService(val project: Project) {
         }
     }
 
-    private fun startWatcher(cmd: List<String>, basePath: Path, project: Project): Process =
-        ProcessBuilder(cmd)
+    private fun startWatcher(cmd: List<String>, basePath: Path, project: Project): Process {
+        return ProcessBuilder(cmd)
             .directory(basePath.toFile())
             .start()
+    }
 
     private fun showError(project: Project, message: String, includeFixAction: Boolean = false) {
         val actions = if (includeFixAction)
             arrayOf("Fix" to { project.elmWorkspace.showConfigureToolchainUI() })
         else
             emptyArray()
-        project.showBalloon(message, NotificationType.ERROR, *actions)
+        project.showBalloon(message, NotificationType.ERROR, "elm-review Error", *actions)
     }
 }
