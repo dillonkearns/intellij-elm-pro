@@ -63,6 +63,29 @@ hello { first, last } =
 test first last =
     "Hello, " ++ first ++ " " ++ last""", "test"
     )
+    @Test
+    fun `test depends on let values`() = doTest(
+        """
+topLevelValue = []
+example param =
+    let
+        letVal : List Float
+        letVal =
+            [ 1.2 ]
+    in
+    {-selection-}[] ++ param ++ letVal ++ topLevelValue{-selection--}
+""", """
+topLevelValue = []
+example param =
+    let
+        letVal : List Float
+        letVal =
+            [ 1.2 ]
+    in
+    test param letVal
+test param letVal =
+    [] ++ param ++ letVal ++ topLevelValue""", "test"
+    )
 
     private fun doTest(
         @Language("Elm") code: String,

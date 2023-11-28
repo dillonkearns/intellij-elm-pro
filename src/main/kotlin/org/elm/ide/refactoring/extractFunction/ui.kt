@@ -3,9 +3,7 @@ package org.elm.ide.refactoring.extractFunction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.psi.search.LocalSearchScope
-import com.intellij.psi.search.searches.ReferencesSearch
-import com.intellij.psi.util.parentsOfType
+import com.intellij.psi.util.childrenOfType
 import com.intellij.refactoring.ui.MethodSignatureComponent
 import com.intellij.refactoring.ui.NameSuggestionsField
 import com.intellij.ui.components.dialog
@@ -14,10 +12,11 @@ import com.intellij.util.ui.JBUI
 import org.elm.ide.refactoring.isValidLowerIdentifier
 import org.elm.ide.utils.findExpressionInRange
 import org.elm.lang.core.ElmFileType
-import org.elm.lang.core.psi.*
-import org.elm.lang.core.psi.elements.ElmLowerPattern
-import org.elm.lang.core.psi.elements.ElmPattern
-import org.elm.lang.core.psi.elements.ElmValueDeclaration
+import org.elm.lang.core.psi.ElmExpressionTag
+import org.elm.lang.core.psi.ElmFile
+import org.elm.lang.core.psi.elements.ElmValueExpr
+import org.elm.lang.core.resolve.scope.ExpressionScope
+import org.elm.lang.core.resolve.scope.ModuleScope
 import org.elm.lang.core.types.Ty
 import org.elm.lang.core.types.findTy
 import org.elm.lang.core.types.renderedText
@@ -60,16 +59,19 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
     companion object {
         fun createConfig(file: ElmFile, start: Int, end: Int): ElmExtractFunctionConfig {
             val expressionToExtract = findExpressionInRange(file, start, end)
-            val patterns: List<ElmNameDeclarationPatternTag> = expressionToExtract?.parentsOfType<ElmValueDeclaration>()?.toList()?.flatMap { it.functionDeclarationLeft?.namedParameters.orEmpty() }.orEmpty()
-            val parameters: List<Parameter> = patterns.flatMap { pattern ->
-                val references = ReferencesSearch.search(pattern, LocalSearchScope(expressionToExtract?.originalElement!!)).toList()
-                if (references.isNotEmpty() && pattern is ElmLowerPattern) {
-                    listOf(Parameter(pattern.name, pattern.findTy()))
+            val relevantPatterns = expressionToExtract?.originalElement?.childrenOfType<ElmValueExpr>()?.toList().orEmpty()
+            val localScopedValues = ExpressionScope(expressionToExtract!!).getVisibleValues().toSet().minus(
+                ModuleScope.getVisibleValues(expressionToExtract.elmFile).all.toSet()
+            )
+            val parameters: List<Parameter> = relevantPatterns.flatMap { pattern ->
+                val resolved = pattern.reference.resolve()
+                if (localScopedValues.contains(resolved)) {
+                    listOf(Parameter(resolved?.name!!, pattern.findTy()))
                 } else {
                     emptyList()
                 }
             }
-            return ElmExtractFunctionConfig("", false, parameters, Pair(start, end), expressionToExtract!!)
+            return ElmExtractFunctionConfig("", false, parameters, Pair(start, end), expressionToExtract)
         }
     }
 }
