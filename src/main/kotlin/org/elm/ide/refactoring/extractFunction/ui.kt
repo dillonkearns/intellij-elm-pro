@@ -3,7 +3,6 @@ package org.elm.ide.refactoring.extractFunction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.psi.util.childrenOfType
 import com.intellij.refactoring.ui.MethodSignatureComponent
 import com.intellij.refactoring.ui.NameSuggestionsField
 import com.intellij.ui.components.dialog
@@ -14,6 +13,7 @@ import org.elm.ide.utils.findExpressionInRange
 import org.elm.lang.core.ElmFileType
 import org.elm.lang.core.psi.ElmExpressionTag
 import org.elm.lang.core.psi.ElmFile
+import org.elm.lang.core.psi.descendantsOfType
 import org.elm.lang.core.psi.elements.ElmValueExpr
 import org.elm.lang.core.resolve.scope.ExpressionScope
 import org.elm.lang.core.resolve.scope.ModuleScope
@@ -59,7 +59,7 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
     companion object {
         fun createConfig(file: ElmFile, start: Int, end: Int): ElmExtractFunctionConfig {
             val expressionToExtract = findExpressionInRange(file, start, end)
-            var relevantPatterns = expressionToExtract?.originalElement?.childrenOfType<ElmValueExpr>()?.toList().orEmpty()
+            var relevantPatterns = expressionToExtract?.originalElement?.descendantsOfType<ElmValueExpr>()?.toList().orEmpty()
             val self = expressionToExtract?.originalElement
             if (self is ElmValueExpr) {
                 relevantPatterns = relevantPatterns.plus(self)

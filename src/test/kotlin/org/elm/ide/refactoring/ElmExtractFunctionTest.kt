@@ -98,6 +98,16 @@ test param =
     param""", "test"
     )
 
+    fun `test value with record access`() = doTest(
+        """
+example model =
+    [1,2,3] ++ [{-selection-}model.counter + 1{-selection--}]
+""", """
+example model =
+    [1,2,3] ++ [test model]
+test model =
+    model.counter + 1""", "test"
+    )
 
     private fun doTest(
         @Language("Elm") code: String,
