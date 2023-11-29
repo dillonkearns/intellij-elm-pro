@@ -7,11 +7,6 @@ import org.elm.lang.ElmTestBase
 import org.intellij.lang.annotations.Language
 import org.junit.Test
 
-//import org.rust.*
-//import org.rust.ide.refactoring.extractFunction.ExtractFunctionUi
-//import org.rust.ide.refactoring.extractFunction.RsExtractFunctionConfig
-//import org.rust.ide.refactoring.extractFunction.withMockExtractFunctionUi
-
 class ElmExtractFunctionTest : ElmTestBase() {
 
     @Test
