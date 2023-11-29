@@ -109,6 +109,23 @@ test model =
     model.counter + 1""", "test"
     )
 
+    fun `test record update syntax`() = doTest(
+        """
+type Msg = Msg1
+example model msg feed =
+    case msg of
+        Msg1 ->
+            {-selection-}( { model | feed = feed }, Cmd.none ){-selection--}
+""", """
+type Msg = Msg1
+example model msg feed =
+    case msg of
+        Msg1 ->
+            test feed model
+test feed model =
+    ( { model | feed = feed }, Cmd.none )""", "test"
+    )
+
     private fun doTest(
         @Language("Elm") code: String,
         @Language("Elm") excepted: String,

@@ -14,7 +14,9 @@ import org.elm.lang.core.ElmFileType
 import org.elm.lang.core.psi.ElmExpressionTag
 import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.psi.descendantsOfType
+import org.elm.lang.core.psi.elements.ElmRecordExpr
 import org.elm.lang.core.psi.elements.ElmValueExpr
+import org.elm.lang.core.resolve.ElmReferenceElement
 import org.elm.lang.core.resolve.scope.ExpressionScope
 import org.elm.lang.core.resolve.scope.ModuleScope
 import org.elm.lang.core.types.Ty
@@ -59,7 +61,10 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
     companion object {
         fun createConfig(file: ElmFile, start: Int, end: Int): ElmExtractFunctionConfig {
             val expressionToExtract = findExpressionInRange(file, start, end)
-            var relevantPatterns = expressionToExtract?.originalElement?.descendantsOfType<ElmValueExpr>()?.toList().orEmpty()
+            var relevantPatterns: Set<ElmReferenceElement> = expressionToExtract?.originalElement?.descendantsOfType<ElmValueExpr>()?.toSet().orEmpty()
+            relevantPatterns = relevantPatterns.plus(
+                expressionToExtract?.descendantsOfType<ElmRecordExpr>()?.mapNotNull { it.baseRecordIdentifier }?.toSet().orEmpty()
+            )
             val self = expressionToExtract?.originalElement
             if (self is ElmValueExpr) {
                 relevantPatterns = relevantPatterns.plus(self)
