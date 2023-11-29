@@ -59,20 +59,20 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
             return "$annotation\n$parameterString"
         }
     companion object {
-        fun createConfig(file: ElmFile, start: Int, end: Int): ElmExtractFunctionConfig {
-            val expressionToExtract = findExpressionInRange(file, start, end)
-            var relevantPatterns: Set<ElmReferenceElement> = expressionToExtract?.originalElement?.descendantsOfType<ElmValueExpr>()?.toSet().orEmpty()
+        fun createConfig(file: ElmFile, start: Int, end: Int): ElmExtractFunctionConfig? {
+            val expressionToExtract = findExpressionInRange(file, start, end) ?: return null
+            var relevantPatterns: Set<ElmReferenceElement> = expressionToExtract.originalElement?.descendantsOfType<ElmValueExpr>()?.toSet().orEmpty()
             relevantPatterns = relevantPatterns.plus(
-                expressionToExtract?.descendantsOfType<ElmRecordExpr>()?.mapNotNull { it.baseRecordIdentifier }?.toSet().orEmpty()
+                expressionToExtract.descendantsOfType<ElmRecordExpr>().mapNotNull { it.baseRecordIdentifier }.toSet().orEmpty()
             )
-            val self = expressionToExtract?.originalElement
+            val self = expressionToExtract.originalElement
             if (self is ElmValueExpr) {
                 relevantPatterns = relevantPatterns.plus(self)
             }
-            val localScopedValues = ExpressionScope(expressionToExtract!!).getVisibleValues().toSet().minus(
+            val localScopedValues = ExpressionScope(expressionToExtract).getVisibleValues().toSet().minus(
                 ModuleScope.getVisibleValues(expressionToExtract.elmFile).all.toSet()
             )
-            val parameters: List<Parameter> = relevantPatterns.flatMap { pattern ->
+            val parameters: List<Parameter> = relevantPatterns.toList().distinctBy { it.referenceName }.flatMap { pattern ->
                 val resolved = pattern.reference.resolve()
                 if (localScopedValues.contains(resolved)) {
                     listOf(Parameter(resolved?.name!!, pattern.findTy()))

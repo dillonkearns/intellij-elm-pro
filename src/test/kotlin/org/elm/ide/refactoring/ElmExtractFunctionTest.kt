@@ -126,6 +126,17 @@ test feed model =
     ( { model | feed = feed }, Cmd.none )""", "test"
     )
 
+    fun `test values with multiple references`() = doTest(
+        """
+example param =
+    {-selection-}param ++ param{-selection--}
+""", """
+example param =
+    test param
+test param =
+    param ++ param""", "test"
+    )
+
     private fun doTest(
         @Language("Elm") code: String,
         @Language("Elm") excepted: String,
