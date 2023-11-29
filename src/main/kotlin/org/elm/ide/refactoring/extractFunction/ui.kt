@@ -45,7 +45,8 @@ fun extractFunctionDialog(
 class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Boolean,
                                var parameters: List<Parameter>,
                                val selection: Pair<Int, Int>,
-                               val expressionToExtract: ElmExpressionTag
+                               val expressionToExtract: ElmExpressionTag,
+                               val inScopeNames: Set<String>
 ) {
     val signature: String
         get() {
@@ -61,13 +62,12 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
     companion object {
         fun createConfig(file: ElmFile, start: Int, end: Int): ElmExtractFunctionConfig? {
             val expressionToExtract = findExpressionInRange(file, start, end) ?: return null
+            val moduleScopeNames = ModuleScope.getVisibleValues(expressionToExtract.elmFile).all.toSet()
             var relevantPatterns: Set<ElmReferenceElement> = expressionToExtract.originalElement?.descendantsOfTypeOrSelf<ElmValueExpr>()?.toSet().orEmpty()
             relevantPatterns = relevantPatterns.plus(
-                expressionToExtract.descendantsOfTypeOrSelf<ElmRecordExpr>().mapNotNull { it.baseRecordIdentifier }.toSet().orEmpty()
+                expressionToExtract.descendantsOfTypeOrSelf<ElmRecordExpr>().mapNotNull { it.baseRecordIdentifier }.toSet()
             )
-            val localScopedValues = ExpressionScope(expressionToExtract).getVisibleValues().toSet().minus(
-                ModuleScope.getVisibleValues(expressionToExtract.elmFile).all.toSet()
-            )
+            val localScopedValues = ExpressionScope(expressionToExtract).getVisibleValues().toSet().minus(moduleScopeNames)
             val parameters: List<Parameter> = relevantPatterns.toList().distinctBy { it.referenceName }.flatMap { pattern ->
                 val resolved = pattern.reference.resolve()
                 if (localScopedValues.contains(resolved)) {
@@ -76,7 +76,7 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
                     emptyList()
                 }
             }
-            return ElmExtractFunctionConfig("", false, parameters, Pair(start, end), expressionToExtract)
+            return ElmExtractFunctionConfig("", false, parameters, Pair(start, end), expressionToExtract, moduleScopeNames.toList().mapNotNull { it.name }.toSet())
         }
     }
 }
@@ -101,7 +101,7 @@ private class DialogExtractFunctionUi(
 ) : ExtractFunctionUi {
 
     override fun extract(config: ElmExtractFunctionConfig, callback: () -> Unit) {
-        val functionNameField = NameSuggestionsField(emptyArray(), project, ElmFileType)
+        val functionNameField =  NameSuggestionsField(emptyArray(), project, ElmFileType)
         functionNameField.minimumSize = JBUI.size(300, 30)
 
         val visibilityBox = ComboBox<String>()
@@ -118,7 +118,7 @@ private class DialogExtractFunctionUi(
             signatureComponent.setSignature(config.signature)
         }
 
-        val parameterPanel = ExtractFunctionParameterTablePanel(::isValidElmVariableIdentifier, config) { signatureComponent.setSignature(config.signature)
+        val parameterPanel = ExtractFunctionParameterTablePanel({ isValidElmVariableIdentifier(config.inScopeNames, it) }, config) { signatureComponent.setSignature(config.signature)
         }
 
         val panel = panel {
@@ -147,14 +147,14 @@ private class DialogExtractFunctionUi(
         functionNameField.addDataChangedListener {
             updateConfig(config, functionNameField, visibilityBox)
             signatureComponent.setSignature(config.signature)
-            extractDialog.isOKActionEnabled = isValidElmVariableIdentifier(config.name)
+            extractDialog.isOKActionEnabled = isValidElmVariableIdentifier(config.inScopeNames, config.name)
         }
         extractDialog.show()
         // TODO implement extract?
     }
 
-    private fun isValidElmVariableIdentifier(name: String): Boolean {
-        return isValidLowerIdentifier(name)
+    private fun isValidElmVariableIdentifier(inScopeNames: Set<String>, name: String): Boolean {
+        return isValidLowerIdentifier(name) && !inScopeNames.contains(name)
     }
 
     private fun updateConfig(
