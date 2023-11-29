@@ -59,7 +59,11 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
     companion object {
         fun createConfig(file: ElmFile, start: Int, end: Int): ElmExtractFunctionConfig {
             val expressionToExtract = findExpressionInRange(file, start, end)
-            val relevantPatterns = expressionToExtract?.originalElement?.childrenOfType<ElmValueExpr>()?.toList().orEmpty()
+            var relevantPatterns = expressionToExtract?.originalElement?.childrenOfType<ElmValueExpr>()?.toList().orEmpty()
+            val self = expressionToExtract?.originalElement
+            if (self is ElmValueExpr) {
+                relevantPatterns = relevantPatterns.plus(self)
+            }
             val localScopedValues = ExpressionScope(expressionToExtract!!).getVisibleValues().toSet().minus(
                 ModuleScope.getVisibleValues(expressionToExtract.elmFile).all.toSet()
             )

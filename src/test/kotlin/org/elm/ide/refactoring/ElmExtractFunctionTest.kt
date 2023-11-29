@@ -87,6 +87,18 @@ test param letVal =
     [] ++ param ++ letVal ++ topLevelValue""", "test"
     )
 
+    fun `test sub expression`() = doTest(
+        """
+example param =
+    [1,2,3] ++ {-selection-}param{-selection--}
+""", """
+example param =
+    [1,2,3] ++ test param
+test param =
+    param""", "test"
+    )
+
+
     private fun doTest(
         @Language("Elm") code: String,
         @Language("Elm") excepted: String,
