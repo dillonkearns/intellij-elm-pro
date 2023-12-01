@@ -17,6 +17,7 @@ import org.elm.lang.core.psi.descendantsOfTypeOrSelf
 import org.elm.lang.core.psi.elements.ElmRecordExpr
 import org.elm.lang.core.psi.elements.ElmValueExpr
 import org.elm.lang.core.resolve.ElmReferenceElement
+import org.elm.lang.core.resolve.reference.LexicalValueReference
 import org.elm.lang.core.resolve.scope.ExpressionScope
 import org.elm.lang.core.resolve.scope.ModuleScope
 import org.elm.lang.core.types.Ty
@@ -69,7 +70,7 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
             )
             val localScopedValues = ExpressionScope(expressionToExtract).getVisibleValues().toSet().minus(moduleScopeNames)
             val parameters: List<Parameter> = relevantPatterns.toList().distinctBy { it.referenceName }.flatMap { pattern ->
-                val resolved = pattern.reference.resolve()
+                val resolved = (pattern.reference as? LexicalValueReference)?.resolveShallow() ?: pattern.reference.resolve()
                 if (localScopedValues.contains(resolved)) {
                     listOf(Parameter(resolved?.name!!, pattern.findTy()))
                 } else {

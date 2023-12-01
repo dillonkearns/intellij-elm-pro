@@ -86,6 +86,12 @@ inline fun <reified T : PsiElement> PsiElement.descendantsOfType(): Collection<T
 inline fun <reified T : PsiElement> PsiElement.descendantsOfTypeOrSelf(): Collection<T> =
     PsiTreeUtil.findChildrenOfAnyType(this, false, T::class.java)
 
+fun PsiElement.addAllAfter(elements: Collection<PsiElement>) {
+    val anchor = this
+    val file = anchor.containingFile
+    elements.reversed().forEach { file.addAfter(it, anchor) }
+}
+
 /** Returns direct children of the specified type */
 inline fun <reified T : PsiElement> PsiElement.directChildrenOfType(): List<T> =
         PsiTreeUtil.getChildrenOfTypeAsList(this, T::class.java)

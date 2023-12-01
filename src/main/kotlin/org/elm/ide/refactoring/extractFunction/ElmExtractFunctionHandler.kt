@@ -7,8 +7,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.refactoring.RefactoringActionHandler
 import org.elm.ide.utils.findExpressionInRange
-import org.elm.lang.core.psi.ElmFile
-import org.elm.lang.core.psi.ElmPsiFactory
+import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.types.Ty
 import org.elm.lang.core.types.findTy
@@ -42,7 +41,7 @@ class ElmExtractFunctionHandler : RefactoringActionHandler {
             val fnBody = expressionToExtract?.text
             val signatureTypes: List<Ty?> = (config.parameters.map { it.type }) + listOf(expressionToExtract?.findTy())
             val signature = if (signatureTypes.all { it != null }) {
-                signatureTypes.joinToString(" -> ") { it!!.renderedText().replace("→", "->") }
+                signatureTypes.joinToString(" -> ") { it!!.renderedText(withModule = true).replace("→", "->") }
             } else { null }
             
             val parameterString = (listOf(config.name) + config.parameters.map { it.name } + listOf("=")).joinToString(" ")
@@ -51,48 +50,20 @@ class ElmExtractFunctionHandler : RefactoringActionHandler {
             } else {
                 listOf(psiFactory.createTopLevelFunction("$parameterString\n    $fnBody"))
             }
-            file.addAll(newTopLevel)
+            val declaredNames = file.directChildrenOfType<ElmValueDeclaration>()
+            val declarationStartOffsets = declaredNames.map { Pair(it.endOffset, it) }
+            val nearestDeclaration = declarationStartOffsets.filter { it.first >= expressionToExtract!!.endOffset }.first().second
+            val nextEndDecl: PsiElement = nearestDeclaration
+            nearestDeclaration.addAllAfter(
+                listOf(
+                psiFactory.createWhitespace("\n\n\n"),
+                ).plus(newTopLevel)
+            )
             expressionToExtract?.replace(psiFactory.createExpression((listOf(config.name) + config.parameters.map { it.name }).joinToString(" ")))
-//            val extractedFunction = addExtractedFunction(project, config, psiFactory) ?: return@runWriteCommandAction
-//            replaceOldStatementsWithCallExpr(config, psiFactory)
 //            val parameters = config.valueParameters.filter { it.isSelected }
 //            renameFunctionParameters(extractedFunction, parameters.map { it.name })
 //            importTypeReferencesFromTys(extractedFunction, config.parametersAndReturnTypes)
 
-        }
-    }
-
-    private fun addExtractedFunction(
-        project: Project,
-        config: ElmExtractFunctionConfig,
-        psiFactory: ElmPsiFactory
-    ): ElmValueDeclaration? {
-//        val owner = config.function.owner
-
-//        val function = psiFactory.createTopLevelFunction(config.functionText)
-//        val psiParserFacade = PsiParserFacade.getInstance(project)
-//        return when {
-//            owner is ElmAbstractableOwner.Impl && !owner.isInherent -> {
-//                val impl = findExistingInherentImpl(owner.impl) ?: createNewInherentImpl(owner.impl) ?: return null
-//                val members = impl.members ?: return null
-//                members.addBefore(psiParserFacade.createWhiteSpaceFromText("\n\n"), members.rbrace)
-//                members.addBefore(function, members.rbrace) as? ElmFunction
-//            }
-//            else -> {
-//                val newline = psiParserFacade.createWhiteSpaceFromText("\n\n")
-//                val end = config.function.block?.rbrace ?: return null
-//                config.function.addAfter(function, config.function.addAfter(newline, end)) as? ElmFunction
-//            }
-//        }
-        return null
-    }
-
-    private fun List<PsiElement>.replaceEachWithReturn(factory: ElmPsiFactory, getValue: (String?) -> String) {
-        for (element in this) {
-//            if (element is ElmTryExpr) continue
-//            val oldValue = element.getControlFlowValue()?.text
-//            val newValue = getValue(oldValue)
-//            element.replace(factory.createExpression("return $newValue"))
         }
     }
 

@@ -18,9 +18,12 @@ hello =
 hello =
     test
 
-test : String
+
+
+test : String.String
 test =
-    "Hello, World!"""", "test"
+    "Hello, World!"
+""", "test"
     )
 
     @Test
@@ -37,8 +40,11 @@ hello name =
         message = test name
     in
     "The message is:\n" ++ message
+
+
 test name =
-    "Hello, " ++ name""", "test"
+    "Hello, " ++ name
+""", "test"
     )
 
     @Test
@@ -55,8 +61,11 @@ hello { first, last } =
         message = test first last
     in
     "The message is:\n" ++ message
+
+
 test first last =
-    "Hello, " ++ first ++ " " ++ last""", "test"
+    "Hello, " ++ first ++ " " ++ last
+""", "test"
     )
     @Test
     fun `test depends on let values`() = doTest(
@@ -78,8 +87,11 @@ example param =
             [ 1.2 ]
     in
     test param letVal
+
+
 test param letVal =
-    [] ++ param ++ letVal ++ topLevelValue""", "test"
+    [] ++ param ++ letVal ++ topLevelValue
+""", "test"
     )
 
     fun `test sub expression`() = doTest(
@@ -89,8 +101,11 @@ example param =
 """, """
 example param =
     [1,2,3] ++ test param
+
+
 test param =
-    param""", "test"
+    param
+""", "test"
     )
 
     fun `test value with record access`() = doTest(
@@ -100,8 +115,11 @@ example model =
 """, """
 example model =
     [1,2,3] ++ [test model]
+
+
 test model =
-    model.counter + 1""", "test"
+    model.counter + 1
+""", "test"
     )
 
     fun `test record update syntax`() = doTest(
@@ -117,8 +135,11 @@ example model msg feed =
     case msg of
         Msg1 ->
             test feed model
+
+
 test feed model =
-    ( { model | feed = feed }, Cmd.none )""", "test"
+    ( { model | feed = feed }, Cmd.none )
+""", "test"
     )
 
     fun `test values with multiple references`() = doTest(
@@ -128,9 +149,33 @@ example param =
 """, """
 example param =
     test param
+
+
 test param =
-    param ++ param""", "test"
+    param ++ param
+""", "test"
     )
+
+    fun `test record destructure pattern`() = doTest(
+        """
+type alias Model = { session : () }
+
+subscriptions : Model -> Sub Msg
+subscriptions { session } =
+    Session.changes GotSession ({-selection-}Session.navKey session{-selection--})
+""", """
+type alias Model = { session : () }
+
+subscriptions : Model -> Sub Msg
+subscriptions { session } =
+    Session.changes GotSession (test session)
+
+
+test session =
+    Session.navKey session
+""", "test"
+    )
+
 
     private fun doTest(
         @Language("Elm") code: String,
