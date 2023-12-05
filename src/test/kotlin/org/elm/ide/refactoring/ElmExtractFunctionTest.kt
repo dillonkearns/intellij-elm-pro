@@ -176,12 +176,28 @@ test session =
 """, "test"
     )
 
+    fun `test rename parameter`() = doTest(
+        """
+example param =
+    {-selection-}param ++ param{-selection--}
+""", """
+example param =
+    test param
+
+
+test renamedParam =
+    renamedParam ++ renamedParam
+""", "test",
+        renames = mapOf("param" to "renamedParam")
+    )
+
 
     private fun doTest(
         @Language("Elm") code: String,
         @Language("Elm") excepted: String,
         name: String,
         pub: Boolean = false,
+        renames: Map<String, String> = emptyMap(),
         noSelected: List<String> = emptyList(),
         mutabilityOverride: Map<String, Boolean> = emptyMap()
     ) {
@@ -189,6 +205,12 @@ test session =
             override fun extract(config: ElmExtractFunctionConfig, callback: () -> Unit) {
                 config.name = name
                 config.visibilityLevelPublic = pub
+                renames.map { (from, to) ->
+                    config.parameters.find { it.name == from }?.let { param ->
+                        param.name = to
+                    }
+                }
+//                config.parameters = renames
 //                noSelected.forEach { n -> config.parameters.filter { n == it.name }[0].isSelected = false }
 //                mutabilityOverride.forEach { (key, mutable) ->
 //                    config.parameters.filter { key == it.name }[0].isMutable = mutable

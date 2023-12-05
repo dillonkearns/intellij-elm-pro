@@ -186,7 +186,7 @@ class Parameter constructor(
     var isSelected: Boolean = true
 ) {
     /** Original name of the parameter (parameter renaming does not affect it) */
-    private val originalName = name
+    public val originalName = name
 
     private val mutText: String
         get() = if (isMutable && (!isReference || requiresMut)) "mut " else ""

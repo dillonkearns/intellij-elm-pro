@@ -5,7 +5,11 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.psi.search.LocalSearchScope
+import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.refactoring.RefactoringActionHandler
+import com.intellij.usageView.UsageInfo
+import org.elm.ide.refactoring.ElmRenamePsiElementProcessor
 import org.elm.ide.utils.findExpressionInRange
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
@@ -44,7 +48,7 @@ class ElmExtractFunctionHandler : RefactoringActionHandler {
                 signatureTypes.joinToString(" -> ") { it!!.renderedText(withModule = true).replace("→", "->") }
             } else { null }
             
-            val parameterString = (listOf(config.name) + config.parameters.map { it.name } + listOf("=")).joinToString(" ")
+            val parameterString = (listOf(config.name) + config.parameters.map { it.originalName } + listOf("=")).joinToString(" ")
             val newTopLevel = if (signature != null) {
                 psiFactory.createTopLevelFunctionWithAnnotation("${config.name} : $signature", "$parameterString\n    $fnBody")
             } else {
@@ -53,13 +57,24 @@ class ElmExtractFunctionHandler : RefactoringActionHandler {
             val declaredNames = file.directChildrenOfType<ElmValueDeclaration>()
             val declarationStartOffsets = declaredNames.map { Pair(it.endOffset, it) }
             val nearestDeclaration = declarationStartOffsets.filter { it.first >= expressionToExtract!!.endOffset }.first().second
-            val nextEndDecl: PsiElement = nearestDeclaration
             nearestDeclaration.addAllAfter(
                 listOf(
                 psiFactory.createWhitespace("\n\n\n"),
                 ).plus(newTopLevel)
             )
-            expressionToExtract?.replace(psiFactory.createExpression((listOf(config.name) + config.parameters.map { it.name }).joinToString(" ")))
+            expressionToExtract?.replace(psiFactory.createExpression((listOf(config.name) + config.parameters.map { it.originalName }).joinToString(" ")))
+            val extractedFunction = file.directChildrenOfType<ElmValueDeclaration>().find { it.functionDeclarationLeft?.name == config.name }!!
+            extractedFunction.functionDeclarationLeft?.namedParameters?.withIndex()
+                ?.forEach { (parameterIndex, parameter) ->
+                config.parameters.find { it.originalName == parameter.text }?.let {
+                    val newName = it.name
+                        if (newName != parameter.name) {
+                            val parameterUsages = ReferencesSearch.search(parameter, LocalSearchScope(extractedFunction)).findAll()
+                            val usageInfo = parameterUsages.map { UsageInfo(it) }.toTypedArray()
+                            ElmRenamePsiElementProcessor().renameElement(parameter, newName, usageInfo, null)
+                        }
+                    }
+                }
 //            val parameters = config.valueParameters.filter { it.isSelected }
 //            renameFunctionParameters(extractedFunction, parameters.map { it.name })
 //            importTypeReferencesFromTys(extractedFunction, config.parametersAndReturnTypes)
