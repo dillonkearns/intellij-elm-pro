@@ -25,7 +25,7 @@ fun <T : PsiElement, Self : PsiElementPattern<T, Self>> PsiElementPattern<T, Sel
 
 private fun <T, Self : ObjectPattern<T, Self>> ObjectPattern<T, Self>.with(name: String, cond: (T) -> Boolean): Self =
         with(object : PatternCondition<T>(name) {
-            override fun accepts(t: T, context: ProcessingContext?): Boolean = cond(t)
+            override fun accepts(t: T & Any, context: ProcessingContext?): Boolean = cond(t)
         })
 
 val PsiElement.leftLeaves: Sequence<PsiElement> get() = generateSequence(this, PsiTreeUtil::prevLeaf).drop(1)

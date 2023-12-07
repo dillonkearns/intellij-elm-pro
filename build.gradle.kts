@@ -1,5 +1,6 @@
-import org.jetbrains.changelog.markdownToHTML
+
 import org.gradle.api.JavaVersion.VERSION_17
+import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.grammarkit.tasks.GenerateLexerTask
 import org.jetbrains.grammarkit.tasks.GenerateParserTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -10,9 +11,9 @@ plugins {
     // Java support
     id("java")
     // Kotlin support
-    kotlin("jvm") version "1.8.22"
+    kotlin("jvm") version "1.9.21"
     // Gradle IntelliJ Plugin
-    id("org.jetbrains.intellij") version "1.13.1"
+    id("org.jetbrains.intellij") version "1.16.1"
     // GrammarKit Plugin
     id("org.jetbrains.grammarkit") version "2022.3.1"
     // Gradle Changelog Plugin
@@ -153,6 +154,6 @@ tasks {
         // pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels, like 2.1.7-alpha.3
         // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
         // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
-        channels.set(listOf(properties("pluginVersion").split('-').getOrElse(1) { "default" }.split('.').first()))
+        channels.set(listOf(properties("pluginVersion").split('-').getOrElse(1) { "default" }.split('.')[0]))
     }
 }

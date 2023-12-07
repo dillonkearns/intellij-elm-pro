@@ -36,12 +36,11 @@ import com.intellij.openapi.vfs.VirtualFileWithId
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.util.Consumer
-import com.intellij.util.containers.ContainerUtil
 
 private val log = logger<MyDirectoryIndex<*>>()
 
 class MyDirectoryIndex<T>(parentDisposable: Disposable,
-                          private val myDefValue: T,
+                          private val myDefValue: T & Any,
                           private val myInitializer: Consumer<MyDirectoryIndex<T>>) {
 
     private val myInfoCache = com.intellij.concurrency.ConcurrentCollectionFactory.createConcurrentIntObjectMap<T>()
@@ -73,12 +72,12 @@ class MyDirectoryIndex<T>(parentDisposable: Disposable,
         myInitializer.consume(this)
     }
 
-    fun putInfo(file: VirtualFile?, value: T) {
+    fun putInfo(file: VirtualFile?, value: T & Any) {
         if (file !is VirtualFileWithId) return
         cacheInfo(file, value)
     }
 
-    fun getInfoForFile(file: VirtualFile?): T {
+    fun getInfoForFile(file: VirtualFile?): T & Any {
         if (file !is VirtualFileWithId) return myDefValue
 
         val dir: VirtualFile
@@ -111,7 +110,7 @@ class MyDirectoryIndex<T>(parentDisposable: Disposable,
         return cacheInfos(dir, null, myDefValue)
     }
 
-    private fun cacheInfos(virtualFile: VirtualFile?, stopAt: VirtualFile?, info: T): T {
+    private fun cacheInfos(virtualFile: VirtualFile?, stopAt: VirtualFile?, info: T & Any): T & Any {
         var dir = virtualFile
         while (dir != null) {
             cacheInfo(dir, info)
@@ -123,7 +122,7 @@ class MyDirectoryIndex<T>(parentDisposable: Disposable,
         return info
     }
 
-    private fun cacheInfo(file: VirtualFile, info: T) {
+    private fun cacheInfo(file: VirtualFile, info: T & Any) {
         val id = (file as VirtualFileWithId).id
 //        if (log.isDebugEnabled) {
 //            val thing = if (info == myDefValue) "sentinel" else info.toString()

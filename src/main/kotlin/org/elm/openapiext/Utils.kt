@@ -112,7 +112,7 @@ fun Editor.toPsiFile(project: Project): PsiFile? =
 
 inline fun <Key, reified Psi : PsiElement> getElements(
         indexKey: StubIndexKey<Key, Psi>,
-        key: Key, project: Project,
+        key: Key & Any, project: Project,
         scope: GlobalSearchScope?
 ): Collection<Psi> =
         StubIndex.getElements(indexKey, key, project, scope, Psi::class.java)
