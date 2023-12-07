@@ -75,9 +75,6 @@ class ElmReviewService(val project: Project) {
             ApplicationManager.getApplication().executeOnPooledThread {
                 val newWatcher = startWatcher(command, projectBasePath, project)
                 watchers[projectBasePath] = newWatcher
-                newWatcher.errorStream.reader().forEachLine {
-                    showError(project, it)
-                }
                 val disposable = Disposer.newDisposable("New elm-review input")
 
                 newWatcher.inputStream.bufferedReader().forEachLine { line ->
@@ -97,6 +94,10 @@ class ElmReviewService(val project: Project) {
                             }
                         }
                     }
+                }
+
+                newWatcher.errorStream.reader().forEachLine {
+                    showError(project, it)
                 }
             }
         }
