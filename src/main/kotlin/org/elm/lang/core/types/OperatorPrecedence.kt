@@ -48,7 +48,7 @@ sealed class BinaryExprTree<T : Any> {
             var i = idx + 1
             fun nextPrecedence(): Int = when {
                 i >= expression.lastIndex -> DEFAULT_PRECEDENCE
-                else -> operatorPrecedences[expression[i]]!!.precedence
+                else -> operatorPrecedences[expression[i]]?.precedence ?: DEFAULT_PRECEDENCE
             }
             while (precedence < nextPrecedence()) {
                 val operator = expression[i]
