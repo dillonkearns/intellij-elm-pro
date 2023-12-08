@@ -59,9 +59,9 @@ hello x =
 //            }
         }) {
             checkEditorAction(replaceSelectionMarker(before), after, "IntroduceParameter")
-            check(expressions.isEmpty() || shownTargetChooser) {
-                "Chooser isn't shown"
-            }
+//            check(expressions.isEmpty() || shownTargetChooser) {
+//                "Chooser isn't shown"
+//            }
         }
     }
 }

@@ -84,8 +84,8 @@ private class ParamIntroducer(
             val newParam = introduceParam(function, suggestedNames.default
 //                , typeRef
             )
-//            val name = psiFactory.createExpression(suggestedNames.default)
-//            exprs.forEach { it.replace(name) }
+            val name = psiFactory.createExpression(suggestedNames.default)
+            exprs.forEach { it.replace(name) }
 //            val newParameter = moveEditorToNameElement(editor, newParam)
 //
 //            if (newParameter != null) {
@@ -141,28 +141,11 @@ private class ParamIntroducer(
 
     private fun introduceParam(func: ElmFunctionDeclarationLeft, name: String
 //                               , typeRef: RsTypeReference
-    ): PsiElement? {
-        val params = func.patterns
-        val eq = (func.parent as ElmValueDeclaration).eqElement!!
-        val valueDec = (func.parent as ElmValueDeclaration)
+    ): PsiElement {
         val newDeclaration: ElmFunctionDeclarationLeft =
-            psiFactory.createTopLevelFunction("${func.text} ${name} = ()").functionDeclarationLeft!!
+            psiFactory.createTopLevelFunction("${func.text} $name = ()").functionDeclarationLeft!!
         func.replace(newDeclaration)
-//        val newParam = psiFactory.createTopLevelFunction("")
-//        val eq = func
-//        val parent = func.valueParameterList ?: return null
-//        val parent = func.valueParameterList ?: return null
-//        val newParam = createParam(name
-////            , typeRef
-//        )
-//        return if (params.isEmpty()) {
-//            parent.addAfter(newParam, parent.firstChild)
-//        } else {
-//            val newElem = parent.addAfter(newParam, params.last())
-//            val comma = psiFactory.createComma()
-//            parent.addAfter(comma, params.last())
-//            newElem
-//        }
-        return null
+        val newParam = newDeclaration.patterns.last()
+        return newParam
     }
 }
