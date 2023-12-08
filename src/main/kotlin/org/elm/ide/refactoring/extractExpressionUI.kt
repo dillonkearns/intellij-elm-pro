@@ -19,16 +19,17 @@ fun showExpressionChooser(
     }
 }
 
-private val <T> ((T) -> Unit).asPass: Pass<T>
+val <T> ((T) -> Unit).asPass: Pass<T>
     get() = object : Pass<T>() {
         override fun pass(t: T) = this@asPass(t)
     }
 
 interface ExtractExpressionUi {
     fun chooseTarget(exprs: List<ElmExpressionTag>): ElmExpressionTag
+    fun chooseOccurrences(expr: ElmExpressionTag, occurrences: List<ElmExpressionTag>): List<ElmExpressionTag>
 }
 
-private var MOCK: ExtractExpressionUi? = null
+var MOCK: ExtractExpressionUi? = null
 @TestOnly
 fun withMockTargetExpressionChooser(mock: ExtractExpressionUi, f: () -> Unit) {
     MOCK = mock

@@ -10,17 +10,17 @@ import com.intellij.psi.PsiNamedElement
 import com.intellij.refactoring.RefactoringActionHandler
 import com.intellij.refactoring.RefactoringBundle
 import com.intellij.refactoring.introduce.inplace.InplaceVariableIntroducer
+import com.intellij.refactoring.introduce.inplace.OccurrencesChooser
 import com.intellij.refactoring.util.CommonRefactoringUtil
 import com.intellij.util.DocumentUtil
 import org.elm.ide.settings.experimentalFlags
-import org.elm.ide.utils.findExpressionAtCaret
-import org.elm.ide.utils.findExpressionInRange
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.ElmAnonymousFunctionExpr
 import org.elm.lang.core.psi.elements.ElmCaseOfBranch
 import org.elm.lang.core.psi.elements.ElmLetInExpr
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.textWithNormalizedIndents
+import org.elm.openapiext.isUnitTestMode
 import org.elm.openapiext.runWriteCommandAction
 
 class ElmIntroduceVariableHandler : RefactoringActionHandler {
@@ -44,21 +44,6 @@ class ElmIntroduceVariableHandler : RefactoringActionHandler {
             else -> showExpressionChooser(editor, exprs) { chosenExpr ->
                 introduceVariable(editor, chosenExpr)
             }
-        }
-    }
-
-    private fun findCandidateExpressions(editor: Editor, file: ElmFile): List<ElmExpressionTag> {
-        val selection = editor.selectionModel
-        return if (selection.hasSelection()) {
-            // If the user has some text selected, make a single suggestion based on the selection
-            listOfNotNull(findExpressionInRange(file, selection.selectionStart, selection.selectionEnd))
-        } else {
-            // Suggest nested expressions at caret position
-            val expr = findExpressionAtCaret(file, editor.caretModel.offset) ?: return emptyList()
-            expr.ancestors
-                    .takeWhile { it !is ElmValueDeclaration && it !is ElmLetInExpr }
-                    .filterIsInstance<ElmExpressionTag>()
-                    .toList()
         }
     }
 
@@ -201,4 +186,26 @@ fun moveEditorToNameElement(editor: Editor, element: PsiElement?): PsiNamedEleme
         editor.caretModel.moveToOffset(newName.nameIdentifier.startOffset)
     }
     return newName
+}
+
+
+fun showOccurrencesChooser(
+    editor: Editor,
+    expr: ElmExpressionTag,
+    occurrences: List<ElmExpressionTag>,
+    callback: (List<ElmExpressionTag>) -> Unit
+) {
+    if (isUnitTestMode && occurrences.size > 1) {
+        callback(MOCK!!.chooseOccurrences(expr, occurrences))
+    } else {
+        OccurrencesChooser.simpleChooser<ElmExpressionTag>(editor)
+            .showChooser(
+                expr,
+                occurrences,
+                { choice: OccurrencesChooser.ReplaceChoice ->
+                    val toReplace = if (choice == OccurrencesChooser.ReplaceChoice.ALL) occurrences else listOf(expr)
+                    callback(toReplace)
+                }.asPass
+            )
+    }
 }

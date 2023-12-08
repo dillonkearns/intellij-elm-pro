@@ -4,7 +4,7 @@ import com.intellij.lang.refactoring.RefactoringSupportProvider
 import com.intellij.psi.PsiElement
 import com.intellij.refactoring.RefactoringActionHandler
 import org.elm.ide.refactoring.extractFunction.ElmExtractFunctionHandler
-import org.rust.ide.refactoring.introduceParameter.ElmIntroduceParameterHandler
+import org.elm.ide.refactoring.introduceParameter.ElmIntroduceParameterHandler
 
 
 class ElmRefactoringSupportProvider : RefactoringSupportProvider() {
