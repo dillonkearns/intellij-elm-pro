@@ -23,8 +23,8 @@ hello =
 message =
     hello "World"
 
-hello param =
-    "Hello, " ++ param ++ "!"
+hello x =
+    "Hello, " ++ x ++ "!"
     """)
 
 
@@ -42,6 +42,13 @@ hello param =
                 shownTargetChooser = true
                 assertEquals(expressions, exprs.map { it.text })
                 return exprs[exprTarget]
+            }
+
+            override fun chooseOccurrences(
+                expr: ElmExpressionTag,
+                occurrences: List<ElmExpressionTag>
+            ): List<ElmExpressionTag> {
+                return occurrences
             }
 //
 //            override fun chooseOccurrences(expr: ElmExpr, occurrences: List<ElmExpr>): List<ElmExpr> =

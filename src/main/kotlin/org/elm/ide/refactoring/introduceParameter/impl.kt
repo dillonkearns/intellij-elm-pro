@@ -17,8 +17,10 @@ import org.elm.ide.refactoring.suggestedNames
 import org.elm.lang.core.psi.ElmExpressionTag
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.ancestors
+import org.elm.lang.core.psi.elements.ElmFunctionCallExpr
 import org.elm.lang.core.psi.elements.ElmFunctionDeclarationLeft
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
+import org.elm.lang.core.psi.elements.ElmValueExpr
 import org.elm.openapiext.runWriteCommandAction
 
 fun extractExpression(editor: Editor, expr: ElmExpressionTag) {
@@ -61,6 +63,7 @@ private class ParamIntroducer(
     private val editor: Editor
 ) {
     private val psiFactory = ElmPsiFactory(project)
+
     /**
      * Introduces a new parameter to the chosen function and replaces chosen expression occurrences with a newly introduced
      * param.
@@ -77,8 +80,10 @@ private class ParamIntroducer(
         val functionUsages = findFunctionUsages(function)
         project.runWriteCommandAction() {
 //            RefactoringBundle.message("introduce.parameter.title")
-//            appendNewArgument(functionUsages, expr)
-//            val newParam = introduceParam(function, suggestedNames.default, typeRef)
+            appendNewArgument(functionUsages, expr)
+            val newParam = introduceParam(function, suggestedNames.default
+//                , typeRef
+            )
 //            val name = psiFactory.createExpression(suggestedNames.default)
 //            exprs.forEach { it.replace(name) }
 //            val newParameter = moveEditorToNameElement(editor, newParam)
@@ -87,21 +92,22 @@ private class ParamIntroducer(
 //                PsiDocumentManager.getInstance(project).doPostponedOperationsAndUnblockDocument(editor.document)
 //                RsInPlaceVariableIntroducer(newParameter, editor, project, ElmBundle.message("command.name.choose.parameter"))
 //                    .performInplaceRefactoring(suggestedNames.all)
-            }
         }
     }
 
-//    private fun appendNewArgument(usages: Sequence<PsiElement>, value: RsExpr) {
-//        usages.forEach {
-//            if (it is RsPath) {
-//                val expr = it.ancestorOrSelf<RsCallExpr>() ?: return
-//                introduceValueArgument(value, expr.valueArgumentList)
-//            } else if (it is RsMethodCall) {
-//                introduceValueArgument(value, it.valueArgumentList)
-//            }
-//        }
-//    }
-//
+    private fun appendNewArgument(usages: Sequence<PsiElement>, value: ElmExpressionTag) {
+        usages.forEach {
+              if (it is ElmFunctionCallExpr) {
+//                  introduceValueArgument(value, it.valueArgumentList)
+                  TODO("Unhandled")
+              } else if (it is ElmValueExpr) {
+                    it.replace(psiFactory.createFunctionCallExpr("(${it.text} ${value.text})"))
+              }
+            // TODO what about curried function references?
+            // TODO pipeline expressions
+        }
+    }
+
     private fun findFunctionUsages(chosenFunction: ElmFunctionDeclarationLeft): Sequence<PsiElement> {
         val projectScope = GlobalSearchScope.projectScope(chosenFunction.project)
         val functionUsages = ReferencesSearch.search(chosenFunction, projectScope, false).findAll()
@@ -121,8 +127,8 @@ private class ParamIntroducer(
 //    private fun createParamList(name: String, typeRef: RsTypeReference): RsValueParameterList {
 //        return psiFactory.createSimpleValueParameterList(name, typeRef)
 //    }
-//
-//    private fun introduceValueArgument(value: RsExpr, argumentList: RsValueArgumentList) {
+
+//    private fun introduceValueArgument(value: ElmExpressionTag, argumentList: RsValueArgumentList) {
 //        val args = argumentList.exprList
 //        if (args.isEmpty()) {
 //            argumentList.addAfter(value, argumentList.firstChild)
@@ -132,25 +138,31 @@ private class ParamIntroducer(
 //            argumentList.addAfter(comma, args.last())
 //        }
 //    }
-//
-//    private fun introduceParam(func: RsFunction, name: String, typeRef: RsTypeReference): PsiElement? {
-//        val params = func.rawValueParameters
+
+    private fun introduceParam(func: ElmFunctionDeclarationLeft, name: String
+//                               , typeRef: RsTypeReference
+    ): PsiElement? {
+        val params = func.patterns
+        val eq = (func.parent as ElmValueDeclaration).eqElement!!
+        val valueDec = (func.parent as ElmValueDeclaration)
+        val newDeclaration: ElmFunctionDeclarationLeft =
+            psiFactory.createTopLevelFunction("${func.text} ${name} = ()").functionDeclarationLeft!!
+        func.replace(newDeclaration)
+//        val newParam = psiFactory.createTopLevelFunction("")
+//        val eq = func
 //        val parent = func.valueParameterList ?: return null
-//        val newParam = createParam(name, typeRef)
+//        val parent = func.valueParameterList ?: return null
+//        val newParam = createParam(name
+////            , typeRef
+//        )
 //        return if (params.isEmpty()) {
-//            if (parent.selfParameter != null) {
-//                val newElem = parent.addAfter(newParam, parent.selfParameter)
-//                val comma = psiFactory.createComma()
-//                parent.addAfter(comma, parent.selfParameter)
-//                newElem
-//            } else {
-//                parent.addAfter(newParam, parent.firstChild)
-//            }
+//            parent.addAfter(newParam, parent.firstChild)
 //        } else {
 //            val newElem = parent.addAfter(newParam, params.last())
 //            val comma = psiFactory.createComma()
 //            parent.addAfter(comma, params.last())
 //            newElem
 //        }
-//    }
-//}
+        return null
+    }
+}
