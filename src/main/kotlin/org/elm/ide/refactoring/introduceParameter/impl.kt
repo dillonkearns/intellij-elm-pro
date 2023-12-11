@@ -16,11 +16,16 @@ import org.elm.ide.refactoring.showOccurrencesChooser
 import org.elm.ide.refactoring.suggestedNames
 import org.elm.lang.core.psi.ElmExpressionTag
 import org.elm.lang.core.psi.ElmPsiFactory
+import org.elm.lang.core.psi.addAllAfter
 import org.elm.lang.core.psi.ancestors
 import org.elm.lang.core.psi.elements.ElmFunctionCallExpr
 import org.elm.lang.core.psi.elements.ElmFunctionDeclarationLeft
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.psi.elements.ElmValueExpr
+import org.elm.lang.core.types.Ty
+import org.elm.lang.core.types.TyUnknown
+import org.elm.lang.core.types.findTy
+import org.elm.lang.core.types.renderedText
 import org.elm.openapiext.runWriteCommandAction
 
 fun extractExpression(editor: Editor, expr: ElmExpressionTag) {
@@ -78,12 +83,12 @@ private class ParamIntroducer(
         val suggestedNames = expr.suggestedNames()
 //
         val functionUsages = findFunctionUsages(function)
-        project.runWriteCommandAction() {
+        project.runWriteCommandAction {
 //            RefactoringBundle.message("introduce.parameter.title")
             appendNewArgument(functionUsages, expr)
-            val newParam = introduceParam(function, suggestedNames.default
-//                , typeRef
-            )
+//            expr.findInference()
+            val typeRef = expr.findTy() ?: TyUnknown()
+            val newParam = introduceParam(function, suggestedNames.default, typeRef)
             val name = psiFactory.createExpression(suggestedNames.default)
             exprs.forEach { it.replace(name) }
 //            val newParameter = moveEditorToNameElement(editor, newParam)
@@ -101,7 +106,12 @@ private class ParamIntroducer(
 //                  introduceValueArgument(value, it.valueArgumentList)
                   TODO("Unhandled")
               } else if (it is ElmValueExpr) {
-                    it.replace(psiFactory.createFunctionCallExpr("(${it.text} ${value.text})"))
+                  // TODO avoid extra parens around value when possible
+                  if (it.parent is ElmFunctionCallExpr) {
+                      it.addAllAfter(listOf(psiFactory.createWhitespace(" ",), psiFactory.createExpression("(${value.text})")))
+                  } else {
+                    it.replace(psiFactory.createFunctionCallExpr("${it.text} (${value.text})"))
+                  }
               }
             // TODO what about curried function references?
             // TODO pipeline expressions
@@ -139,13 +149,24 @@ private class ParamIntroducer(
 //        }
 //    }
 
-    private fun introduceParam(func: ElmFunctionDeclarationLeft, name: String
-//                               , typeRef: RsTypeReference
+    private fun introduceParam(
+        func: ElmFunctionDeclarationLeft, name: String, typeRef: Ty
     ): PsiElement {
+        val fnName = func.lowerCaseIdentifier.text
+        val withoutFunctionName = func.text.drop(func.lowerCaseIdentifier.textLength)
         val newDeclaration: ElmFunctionDeclarationLeft =
-            psiFactory.createTopLevelFunction("${func.text} $name = ()").functionDeclarationLeft!!
+            // TODO add new param to FRONT of param list here
+            psiFactory.createTopLevelFunction("$fnName $name$withoutFunctionName = ()").functionDeclarationLeft!!
+        (func.parent as ElmValueDeclaration).typeAnnotation?.let { annotation ->
+            val newAnnotationText = annotation.text.replace(":", ": ${typeRef.renderedText()} ->")
+            val createTopLevelFunctionWithAnnotation =
+            psiFactory.createTopLevelFunctionWithAnnotation(newAnnotationText, "foo = ()")
+            val newAnnotation = createTopLevelFunctionWithAnnotation.toList()[1]
+            annotation.replace(newAnnotation)
+        }
         func.replace(newDeclaration)
-        val newParam = newDeclaration.patterns.last()
+
+        val newParam = newDeclaration.patterns.first()
         return newParam
     }
 }

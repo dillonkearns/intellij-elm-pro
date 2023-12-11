@@ -13,7 +13,7 @@ import org.elm.lang.core.psi.ElmExpressionTag
 //import org.elm.lang.core.psi.ElmFunction
 
 class ElmIntroduceParameterTest : ElmTestBase() {
-    fun `test method no params`() = doTest("""
+    fun `test no params without annotation`() = doTest("""
 message =
     hello
 
@@ -21,10 +21,46 @@ hello =
     "Hello, " ++ {-selection-}"World"{-selection--} ++ "!"
     """, listOf("\"World\""), 0, 0, """
 message =
-    hello "World"
+    hello ("World")
 
 hello x =
     "Hello, " ++ x ++ "!"
+    """)
+
+    fun `test no params with annotation`() = doTest("""
+message : String
+message =
+    hello
+
+hello : String
+hello =
+    "Hello, " ++ {-selection-}"World"{-selection--} ++ "!"
+    """, listOf("\"World\""), 0, 0, """
+message : String
+message =
+    hello ("World")
+
+hello : unknown -> String
+hello x =
+    "Hello, " ++ x ++ "!"
+    """)
+
+    fun `test adds to front with existing param and annotation`() = doTest("""
+message : String
+message =
+    hello
+
+hello : String -> String
+hello greeting =
+    greeting ++ ", " ++ {-selection-}"World"{-selection--} ++ "!"
+    """, listOf("\"World\""), 0, 0, """
+message : String
+message =
+    hello ("World")
+
+hello : unknown -> String -> String
+hello x greeting =
+    greeting ++ ", " ++ x ++ "!"
     """)
 
 
