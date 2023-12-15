@@ -18,6 +18,8 @@ import com.intellij.openapi.vfs.VirtualFileSystem
 import com.intellij.refactoring.RefactoringBundle
 import com.intellij.refactoring.ui.RefactoringDialog
 import com.intellij.refactoring.util.CommonRefactoringUtil
+import com.intellij.ui.ColoredTreeCellRenderer
+import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
@@ -29,6 +31,7 @@ import org.elm.ElmBundle
 //import org.elm.ide.docs.signature
 //import org.elm.lang.ElmConstants
 import org.elm.lang.core.psi.*
+import org.elm.lang.core.psi.elements.*
 //import org.elm.lang.core.psi.ext.ElmItemElement
 //import org.elm.lang.core.psi.ext.ElmMod
 import org.elm.openapiext.*
@@ -82,19 +85,20 @@ class ElmMoveTopLevelItemsDialog(
 //        val nodesWithoutGrouping = topLevelItems.subtract(itemsGroupedWithImpls).map { ElmMoveMemberInfo(it) }
 //        val nodesAll = nodesGroupedWithImpls + nodesWithoutGrouping
 //
-//        val nodesSelected = nodesAll
+        val nodesAll = topLevelItems.map { ElmMoveItemAndImplsInfo(it) }
+//        val nodesSelected = emptyList<ElmMoveNodeInfo>()
+
+        val nodesSelected = nodesAll
 //            .flatMap {
 //                when (it) {
 //                    is ElmMoveItemAndImplsInfo -> it.children
-//                    is ElmMoveMemberInfo -> listOf(it)
+////                    is ElmMoveMemberInfo -> listOf(it)
 //                    else -> error("unexpected node info type: $it")
 //                }
 //            }
-//            .filter { it.member in itemsToMove }
-
-//        return ElmMoveMemberSelectionPanel(project, ElmBundle.message("separator.items.to.move"), nodesAll, nodesSelected)
-//            .also { it.tree.setInclusionListener { validateButtons() } }
-        TODO()
+            .filter { it.item in itemsToMove }
+        return ElmMoveMemberSelectionPanel(project, ElmBundle.message("separator.items.to.move"), nodesAll, nodesSelected)
+            .also { it.tree.setInclusionListener { validateButtons() } }
     }
 
     override fun createCenterPanel(): JComponent {
@@ -118,9 +122,17 @@ class ElmMoveTopLevelItemsDialog(
     }
 
     private fun getTopLevelItems(): List<ElmExposableTag> {
-        return sourceMod.children
-            .filterIsInstance<ElmExposableTag>()
-            .filter { ElmMoveTopLevelItemsHandler.canMoveElement(it) }
+        return sourceMod.children.mapNotNull {
+            when (it) {
+                is ElmValueDeclaration -> it.functionDeclarationLeft
+                is ElmTypeDeclaration -> it
+                is ElmTypeAliasDeclaration -> it
+                is ElmPortAnnotation -> it
+                else -> null
+            }
+        }.filter {
+            ElmMoveTopLevelItemsHandler.canMoveElement(it)
+        }
     }
 
     override fun areButtonsValid(): Boolean {
@@ -210,36 +222,28 @@ class ElmMoveTopLevelItemsDialog(
 //    override val icon: Icon = member.getIcon(0)
 //}
 //
-//class ElmMoveItemAndImplsInfo(
-//    private val item: ElmExposableTag, // struct or trait
-//    impls: List<ElmImplItem>
-//) : ElmMoveNodeInfo {
-//
-//    @Suppress("DialogTitleCapitalization")
-//    override fun render(renderer: ColoredTreeCellRenderer) {
-//        val name = item.name
-//        val keyword = when (item) {
-//            is ElmStructItem -> ElmBundle.message("struct")
-//            is ElmEnumItem -> ElmBundle.message("enum")
-//            is ElmTypeAlias -> ElmBundle.message("type2")
-//            is ElmTraitItem -> ElmBundle.message("trait")
-//            else -> null
-//        }
-//        if (name == null || keyword == null) {
-//            renderer.append(ElmBundle.message("item.and.impls"), SimpleTextAttributes.REGULAR_ATTRIBUTES)
-//            return
-//        }
-//
-//        // "$keyword $name and impls"
-//        renderer.append("$keyword ", SimpleTextAttributes.REGULAR_ATTRIBUTES)
-//        renderer.append(name, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES)
-//        renderer.append(ElmBundle.message("and.impls"), SimpleTextAttributes.REGULAR_ATTRIBUTES)
-//    }
-//
+class ElmMoveItemAndImplsInfo(
+    val item: ElmExposableTag, // struct or trait
+) : ElmMoveNodeInfo {
+
+    @Suppress("DialogTitleCapitalization")
+    override fun render(renderer: ColoredTreeCellRenderer) {
+        val name = item.name
+        val keyword = when (item) {
+            is ElmFunctionDeclarationLeft -> ElmBundle.message("function")
+            is ElmTypeDeclaration -> ElmBundle.message("custom-type")
+            is ElmTypeAliasDeclaration -> ElmBundle.message("type-alias")
+            is ElmPortAnnotation -> ElmBundle.message("port")
+            else -> return
+        }
+        renderer.append("$keyword ", SimpleTextAttributes.REGULAR_ATTRIBUTES)
+        renderer.append(name, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES)
+    }
+
 //    override val children: List<ElmMoveMemberInfo> =
 //        listOf(ElmMoveMemberInfo(item)) + impls.map { ElmMoveMemberInfo(it) }
-//}
-//
+}
+
 val MOVE_TARGET_MOD_KEY: Key<ElmFile> = Key("ELM_MOVE_TARGET_MOD_KEY")
 val MOVE_TARGET_FILE_PATH_KEY: Key<Path> = Key("ELM_MOVE_TARGET_FILE_PATH_KEY")
 //
