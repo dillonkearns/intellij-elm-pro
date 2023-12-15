@@ -12,9 +12,13 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.ui.TextComponentAccessor
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.NlsContexts
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.util.Alarm
@@ -23,7 +27,8 @@ import javax.swing.event.DocumentEvent
 import kotlin.reflect.KProperty
 import com.intellij.ui.dsl.builder.Row
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-
+import org.elm.lang.core.ElmFileType
+import javax.swing.JTextField
 
 
 class UiDebouncer(
@@ -82,4 +87,45 @@ class CheckboxDelegate(private val checkbox: JBCheckBox) {
 fun <T : JComponent> Row.fullWidthCell(component: T): Cell<T> {
     return cell(component)
         .horizontalAlign(HorizontalAlign.FILL)
+}
+
+fun pathToElmFileTextField(
+    disposable: Disposable,
+    @NlsContexts.DialogTitle title: String,
+    project: Project,
+    onTextChanged: () -> Unit = {}
+): TextFieldWithBrowseButton =
+    pathTextField(
+        FileChooserDescriptorFactory
+            .createSingleFileDescriptor(ElmFileType)
+            .withRoots(project.guessProjectDir()),
+        disposable,
+        title,
+        onTextChanged
+    )
+
+fun pathTextField(
+    fileChooserDescriptor: FileChooserDescriptor,
+    disposable: Disposable,
+    @NlsContexts.DialogTitle title: String,
+    onTextChanged: () -> Unit = {}
+): TextFieldWithBrowseButton {
+    val component = TextFieldWithBrowseButton(null, disposable)
+    component.addBrowseFolderListener(
+        title, null, null,
+        fileChooserDescriptor,
+        TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT
+    )
+    component.childComponent.addTextChangeListener { onTextChanged() }
+    return component
+}
+
+fun JTextField.addTextChangeListener(listener: (DocumentEvent) -> Unit) {
+    document.addDocumentListener(
+        object : DocumentAdapter() {
+            override fun textChanged(e: DocumentEvent) {
+                listener(e)
+            }
+        }
+    )
 }

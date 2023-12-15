@@ -42,6 +42,9 @@
         <lang.refactoringSupport language="Elm"
                                  implementationClass="org.elm.ide.refactoring.ElmRefactoringSupportProvider"/>
         <renamePsiElementProcessor implementation="org.elm.ide.refactoring.ElmRenamePsiFileProcessor"/>
+        <refactoring.moveHandler id="elm.moveTopLevelItems"
+                                 implementation="org.elm.ide.refactoring.move.ElmMoveTopLevelItemsHandler" />
+
         <inlineActionHandler implementation="org.elm.ide.refactoring.ElmInlineFunctionHandler"/>
         <renamePsiElementProcessor implementation="org.elm.ide.refactoring.ElmRenamePsiElementProcessor"/>
         <lang.syntaxHighlighterFactory language="Elm"

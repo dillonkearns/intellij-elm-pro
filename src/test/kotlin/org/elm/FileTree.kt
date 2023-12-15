@@ -119,9 +119,10 @@ class FileTree(private val rootDirectory: Entry.Directory) {
         return TestProject(project, directory, filesWithCaret)
     }
 
+
     fun assertEquals(baseDir: VirtualFile) {
         fun go(expected: Entry.Directory, actual: VirtualFile) {
-            val actualChildren = actual.children.associateBy { it.name }
+            val actualChildren = actual.children.filter { it.name != "elm.json" }.associateBy { it.name }
             check(expected.children.keys == actualChildren.keys) {
                 "Mismatch in directory ${actual.path}\n" +
                         "Expected: ${expected.children.keys}\n" +
@@ -236,3 +237,4 @@ private fun findElementInFile(file: PsiFile, marker: String): PsiElement {
 
 fun replaceCaretMarker(text: String): String = text.replace("{-caret-}", "<caret>")
 fun hasCaretMarker(text: String): Boolean = text.contains("{-caret-}")
+

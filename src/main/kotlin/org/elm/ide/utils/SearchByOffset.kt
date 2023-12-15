@@ -105,3 +105,17 @@ fun PsiFile.findElementAtIgnoreWhitespaceAfter(offset: Int): PsiElement? {
     }
     return element
 }
+
+
+/**
+ * Finds child of [parent] of which given element is descendant.
+ */
+fun PsiElement.getTopmostParentInside(parent: PsiElement): PsiElement {
+    if (parent == this) return this
+
+    var element = this
+    while (parent != element.parent) {
+        element = element.parent
+    }
+    return element
+}

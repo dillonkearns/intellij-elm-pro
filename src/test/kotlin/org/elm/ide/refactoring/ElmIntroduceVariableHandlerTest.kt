@@ -537,6 +537,14 @@ f =
                 TestCase.assertEquals(exprs.map { it.text }, expressions)
                 return exprs[target]
             }
+
+            override fun chooseOccurrences(
+                expr: ElmExpressionTag,
+                occurrences: List<ElmExpressionTag>
+            ): List<ElmExpressionTag> {
+//                TODO("Not yet implemented")
+                return emptyList()
+            }
         }) {
             myFixture.performEditorAction("IntroduceVariable")
             if (expressions.size > 1 && !shownTargetChooser) {

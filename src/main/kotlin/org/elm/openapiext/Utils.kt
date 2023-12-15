@@ -24,10 +24,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.ex.temp.TempFileSystem
-import com.intellij.psi.PsiDocumentManager
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiManager
+import com.intellij.psi.*
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.stubs.StubIndex
 import com.intellij.psi.stubs.StubIndexKey
@@ -208,3 +205,8 @@ fun saveAllDocumentsAsTheyAre(reformatLater: Boolean = true) {
 
 fun <T> runWithCheckCanceled(callable: () -> T): T =
     ApplicationUtil.runWithCheckCanceled(callable, ProgressManager.getInstance().progressIndicator)
+
+fun String.toPath(): Path = Paths.get(this)
+
+fun VirtualFile.toPsiDirectory(project: Project): PsiDirectory? =
+    PsiManager.getInstance(project).findDirectory(this)
