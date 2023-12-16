@@ -26,7 +26,9 @@ value2 = 123
 
 module A exposing (value2)
 
-value2 = 123
+
+value2 =
+    123
 
 --@ B.elm
 module B exposing (value)

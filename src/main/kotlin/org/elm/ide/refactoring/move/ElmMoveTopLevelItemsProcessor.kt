@@ -15,6 +15,8 @@ import org.elm.ide.refactoring.move.common.ElmMoveCommonProcessor
 import org.elm.lang.core.psi.ElmExposableTag
 import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.psi.ElmPsiFactory
+import org.elm.lang.core.psi.elements.findMatchingItemFor
+import org.elm.lang.core.psi.elements.removeItem
 import org.elm.lang.core.psi.startOffset
 
 /** See overview of move refactoring in comment for [ElmMoveCommonProcessor] */
@@ -90,8 +92,13 @@ class ElmMoveTopLevelItemsProcessor(
 //        targetMod.addBefore(space?.copy() ?: psiFactory.createNewline(), itemNew)
 //
 //        space?.delete()
-        item.delete()
+        val exposingList = item.elmFile.getModuleDecl()?.exposingList ?: return null
 
+        val exposedItem = exposingList.findMatchingItemFor(item)
+        if (exposedItem != null) {
+            exposingList.removeItem(exposedItem)
+        }
+        item.parent.delete()
 //        return ElementToMove.fromItem(itemNew)
         return null
     }
