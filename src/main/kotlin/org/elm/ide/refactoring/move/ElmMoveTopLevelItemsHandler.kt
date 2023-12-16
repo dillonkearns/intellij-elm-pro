@@ -19,7 +19,6 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.refactoring.move.MoveCallback
 import com.intellij.refactoring.move.MoveHandlerDelegate
 import com.intellij.refactoring.util.CommonRefactoringUtil
-import org.elm.ide.utils.getTopmostParentInside
 import org.elm.lang.core.ElmLanguage
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
@@ -97,8 +96,8 @@ class ElmMoveTopLevelItemsHandler : MoveHandlerDelegate() {
             )!!
 
         // TODO
-//        val processor = ElmMoveTopLevelItemsProcessor(project, itemsToMove, targetMod, searchForReferences = true)
-//        processor.run()
+        val processor = ElmMoveTopLevelItemsProcessor(project, itemsToMove, targetMod, searchForReferences = true)
+        processor.run()
     }
 
     private fun collectInitialItems(project: Project, editor: Editor): Pair<Set<ElmExposableTag>, ElmFile>? {
@@ -142,9 +141,7 @@ class ElmMoveTopLevelItemsHandler : MoveHandlerDelegate() {
             element?.ancestorOrSelf<ElmValueDeclaration>()?.functionDeclarationLeft
         }
         val containingMod = elements.first().elmFile ?: return null
-        val items = elements.mapNotNull { it.getTopmostParentInside(containingMod) as? ElmExposableTag }
-        if (items.isEmpty()) return null
-        return items.toSet() to containingMod
+        return elements.toSet() to containingMod
     }
 
     companion object {
