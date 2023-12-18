@@ -19,6 +19,9 @@ value = {-caret-}42
 value2 = 123
 
 --@ B.elm
+module B exposing (existing)
+
+existing = "Existing"
 {-target-}
 """
         , """
@@ -31,10 +34,16 @@ value2 =
     123
 
 --@ B.elm
-module B exposing (value)
 
-value = 42
-"""
+module B exposing (existing, value)
+
+
+existing =
+    "Existing"
+
+
+value =
+    42"""
 )
 //"""
 //    //- lib.rs

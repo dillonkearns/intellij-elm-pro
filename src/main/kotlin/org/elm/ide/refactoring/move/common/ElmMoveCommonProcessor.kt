@@ -24,6 +24,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.IncorrectOperationException
 import org.elm.lang.core.psi.*
+import org.elm.lang.core.psi.elements.addItem
 
 //import org.elm.openapiext.runWithCancelableProgress
 
@@ -410,6 +411,8 @@ class ElmMoveCommonProcessor(
 //    }
 
     fun performRefactoring(usages: Array<out UsageInfo>, moveElements: () -> List<ElementToMove>) {
+        targetMod.add(psiFactory.createDeclaration("value = 42"))
+        targetMod.getModuleDecl()?.exposingList?.addItem("value")
 //        updateOutsideReferencesInVisRestrictions()
 
         elementsToMove = moveElements()
