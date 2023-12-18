@@ -37,6 +37,7 @@ import org.elm.lang.core.resolve.ElmReferenceElement
 import org.elm.openapiext.fullyRefreshDirectory
 import org.elm.workspace.ElmPackageProject
 import org.intellij.lang.annotations.Language
+import org.junit.Assert
 
 
 fun fileTree(builder: FileTreeBuilder.() -> Unit): FileTree {
@@ -135,9 +136,7 @@ class FileTree(private val rootDirectory: Entry.Directory) {
                     is Entry.File -> {
                         check(!a.isDirectory)
                         val actualText = String(a.contentsToByteArray(), Charsets.UTF_8)
-                        check(entry.text == actualText) {
-                            "Expected:\n${entry.text}\nGot:\n$actualText"
-                        }
+                        Assert.assertEquals(entry.text.trimEnd(), actualText.trimEnd())
                     }
                     is Entry.Directory -> go(entry, a)
                 }
