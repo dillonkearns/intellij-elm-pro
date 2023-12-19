@@ -166,6 +166,8 @@ class ElmMoveTopLevelItemsDialog(
         try {
             val processor = ElmMoveTopLevelItemsProcessor(project, itemsToMove, targetMod, searchForReferences)
             invokeRefactoring(processor)
+            // TODO not sure why this is needed, maybe a breaking API change broke automatically closing the window on successful action
+            this.close(0)
         } catch (e: Exception) {
             if (e !is IncorrectOperationException) {
                 Logger.getInstance(ElmMoveTopLevelItemsDialog::class.java).error(e)
