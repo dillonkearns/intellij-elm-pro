@@ -11,10 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.NlsContexts.DialogMessage
-import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VfsUtil
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileSystem
+import com.intellij.openapi.vfs.*
 import com.intellij.refactoring.RefactoringBundle
 import com.intellij.refactoring.ui.RefactoringDialog
 import com.intellij.refactoring.util.CommonRefactoringUtil
@@ -26,6 +23,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.util.IncorrectOperationException
 import com.intellij.util.ui.JBUI
+import org.apache.commons.io.FilenameUtils
 import org.jetbrains.annotations.Nls
 import org.elm.ElmBundle
 //import org.elm.ide.docs.signature
@@ -40,6 +38,8 @@ import org.elm.openapiext.*
 import java.awt.Dimension
 import java.nio.file.Path
 import javax.swing.JComponent
+import kotlin.io.path.name
+import kotlin.io.path.nameWithoutExtension
 
 class ElmMoveTopLevelItemsDialog(
     project: Project,
@@ -145,11 +145,9 @@ class ElmMoveTopLevelItemsDialog(
     }
 
     // TODO
-    private fun getSelectedItems(): Set<ElmExposableTag> = emptySet()
-//    private fun getSelectedItems(): Set<ElmExposableTag> =
-//        memberPanel.tree.includedSet
-//            .filterIsInstance<ElmMoveMemberInfo>()
-//            .mapToSet { it.member }
+    private fun getSelectedItems(): Set<ElmExposableTag> {
+        return memberPanel.tree.includedSet.map { ( it as ElmMoveItemAndImplsInfo).item }.toSet()
+    }
 
     override fun doAction() {
         // we want that file creation is undo together with actual move
@@ -166,9 +164,8 @@ class ElmMoveTopLevelItemsDialog(
         val targetFilePath = targetFileChooser.text.toPath()
         val targetMod = getOrCreateTargetMod(targetFilePath, project, sourceMod) ?: return
         try {
-            // TODO
-//            val processor = ElmMoveTopLevelItemsProcessor(project, itemsToMove, targetMod, searchForReferences)
-//            invokeRefactoring(processor)
+            val processor = ElmMoveTopLevelItemsProcessor(project, itemsToMove, targetMod, searchForReferences)
+            invokeRefactoring(processor)
         } catch (e: Exception) {
             if (e !is IncorrectOperationException) {
                 Logger.getInstance(ElmMoveTopLevelItemsDialog::class.java).error(e)
@@ -252,6 +249,7 @@ private fun createNewElmFile(filePath: Path, project: Project, crateRoot: ElmFil
     return project.runWriteCommandAction() {
         val fileSystem = (crateRoot as? ElmFile)?.virtualFile?.fileSystem ?: LocalFileSystem.getInstance()
         createNewFile(filePath, fileSystem, requestor) { virtualFile ->
+            virtualFile.writeText("module ${filePath.nameWithoutExtension} exposing (todoRemoveThis)\n\n")
             val file = (virtualFile.toPsiFile(project) as? ElmFile) ?: return@createNewFile null
 //            if (!attachFileToParentMod(file, project, crateRoot)) return@createNewFile null
             file
