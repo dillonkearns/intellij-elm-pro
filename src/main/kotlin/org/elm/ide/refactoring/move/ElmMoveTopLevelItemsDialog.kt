@@ -164,7 +164,7 @@ class ElmMoveTopLevelItemsDialog(
         @Suppress("SENSELESS_COMPARISON")
         if (memberPanel == null) return false
 
-        return sourceFilePath != targetFileChooser.text && getSelectedItems().isNotEmpty()
+        return sourceMod.virtualFile.pathAsPath != existingModules.item.declaration.elmFile.virtualFile.pathAsPath && getSelectedItems().isNotEmpty()
     }
 
     // TODO
@@ -184,7 +184,7 @@ class ElmMoveTopLevelItemsDialog(
 
     private fun doActionUndoCommand() {
         val itemsToMove = getSelectedItems()
-        val targetFilePath = targetFileChooser.text.toPath()
+        val targetFilePath = existingModules.item.declaration.elmFile.virtualFile.path.toPath()
         val targetMod = getOrCreateTargetMod(targetFilePath, project, sourceMod) ?: return
         try {
             val processor = ElmMoveTopLevelItemsProcessor(project, itemsToMove, targetMod, searchForReferences)
