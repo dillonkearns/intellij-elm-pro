@@ -26,6 +26,7 @@ import com.intellij.util.IncorrectOperationException
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.ElmFunctionDeclarationLeft
 import org.elm.lang.core.psi.elements.addItem
+import org.elm.lang.core.psi.elements.removeItem
 
 //import org.elm.openapiext.runWithCancelableProgress
 
@@ -415,6 +416,11 @@ class ElmMoveCommonProcessor(
         val element: ElmFunctionDeclarationLeft = this.elementsToMove.first().element as ElmFunctionDeclarationLeft
         targetMod.add(psiFactory.createDeclaration(element.parent.text))
         targetMod.getModuleDecl()?.exposingList?.addItem(element.name)
+        val todoRemoveThis = targetMod.getModuleDecl()?.exposingList?.allExposedItems?.find { it.text == "todoRemoveThis" }
+        if (todoRemoveThis != null) {
+            targetMod.getModuleDecl()?.exposingList?.removeItem(todoRemoveThis)
+        }
+
 //        updateOutsideReferencesInVisRestrictions()
 
         elementsToMove = moveElements()

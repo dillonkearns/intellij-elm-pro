@@ -8,6 +8,7 @@ package org.elm.ide.refactoring.move
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.NlsContexts.DialogMessage
@@ -23,22 +24,23 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.util.IncorrectOperationException
 import com.intellij.util.ui.JBUI
-import org.apache.commons.io.FilenameUtils
 import org.jetbrains.annotations.Nls
 import org.elm.ElmBundle
 //import org.elm.ide.docs.signature
 //import org.elm.lang.ElmConstants
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
+import org.elm.lang.core.stubs.index.ElmModulesIndex
 //import org.elm.lang.core.psi.ext.ElmItemElement
 //import org.elm.lang.core.psi.ext.ElmMod
 import org.elm.openapiext.*
+import org.elm.workspace.ElmPackageProject
+import org.elm.workspace.elmWorkspace
 //import org.elm.stdext.mapToSet
 //import org.elm.stdext.toPath
 import java.awt.Dimension
 import java.nio.file.Path
 import javax.swing.JComponent
-import kotlin.io.path.name
 import kotlin.io.path.nameWithoutExtension
 
 class ElmMoveTopLevelItemsDialog(
@@ -50,6 +52,21 @@ class ElmMoveTopLevelItemsDialog(
     @Nls
     private val sourceFilePath: String = sourceMod.containingFile.virtualFile.path
     private val sourceFileField: JBTextField = JBTextField(sourceFilePath).apply { isEnabled = false }
+    private val existingModules = ComboBox<DeclarationWrapper>().apply {
+        ElmModulesIndex.getAll(itemsToMove.first().elmFile).filter { it.elmProject !is ElmPackageProject }.forEach {
+            this.addItem(DeclarationWrapper(it))
+        }
+    }
+    @Nls
+
+    private val sourceDirectory: ComboBox<String> = ComboBox<String>().apply {
+        isEnabled = true
+        val elmProject = project.elmWorkspace.allProjects.firstOrNull()
+        elmProject?.sourceDirectories.orEmpty().forEach {
+            this.addItem(it.toString())
+        }
+
+    }
     private val targetFileChooser: TextFieldWithBrowseButton = createTargetFileChooser(project)
     private val memberPanel: ElmMoveMemberSelectionPanel = createMemberSelectionPanel().apply {
         // Small hack to make Kotlin UI DSL 2 use proper minimal size
@@ -105,6 +122,12 @@ class ElmMoveTopLevelItemsDialog(
         return panel {
             row(ElmBundle.message("from")) {
                 fullWidthCell(sourceFileField)
+            }
+            row(ElmBundle.message("source.directory")) {
+                fullWidthCell(sourceDirectory)
+            }
+            row(ElmBundle.message("source.directory")) {
+                fullWidthCell(existingModules)
             }
             row(ElmBundle.message("to")) {
                 fullWidthCell(targetFileChooser).focused()
@@ -253,6 +276,7 @@ private fun createNewElmFile(filePath: Path, project: Project, crateRoot: ElmFil
         createNewFile(filePath, fileSystem, requestor) { virtualFile ->
             virtualFile.writeText("module ${filePath.nameWithoutExtension} exposing (todoRemoveThis)\n\n")
             val file = (virtualFile.toPsiFile(project) as? ElmFile) ?: return@createNewFile null
+
 //            if (!attachFileToParentMod(file, project, crateRoot)) return@createNewFile null
             file
         }
@@ -301,4 +325,8 @@ private fun <T> createNewFile(
         fileSystem.findFileByPath(directory.toString())?.delete(requestor)
     }
     return null
+}
+
+class DeclarationWrapper(public val declaration: ElmModuleDeclaration) {
+    override fun toString(): String = declaration.name
 }
