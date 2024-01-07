@@ -46,6 +46,45 @@ value =
     42"""
 )
 
+    fun `test target module exposing all`() = doTest(
+        """
+--@ A.elm
+
+module A exposing (value, value2)
+
+value = {-caret-}42
+
+value2 = 123
+
+--@ B.elm
+module B exposing (..)
+
+existing = "Existing"
+{-target-}
+"""
+        , """
+--@ A.elm
+
+module A exposing (value2)
+
+
+value2 =
+    123
+
+--@ B.elm
+
+module B exposing (..)
+
+
+existing =
+    "Existing"
+
+
+value =
+    42"""
+    )
+
+
     fun `test move create file 1`() = doTestCreateFile("B.elm", """
 --@ A.elm
 

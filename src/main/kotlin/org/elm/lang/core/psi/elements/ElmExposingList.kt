@@ -132,11 +132,15 @@ fun ElmExposingList.exposes(element: ElmExposableTag): Boolean {
  * TODO does this function really belong here in this file? Or should it be moved closer to intention actions?
  */
 fun ElmExposingList.addItem(itemName: String) {
-    // create a dummy import with multiple exposed values so that we can also extract the preceding comma and whitespace
-    val import = ElmPsiFactory(project).createImportExposing("FooBar", listOf("foobar", itemName))
-    val item = import.exposingList!!.allExposedItems.single { it.text == itemName }
-    val prevComma = item.prevSiblings.first { it.elementType == ElmTypes.COMMA }
-    addRangeBefore(prevComma, item, closeParen)
+    if (exposesAll) {
+        // no changes needed
+    } else {
+        // create a dummy import with multiple exposed values so that we can also extract the preceding comma and whitespace
+        val import = ElmPsiFactory(project).createImportExposing("FooBar", listOf("foobar", itemName))
+        val item = import.exposingList!!.allExposedItems.single { it.text == itemName }
+        val prevComma = item.prevSiblings.first { it.elementType == ElmTypes.COMMA }
+        addRangeBefore(prevComma, item, closeParen)
+    }
 }
 
 
