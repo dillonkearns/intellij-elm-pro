@@ -44,9 +44,9 @@ intellij {
 
     // Plugin Dependencies -> https://plugins.jetbrains.com/docs/intellij/plugin-dependencies.html
     // Example: platformPlugins = com.intellij.java, com.jetbrains.php:203.4449.22
-    val ideaVimPlugin = "IdeaVim:2.4.1"
-    val psiViewerPlugin = "PsiViewer:232.2"
 //    plugins.set(listOf(psiViewerPlugin, ideaVimPlugin))
+    val ideaVimPlugin = "IdeaVim:2.7.0"
+//    val psiViewerPlugin = "PsiViewer:232.3"
 }
 
 // Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
