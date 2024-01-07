@@ -52,21 +52,27 @@ class ElmMoveTopLevelItemsDialog(
     @Nls
     private val sourceFilePath: String = sourceMod.containingFile.virtualFile.path
     private val sourceFileField: JBTextField = JBTextField(sourceFilePath).apply { isEnabled = false }
-    private val existingModules = ComboBox<DeclarationWrapper>().apply {
-        ElmModulesIndex.getAll(itemsToMove.first().elmFile).filter { it.elmProject !is ElmPackageProject }.forEach {
-            this.addItem(DeclarationWrapper(it))
-        }
-    }
     @Nls
 
-    private val sourceDirectory: ComboBox<String> = ComboBox<String>().apply {
+    private val sourceDirectory: ComboBox<Path> = ComboBox<Path>().apply {
         isEnabled = true
         val elmProject = project.elmWorkspace.allProjects.firstOrNull()
         elmProject?.sourceDirectories.orEmpty().forEach {
-            this.addItem(it.toString())
+            this.addItem(it)
         }
 
     }
+    private val existingModules = ComboBox<DeclarationWrapper>().apply {
+        ElmModulesIndex.getAll(itemsToMove.first().elmFile).filter { it.elmProject !is ElmPackageProject }
+            .filter {
+                it.elmFile.virtualFile.pathAsPath.startsWith(it.elmFile.elmProject?.projectDirPath?.toRealPath()
+                    ?.resolve(sourceDirectory.item) ?: return@filter false)
+            }
+            .sortedBy { it.moduleName  }
+            .map { DeclarationWrapper(it) }
+            .forEach(::addItem)
+    }
+
     private val targetFileChooser: TextFieldWithBrowseButton = createTargetFileChooser(project)
     private val memberPanel: ElmMoveMemberSelectionPanel = createMemberSelectionPanel().apply {
         // Small hack to make Kotlin UI DSL 2 use proper minimal size
