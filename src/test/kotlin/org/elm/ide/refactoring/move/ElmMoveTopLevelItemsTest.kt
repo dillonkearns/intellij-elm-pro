@@ -110,6 +110,48 @@ module B exposing (value)
 value =
     42"""
     )
+
+    fun `test update reference with unqualified import`() = doTest(
+        """
+--@ A.elm
+
+module A exposing (value, value2)
+
+value = {-caret-}42
+
+value2 = value + 123
+
+--@ B.elm
+module B exposing (existing)
+
+existing = "Existing"
+{-target-}
+"""
+        , """
+--@ A.elm
+
+module A exposing (value2)
+
+import B
+
+
+value2 =
+    B.value + 123
+
+--@ B.elm
+
+module B exposing (existing, value)
+
+
+existing =
+    "Existing"
+
+
+value =
+    42"""
+    )
+
+
 //"""
 //    //- lib.rs
 //        mod mod1 {

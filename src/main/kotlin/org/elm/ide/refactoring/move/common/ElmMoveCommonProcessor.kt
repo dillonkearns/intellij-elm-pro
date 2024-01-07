@@ -21,10 +21,15 @@ package org.elm.ide.refactoring.move.common
 //import org.elm.lang.core.psi.ext.*
 //import org.elm.openapiext.computeWithCancelableProgress
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiReference
+import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.IncorrectOperationException
+import org.elm.lang.core.imports.ImportAdder
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.ElmFunctionDeclarationLeft
+import org.elm.lang.core.psi.elements.ElmValueExpr
 import org.elm.lang.core.psi.elements.addItem
 import org.elm.lang.core.psi.elements.removeItem
 
@@ -122,66 +127,24 @@ class ElmMoveCommonProcessor(
         }
     }
 
-//    /**
-//     * - Direct reference is reference to one of [elementsToMove]:
-//     * ```elm
-//     * fn usages() {
-//     *     item1();
-//     *     ~~~~~ direct reference
-//     *     item2::func();
-//     *     ~~~~~ direct reference
-//     * }
-//     *
-//     * fn item1/*caret*/() {}
-//     * mod item2/*caret*/ { pub fn func() {} }
-//     * ```
-//     *
-//     * - Indirect reference is reference to item inside moved mod:
-//     *   (if we can't find direct reference using base/parent path)
-//     * ```elm
-//     * use inner::func;  // this import will remain in source mod!
-//     * fn usages() {
-//     *     func();
-//     *     ~~~~ indirect reference
-//     * }
-//     *
-//     * mod inner/*caret*/ { pub fn func() {} }
-//     * ```
-//     */
-//    fun findUsages(): Array<ElmMoveUsageInfo> {
-//        val referencesDirect = findDirectInsideReferences()
-//        val referencesIndirect = findIndirectInsideReferences()
-//        return (referencesDirect + referencesIndirect)
-//            .mapNotNull { createMoveUsageInfo(it) }
-//            // sorting is needed for stable results in tests
-//            .sortedWith(compareBy({ it.element.containingMod.crateRelativePath }, { it.element.startOffset }))
-//            .toTypedArray()
-//    }
-//
-//    private fun findDirectInsideReferences(): List<PsiReference> = elementsToMove
-//        .flatMap { ReferencesSearch.search(it.element, GlobalSearchScope.projectScope(project)) }
-//
-//    private fun findIndirectInsideReferences(): List<PsiReference> =
-//        movedElementsShallowDescendantsOfType<ElmPath>(elementsToMove, processInlineModules = false)
-//            .filter { path ->
-//                if (path.ancestorStrict<ElmUseGroup>() != null || path.path != null) return@filter false
-//                val target = path.reference?.resolve() ?: return@filter false
-//                // these are direct references
-//                if (elementsToMove.any { it is ItemToMove && it.item == target }) return@filter false
-//                target.isInsideMovedElements(elementsToMove)
-//            }
-//            .mapNotNull { it.reference }
-//
-//    private fun createMoveUsageInfo(reference: PsiReference): ElmMoveUsageInfo? {
-//        val element = reference.element
-//        val target = reference.resolve() ?: return null
-//
-//        return when {
-//            element is ElmModDeclItem && target is ElmFile -> ElmModDeclUsageInfo(element, target)
-//            element is ElmPath && target is ElmQualifiedNamedElement -> ElmPathUsageInfo(element, reference, target)
-//            else -> null
-//        }
-//    }
+    fun findUsages(): Array<ElmMoveUsageInfo> {
+        val referencesDirect = findDirectInsideReferences()
+        return referencesDirect
+            .mapNotNull { createMoveUsageInfo(it) }
+            // sorting is needed for stable results in tests
+            .sortedWith(compareBy({ it.element.elmFile.name }, { it.element.startOffset }))
+            .toTypedArray()
+    }
+
+    private fun findDirectInsideReferences(): List<PsiReference> = elementsToMove
+        .flatMap { ReferencesSearch.search(it.element, GlobalSearchScope.projectScope(project)) }
+
+    private fun createMoveUsageInfo(reference: PsiReference): ElmMoveUsageInfo? {
+        val element = reference.element as? ElmValueExpr ?: return null
+        val target = reference.resolve() as? ElmNamedElement ?: return null
+
+        return ElmPathUsageInfo(element, reference, target)
+    }
 
 //    fun preprocessUsages(
 //        usages: Array<UsageInfo>,
@@ -220,27 +183,6 @@ class ElmMoveCommonProcessor(
 //        }
 //    }
 //
-//    private fun collectOutsideReferences(): List<ElmMoveReferenceInfo> {
-//        // we should collect:
-//        // - absolute references (starts with "::", "crate" or some crate name) to source or target crate
-//        // - references which starts with "super"
-//        // - references from old mod scope:
-//        //     - to items in old mod
-//        //     - to something which is imported in old mod
-//
-//        val references = mutableListOf<ElmMoveReferenceInfo>()
-//        for (path in movedElementsDeepDescendantsOfType<ElmPath>(elementsToMove)) {
-//            if (path.containingFile == sourceMod.containingFile) {
-//                path.putCopyableUserData(RS_PATH_OLD_BEFORE_MOVE_KEY, path)
-//            }
-//
-//            if (path.parent is ElmVisRestriction) continue
-//            if (path.containingMod != sourceMod  // path inside nested mod of moved element
-//                && !path.isAbsolute()
-//                && !path.startsWithSuper()
-//            ) continue
-//            if (!isSimplePath(path)) continue
-//            if (!checkMacroCallPath(path)) continue
 //
 //            // `use path1::{path2, path3}`
 //            //              ~~~~~  ~~~~~ TODO: don't ignore such paths
@@ -264,61 +206,6 @@ class ElmMoveCommonProcessor(
 //        }
 //        return references
 //    }
-//
-//    private fun checkMacroCallPath(path: ElmPath): Boolean {
-//        if (path.parent !is ElmMacroCall) return true
-//        val target = path.reference?.resolve() as? ElmMacroDefinitionBase ?: return false
-//        val targetCrate = target.containingCrate
-//        // TODO: support references to macros in same crate
-//        //  it is complicated: https://doc.elm-lang.org/reference/macros-by-example.html#scoping-exporting-and-importing
-//        return targetCrate != sourceMod.containingCrate && target != targetMod.containingCrate
-//    }
-//
-//    private fun createOutsideReferenceInfo(
-//        pathOriginal: ElmElement,
-//        target: ElmQualifiedNamedElement
-//    ): ElmMoveReferenceInfo? {
-//        val path = convertFromPathOriginal(pathOriginal, codeFragmentFactory)
-//
-//        // after move both `path` and its target will belong to `targetMod`
-//        // so we can refer to item in `targetMod` just with its name
-//        if (path.containingMod == sourceMod && target.containingModStrict == targetMod) {
-//            val pathNew = target.name?.toElmPath(psiFactory)
-//            if (pathNew != null) {
-//                return ElmMoveReferenceInfo(path, pathOriginal, pathNew, pathNew, target, forceReplaceDirectly = true)
-//            }
-//        }
-//
-//        if (path.isAbsolute()) {
-//            // when moving from binary to library crate, we should change path `library_crate::...` to `crate::...`
-//            // when moving from one library crate to another, we should change path `crate::...` to `first_library::...`
-//            val basePathTarget = path.basePath().reference?.resolve() as? ElmMod
-//            if (basePathTarget != null
-//                && basePathTarget.crateRoot != sourceMod.crateRoot
-//                && basePathTarget.crateRoot != targetMod.crateRoot
-//            ) return null  // not needed to change path
-//
-//            // ideally this check is enough and above check is not needed
-//            // but for some paths (e.g. `base64::decode`) `pathNew.reference.resolve()` is null,
-//            // though actually path will be resolved correctly after move
-//            val pathNew = path.textNormalized.toElmPath(codeFragmentFactory, targetMod)
-//            if (pathNew != null && pathNew.resolvesToAndAccessible(target)) return null  // not needed to change path
-//        }
-//
-//        val pathNewFallback = if (path.containingMod == sourceMod) {
-//            // after move `path` will belong to `targetMod`
-//            target.qualifiedNameRelativeTo(targetMod)
-//                ?.toElmPath(codeFragmentFactory, targetMod)
-//        } else {
-//            target.qualifiedNameInCrate(targetMod)
-//                ?.toElmPathInEmptyTmpMod(codeFragmentFactory, psiFactory, targetMod)
-//        }
-//        val pathNewAccessible = ElmImportHelper.findPath(targetMod, target)
-//            ?.toElmPathInEmptyTmpMod(codeFragmentFactory, psiFactory, targetMod)
-//
-//        return ElmMoveReferenceInfo(path, pathOriginal, pathNewAccessible, pathNewFallback, target)
-//    }
-//
 //    /** Also processes self references */
 //    private fun preprocessInsideReferences(usages: Array<UsageInfo>): List<ElmMoveReferenceInfo> {
 //        val pathUsages = usages.filterIsInstance<ElmPathUsageInfo>()
@@ -413,6 +300,11 @@ class ElmMoveCommonProcessor(
 //    }
 
     fun performRefactoring(usages: Array<out UsageInfo>, moveElements: () -> List<ElementToMove>) {
+        usages.forEach { usage ->
+            val ref = (usage as ElmPathUsageInfo).element
+            ImportAdder.addImport(ImportAdder.Import(targetMod.name, null, ref.referenceName), ref.elmFile, true)
+            ref.replace(psiFactory.createValueQID("${targetMod.getModuleDecl()?.name}.${ref.referenceName}"))
+        }
         val element: ElmFunctionDeclarationLeft = this.elementsToMove.first().element as ElmFunctionDeclarationLeft
         targetMod.add(psiFactory.createDeclaration(element.parent.text))
         targetMod.getModuleDecl()?.exposingList?.addItem(element.name)
@@ -538,4 +430,16 @@ class ElmMoveCommonProcessor(
 //         */
 //        private val RS_TARGET_BEFORE_MOVE_KEY: Key<ElmQualifiedNamedElement> = Key.create("RS_TARGET_BEFORE_MOVE_KEY")
 //    }
+}
+
+sealed class ElmMoveUsageInfo(open val element: ElmPsiElement) : UsageInfo(element)
+
+class ElmPathUsageInfo(
+    override val element: ElmValueExpr,
+    private val elmReference: PsiReference,
+    val target: ElmNamedElement
+) : ElmMoveUsageInfo(element) {
+//    lateinit var referenceInfo: ElmMoveReferenceInfo
+
+    override fun getReference(): PsiReference = elmReference
 }

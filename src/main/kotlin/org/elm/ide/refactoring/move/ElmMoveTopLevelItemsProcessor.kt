@@ -35,8 +35,8 @@ class ElmMoveTopLevelItemsProcessor(
     override fun findUsages(): Array<out UsageInfo> {
         if (!searchForReferences) return UsageInfo.EMPTY_ARRAY
         // TODO
-//        return commonProcessor.findUsages()
-        return emptyArray()
+        return commonProcessor.findUsages()
+//        return emptyArray()
     }
 
     private fun checkNoItemsWithSameName(@Suppress("UnstableApiUsage") conflicts: MultiMap<PsiElement, @NlsContexts.DialogMessage String>) {
