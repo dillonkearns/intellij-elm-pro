@@ -28,10 +28,7 @@ import com.intellij.usageView.UsageInfo
 import com.intellij.util.IncorrectOperationException
 import org.elm.lang.core.imports.ImportAdder
 import org.elm.lang.core.psi.*
-import org.elm.lang.core.psi.elements.ElmFunctionDeclarationLeft
-import org.elm.lang.core.psi.elements.ElmValueExpr
-import org.elm.lang.core.psi.elements.addItem
-import org.elm.lang.core.psi.elements.removeItem
+import org.elm.lang.core.psi.elements.*
 
 //import org.elm.openapiext.runWithCancelableProgress
 
@@ -306,7 +303,13 @@ class ElmMoveCommonProcessor(
             ref.replace(psiFactory.createValueQID("${targetMod.getModuleDecl()?.name}.${ref.referenceName}"))
         }
         val element: ElmFunctionDeclarationLeft = this.elementsToMove.first().element as ElmFunctionDeclarationLeft
-        targetMod.add(psiFactory.createDeclaration(element.parent.text))
+        val annotation = (element.parent as? ElmValueDeclaration)?.typeAnnotation
+        if (annotation != null) {
+            targetMod.addAll(psiFactory.createTopLevelFunctionWithAnnotation(annotation.text, element.parent.text))
+            annotation.delete()
+        } else {
+            targetMod.add(psiFactory.createDeclaration(element.parent.text))
+        }
         targetMod.getModuleDecl()?.exposingList?.addItem(element.name)
         val todoRemoveThis = targetMod.getModuleDecl()?.exposingList?.allExposedItems?.find { it.text == "todoRemoveThis" }
         if (todoRemoveThis != null) {

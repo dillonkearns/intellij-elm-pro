@@ -117,6 +117,7 @@ value =
 
 module A exposing (value, value2)
 
+value : Int
 value = {-caret-}42
 
 value2 = value + 123
@@ -147,6 +148,7 @@ existing =
     "Existing"
 
 
+value : Int
 value =
     42"""
     )
