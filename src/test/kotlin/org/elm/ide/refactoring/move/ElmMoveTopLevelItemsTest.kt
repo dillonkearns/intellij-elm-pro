@@ -117,6 +117,11 @@ value =
 
 module A exposing (value, value2)
 
+{-| -}
+
+{-| This is a doc comment.
+ 
+It can be on multiple lines. -}
 value : Int
 value = {-caret-}42
 
@@ -133,6 +138,8 @@ existing = "Existing"
 
 module A exposing (value2)
 
+{-| -}
+
 import B
 
 
@@ -148,6 +155,11 @@ existing =
     "Existing"
 
 
+{-| This is a doc comment.
+
+It can be on multiple lines.
+
+-}
 value : Int
 value =
     42"""

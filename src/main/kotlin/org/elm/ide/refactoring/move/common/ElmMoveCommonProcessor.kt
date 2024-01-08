@@ -21,11 +21,13 @@ package org.elm.ide.refactoring.move.common
 //import org.elm.lang.core.psi.ext.*
 //import org.elm.openapiext.computeWithCancelableProgress
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.IncorrectOperationException
+import com.intellij.util.containers.addIfNotNull
 import org.elm.lang.core.imports.ImportAdder
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
@@ -297,15 +299,21 @@ class ElmMoveCommonProcessor(
 //    }
 
     fun performRefactoring(usages: Array<out UsageInfo>, moveElements: () -> List<ElementToMove>) {
+        val element: ElmFunctionDeclarationLeft = this.elementsToMove.first().element as ElmFunctionDeclarationLeft
+        val annotation = (element.parent as? ElmValueDeclaration)?.typeAnnotation
+        val docComment = (element.parent as? ElmValueDeclaration)?.docComment
         usages.forEach { usage ->
             val ref = (usage as ElmPathUsageInfo).element
             ImportAdder.addImport(ImportAdder.Import(targetMod.name, null, ref.referenceName), ref.elmFile, true)
             ref.replace(psiFactory.createValueQID("${targetMod.getModuleDecl()?.name}.${ref.referenceName}"))
         }
-        val element: ElmFunctionDeclarationLeft = this.elementsToMove.first().element as ElmFunctionDeclarationLeft
-        val annotation = (element.parent as? ElmValueDeclaration)?.typeAnnotation
         if (annotation != null) {
-            targetMod.addAll(psiFactory.createTopLevelFunctionWithAnnotation(annotation.text, element.parent.text))
+            val elements = mutableListOf<PsiElement>()
+            elements.addIfNotNull(docComment)
+
+            elements.addAll(psiFactory.createTopLevelFunctionWithAnnotation(annotation.text, element.parent.text))
+            targetMod.addAll(elements)
+            docComment?.delete()
             annotation.delete()
         } else {
             targetMod.add(psiFactory.createDeclaration(element.parent.text))
