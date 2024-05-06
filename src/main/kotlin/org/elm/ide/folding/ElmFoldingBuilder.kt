@@ -58,10 +58,14 @@ private class ElmFoldingVisitor : PsiElementVisitor() {
         super.visitElement(element)
         when (element) {
             is ElmFile -> {
-                val imports = element.directChildren.filterIsInstance<ElmImportClause>().toList()
-                if (imports.size < 2) return
-                val start = imports.first()
-                foldBetween(start, start.moduleQID, imports.last(), true, true)
+                try {
+                    val imports = element.directChildren.filterIsInstance<ElmImportClause>().toList()
+                    if (imports.size < 2) return
+                    val start = imports.first()
+                    foldBetween(start, start.moduleQID, imports.last(), true, true)
+                } catch (e: Exception) {
+                    // Ignore exceptions
+                }
             }
             is ElmModuleDeclaration -> {
                 if (element.exposesAll) return
@@ -96,35 +100,42 @@ private class ElmFoldingVisitor : PsiElementVisitor() {
                 foldToEnd(element) { directChildren.find { it.elementType == ARROW } }
             }
             is ElmFunctionCallExpr -> {
-                val callingFunction =
-                    when (val target = element.target) {
-                        is ElmValueExpr -> {
-                            target.referenceName
+                try {
+                    val callingFunction =
+                        when (val target = element.target) {
+                            is ElmValueExpr -> {
+                                target.referenceName
+                            }
+
+                            else -> {
+                                null
+                            }
                         }
-                        else -> {
-                            null
+                    if (callingFunction == "test") {
+                        if (element.parent is ElmBinOpExpr) {
+                            val binOpExpr = (element.parent as ElmBinOpExpr).parts.toList()
+                            val start = binOpExpr.drop(1).first()
+                            val end = binOpExpr.last()
+                            foldBetween(start, start, end, true, true)
+                        } else {
+                            fold(element)
+                        }
+                    } else if (callingFunction == "describe") {
+                        if (element.parent is ElmBinOpExpr) {
+                            fold(element.parent)
+                        } else {
+                            val describeList = element.arguments.last() as? ElmListExpr
+                            if (describeList != null) {
+                                val listStart =
+                                    describeList.directChildren.toList().first { it.elementType == LEFT_SQUARE_BRACKET }
+                                val listEnd = describeList.directChildren.toList()
+                                    .first { it.elementType == RIGHT_SQUARE_BRACKET }
+                                foldBetween(listStart, listStart, listEnd, false, false)
+                            }
                         }
                     }
-                if (callingFunction == "test") {
-                    if (element.parent is ElmBinOpExpr) {
-                        val binOpExpr = (element.parent as ElmBinOpExpr).parts.toList()
-                        val start = binOpExpr.drop(1).first()
-                        val end = binOpExpr.last()
-                        foldBetween(start, start, end, true, true)
-                    } else {
-                        fold(element)
-                    }
-                } else if (callingFunction == "describe") {
-                    if (element.parent is ElmBinOpExpr) {
-                        fold(element.parent)
-                    } else {
-                        val describeList = element.arguments.last() as? ElmListExpr
-                        if (describeList != null) {
-                            val listStart = describeList.directChildren.toList().first { it.elementType == LEFT_SQUARE_BRACKET }
-                            val listEnd = describeList.directChildren.toList().first { it.elementType == RIGHT_SQUARE_BRACKET }
-                            foldBetween(listStart, listStart, listEnd, false, false)
-                        }
-                    }
+                } catch (e: Exception) {
+                    // Ignore exceptions
                 }
             }
         }
