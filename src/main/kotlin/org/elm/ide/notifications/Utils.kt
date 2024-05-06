@@ -77,8 +77,8 @@ fun executeAction(action: AnAction, place: String, dataContext: DataContext) {
 
     if (event.presentation.isEnabled && event.presentation.isVisible) {
         val actionManager = ActionManagerEx.getInstanceEx()
-        actionManager.fireBeforeActionPerformed(action, event.dataContext, event)
+        actionManager.fireBeforeActionPerformed(action, event)
         action.actionPerformed(event)
-        actionManager.fireAfterActionPerformed(action, event.dataContext, event)
+        actionManager.fireBeforeActionPerformed(action, event)
     }
 }

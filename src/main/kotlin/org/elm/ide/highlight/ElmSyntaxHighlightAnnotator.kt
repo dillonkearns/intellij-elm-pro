@@ -77,8 +77,8 @@ class ElmSyntaxHighlightAnnotator : Annotator {
 
     private fun AnnotationHolder.fieldAccessorFunction(element: ElmFieldAccessorFunctionExpr) {
         applyColor(element, ElmColor.RECORD_FIELD_ACCESSOR)
-    }
 
+    }
     private fun AnnotationHolder.applyColor(element: PsiElement, color: ElmColor) {
         newSilentAnnotation(HighlightSeverity.INFORMATION).textAttributes(color.textAttributesKey).range(element.textRange).create()
     }

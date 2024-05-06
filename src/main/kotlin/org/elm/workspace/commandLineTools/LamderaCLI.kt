@@ -6,10 +6,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindowManager
 import org.elm.openapiext.*
-import org.elm.workspace.*
+import org.elm.workspace.ElmProject
+import org.elm.workspace.ParseException
+import org.elm.workspace.Version
 import org.elm.workspace.compiler.ElmBuildAction
 import org.elm.workspace.compiler.ElmError
 import org.elm.workspace.compiler.elmJsonToCompilerMessages
+import org.elm.workspace.elmCompilerTool
 import java.nio.file.Path
 
 private val log = logger<LamderaCLI>()

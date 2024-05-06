@@ -15,7 +15,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findDocument
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
-import com.intellij.util.alsoIfNull
 import org.elm.workspace.elmreview.ElmReviewError
 import java.nio.file.Path
 
@@ -72,11 +71,9 @@ fun highlightsForFile(
                 return emptyList()
             }
             highlightBuilder.range(textRange)
-        }.alsoIfNull {
-            // if we get null from the TextRange, it means the document has changed since we got the elm-review results,
-            // so we should skip this highlighting pass and wait for it to re-run upon receiving fresh elm-review --watch results
-            return emptyList()
-        }
+        } ?: return emptyList()
+        // if we get null from the TextRange, it means the document has changed since we got the elm-review results,
+        // so we should skip this highlighting pass and wait for it to re-run upon receiving fresh elm-review --watch results
 
 
         message.fix.orEmpty()

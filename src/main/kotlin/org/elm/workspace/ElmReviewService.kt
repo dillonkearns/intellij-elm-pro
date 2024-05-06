@@ -9,7 +9,6 @@ import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.currentOrDefaultProject
 import com.intellij.openapi.util.Disposer
-import com.intellij.util.alsoIfNull
 import com.intellij.util.messages.Topic
 import org.elm.ide.notifications.showBalloon
 import org.elm.workspace.elmreview.ElmReviewError
@@ -19,7 +18,6 @@ import org.jetbrains.annotations.SystemIndependent
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
-
 
 
 private val log = logger<ElmReviewService>()
@@ -45,9 +43,12 @@ class ElmReviewService(val project: Project) {
     }
 
     private fun reviewDirExists(): Boolean {
-        return currentBasePath()?.let { Path.of(it, "review") }?.exists().alsoIfNull {
-            showError(project, "Could not determine whether a review/ folder is present in this project.")
-        } ?: false
+        return currentBasePath()?.let { Path.of(it, "review") }?.exists() ?: defaultWithError()
+    }
+
+    private fun defaultWithError(): Boolean {
+        showError(project, "Could not determine whether a review/ folder is present in this project.")
+        return false
     }
 
     private fun currentBasePath(): @SystemIndependent @NonNls String? = currentOrDefaultProject(project).basePath

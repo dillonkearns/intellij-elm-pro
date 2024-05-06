@@ -15,7 +15,7 @@ plugins {
     // Gradle IntelliJ Plugin
     id("org.jetbrains.intellij") version "1.16.1"
     // GrammarKit Plugin
-    id("org.jetbrains.grammarkit") version "2022.3.1"
+    id("org.jetbrains.grammarkit") version "2022.3.2.2"
     // Gradle Changelog Plugin
     id("org.jetbrains.changelog") version "1.3.1"
     // Gradle Qodana Plugin
@@ -65,7 +65,7 @@ qodana {
 
 val generateSpecParser = tasks.create<GenerateParserTask>("generateElmParser") {
     sourceFile.set(file("$projectDir/src/main/grammars/ElmParser.bnf"))
-    targetRoot.set("$projectDir/src/main/gen")
+    targetRootOutputDir.set(file("$projectDir/src/main/gen"))
     pathToParser.set("/org/elm/lang/core/parser/ElmParser.java")
     pathToPsiRoot.set("/org/elm/lang/core/psi")
     purgeOldFiles.set(true)
@@ -74,8 +74,7 @@ val generateSpecParser = tasks.create<GenerateParserTask>("generateElmParser") {
 val generateSpecLexer = tasks.create<GenerateLexerTask>("generateElmLexer") {
     sourceFile.set(file("$projectDir/src/main/grammars/ElmLexer.flex"))
     skeleton.set(file("$projectDir/src/main/grammars/lexer.skeleton"))
-    targetDir.set("$projectDir/src/main/gen/org/elm/lang/core/lexer/")
-    targetClass.set("_ElmLexer")
+    targetOutputDir.set(file("$projectDir/src/main/gen/org/elm/lang/core/lexer/"))
     purgeOldFiles.set(true)
 }
 
