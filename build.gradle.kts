@@ -47,6 +47,7 @@ intellij {
 //    plugins.set(listOf(psiViewerPlugin, ideaVimPlugin))
     val ideaVimPlugin = "IdeaVim:2.7.0"
 //    val psiViewerPlugin = "PsiViewer:232.3"
+    plugins.set(listOf(ideaVimPlugin))
 }
 
 // Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
