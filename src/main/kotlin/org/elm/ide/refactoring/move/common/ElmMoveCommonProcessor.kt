@@ -109,7 +109,10 @@ class ElmMoveCommonProcessor(
 //        ?: error("Elements to move must belong to single parent mod")
     private val sourceMod: ElmFile = elementsToMove
         .also { if (it.isEmpty()) throw IncorrectOperationException("No items to move") }
-        .singleOrNull()?.element?.elmFile
+        .map { it.element.elmFile }
+        .toSet()
+        .toList()
+        .singleOrNull()
         ?: error("Elements to move must belong to single parent mod")
 
 
