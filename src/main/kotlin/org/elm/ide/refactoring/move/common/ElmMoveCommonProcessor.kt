@@ -307,6 +307,11 @@ class ElmMoveCommonProcessor(
             ImportAdder.addImport(ImportAdder.Import(targetMod.name, null, ref.referenceName), ref.elmFile, true)
             ref.replace(psiFactory.createValueQID("${targetMod.getModuleDecl()?.name}.${ref.referenceName}"))
         }
+        (this.elementsToMove.first().element as ElmFunctionDeclarationLeft).body?.descendantsOfType<ElmValueExpr>()?.forEach {  e ->
+            if (e.reference.resolve()?.moduleName == targetMod.getModuleDecl()?.name) {
+                e.replace(psiFactory.createValueQID(e.referenceName))
+            }
+        }
         if (annotation != null) {
             val elements = mutableListOf<PsiElement>()
             elements.addIfNotNull(docComment)

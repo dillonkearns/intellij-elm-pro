@@ -165,6 +165,57 @@ value =
     42"""
     )
 
+    fun `test remove qualified reference after moving to referenced module`() = doTest(
+        """
+--@ Example.elm
+
+module Example exposing (example, toRoman)
+
+example = toRoman -1
+
+toRoman : Int -> String
+toRoman n =
+    {-caret-}if n > 0 then
+        Roman.toRomanHelp
+    else
+        ""
+    
+
+--@ Roman.elm
+module Roman exposing (toRomanHelp)
+
+toRomanHelp n = "I"
+{-target-}
+"""
+        , """
+--@ Example.elm
+
+module Example exposing (example)
+
+import Roman
+
+
+example =
+    Roman.toRoman -1
+
+--@ Roman.elm
+module Roman exposing (toRoman, toRomanHelp)
+
+
+toRomanHelp n =
+    "I"
+
+
+toRoman : Int -> String
+toRoman n =
+    if n > 0 then
+        toRomanHelp
+
+    else
+        ""
+"""
+    )
+
 
 //"""
 //    //- lib.rs
