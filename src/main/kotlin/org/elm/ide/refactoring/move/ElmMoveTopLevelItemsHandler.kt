@@ -119,8 +119,6 @@ class ElmMoveTopLevelItemsHandler : MoveHandlerDelegate() {
     ): Pair<Set<ElmExposableTag>, ElmFile>? {
         val (leafElement1, leafElement2) = file.getElementRange(selection.selectionStart, selection.selectionEnd)
             ?: return null
-//        val element1 = leafElement1.ancestorOrSelf<ElmExposableTag>() ?: return null
-//        val element2 = leafElement2.ancestorOrSelf<ElmExposableTag>() ?: return null
         val element1 = leafElement1.ancestorOrSelf<ElmPsiElement>() ?: leafElement1
         val element2 = leafElement2.ancestorOrSelf<ElmPsiElement>() ?: leafElement2
         val containingMod = element1.containingFile as ElmFile
