@@ -93,6 +93,7 @@ interface FileTreeBuilder {
 class FileTree(private val rootDirectory: Entry.Directory) {
     fun create(project: Project, directory: VirtualFile): TestProject {
         val filesWithCaret: MutableList<String> = mutableListOf()
+        val filesWithSelection: MutableList<String> = mutableListOf()
 
         fun go(dir: Entry.Directory, root: VirtualFile, parentComponents: List<String> = emptyList()) {
             for ((name, entry) in dir.children) {
@@ -103,6 +104,9 @@ class FileTree(private val rootDirectory: Entry.Directory) {
                         VfsUtil.saveText(vFile, replaceCaretMarker(entry.text))
                         if (hasCaretMarker(entry.text) || "--^" in entry.text) {
                             filesWithCaret += components.joinToString(separator = "/")
+                        }
+                        if (hasSelectionMarker(entry.text)) {
+                            filesWithSelection += components.joinToString(separator = "/")
                         }
                     }
                     is Entry.Directory -> {
@@ -117,7 +121,7 @@ class FileTree(private val rootDirectory: Entry.Directory) {
             fullyRefreshDirectory(directory)
         }
 
-        return TestProject(project, directory, filesWithCaret)
+        return TestProject(project, directory, filesWithCaret, filesWithSelection)
     }
 
 
@@ -150,10 +154,18 @@ class FileTree(private val rootDirectory: Entry.Directory) {
 class TestProject(
         private val project: Project,
         val root: VirtualFile,
-        val filesWithCaret: List<String>
+        val filesWithCaret: List<String>,
+        val filesWithSelection: List<String>
 ) {
 
     val fileWithCaret: String get() = filesWithCaret.singleOrNull()!!
+
+    val fileWithCaretOrSelection: String get() = filesWithCaret.singleOrNull() ?: fileWithSelection
+
+    val fileWithSelection: String get() = filesWithSelection.single()
+
+
+
 
     inline fun <reified T : PsiElement> findElementInFile(path: String): T {
         val element = doFindElementInFile(path)
@@ -237,3 +249,4 @@ private fun findElementInFile(file: PsiFile, marker: String): PsiElement {
 fun replaceCaretMarker(text: String): String = text.replace("{-caret-}", "<caret>")
 fun hasCaretMarker(text: String): Boolean = text.contains("{-caret-}")
 
+fun hasSelectionMarker(text: String): Boolean = text.contains("<selection>") && text.contains("</selection>")

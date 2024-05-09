@@ -302,19 +302,28 @@ class ElmMoveCommonProcessor(
 //    }
 
     fun performRefactoring(usages: Array<out UsageInfo>, moveElements: () -> List<ElementToMove>) {
-        val element: ElmFunctionDeclarationLeft = this.elementsToMove.first().element as ElmFunctionDeclarationLeft
-        val annotation = (element.parent as? ElmValueDeclaration)?.typeAnnotation
-        val docComment = (element.parent as? ElmValueDeclaration)?.docComment
         usages.forEach { usage ->
             val ref = (usage as ElmPathUsageInfo).element
             ImportAdder.addImport(ImportAdder.Import(targetMod.name, null, ref.referenceName), ref.elmFile, true)
             ref.replace(psiFactory.createValueQID("${targetMod.getModuleDecl()?.name}.${ref.referenceName}"))
         }
-        (this.elementsToMove.first().element as ElmFunctionDeclarationLeft).body?.descendantsOfType<ElmValueExpr>()?.forEach {  e ->
-            if (e.reference.resolve()?.moduleName == targetMod.getModuleDecl()?.name) {
-                e.replace(psiFactory.createValueQID(e.referenceName))
-            }
+        this.elementsToMove.forEach { it ->
+            moveElement(it.element as ElmFunctionDeclarationLeft)
         }
+    }
+
+    private fun moveElement(
+        element: ElmFunctionDeclarationLeft
+    ) {
+        val exposedItem = sourceMod.getModuleDecl()?.exposingList?.findMatchingItemFor(element)
+        val annotation = (element.parent as? ElmValueDeclaration)?.typeAnnotation
+        val docComment = (element.parent as? ElmValueDeclaration)?.docComment
+        element.body?.descendantsOfType<ElmValueExpr>()
+            ?.forEach { e ->
+                if (e.reference.resolve()?.moduleName == targetMod.getModuleDecl()?.name) {
+                    e.replace(psiFactory.createValueQID(e.referenceName))
+                }
+            }
         if (annotation != null) {
             val elements = mutableListOf<PsiElement>()
             elements.addIfNotNull(docComment)
@@ -324,32 +333,38 @@ class ElmMoveCommonProcessor(
             docComment?.delete()
             annotation.delete()
         } else {
-            targetMod.add(psiFactory.createDeclaration(element.parent.text))
+            targetMod.add(psiFactory.createDeclaration(element.parent.text + "\n\n"))
+            targetMod.add(psiFactory.createWhitespace("\n"))
+            targetMod.add(psiFactory.createWhitespace("\n"))
         }
         targetMod.getModuleDecl()?.exposingList?.addItem(element.name)
-        val todoRemoveThis = targetMod.getModuleDecl()?.exposingList?.allExposedItems?.find { it.text == "todoRemoveThis" }
+        val todoRemoveThis =
+            targetMod.getModuleDecl()?.exposingList?.allExposedItems?.find { it.text == "todoRemoveThis" }
         if (todoRemoveThis != null) {
             targetMod.getModuleDecl()?.exposingList?.removeItem(todoRemoveThis)
         }
+        element.parent.delete()
+        if (exposedItem != null) {
+            sourceMod.getModuleDecl()?.exposingList?.removeItem(exposedItem)
+        }
 
-//        updateOutsideReferencesInVisRestrictions()
+        //        updateOutsideReferencesInVisRestrictions()
 
-        elementsToMove = moveElements()
-//        val pathMapping = createMapping(RS_PATH_OLD_BEFORE_MOVE_KEY, ElmElement::class.java)
+        //        val pathMapping = createMapping(RS_PATH_OLD_BEFORE_MOVE_KEY, ElmElement::class.java)
 
-//        val retargetReferencesProcessor = ElmMoveRetargetReferencesProcessor(project, sourceMod, targetMod)
-//        restoreOutsideReferenceInfosAfterMove(pathMapping)
-//        retargetReferencesProcessor.retargetReferences(outsideReferences)
-//
-//        traitMethodsProcessor.addTraitImportsForOutsideReferences(elementsToMove)
-//        traitMethodsProcessor.addTraitImportsForInsideReferences()
+        //        val retargetReferencesProcessor = ElmMoveRetargetReferencesProcessor(project, sourceMod, targetMod)
+        //        restoreOutsideReferenceInfosAfterMove(pathMapping)
+        //        retargetReferencesProcessor.retargetReferences(outsideReferences)
+        //
+        //        traitMethodsProcessor.addTraitImportsForOutsideReferences(elementsToMove)
+        //        traitMethodsProcessor.addTraitImportsForInsideReferences()
 
-//        val insideReferences = usages
-//            .filterIsInstance<ElmPathUsageInfo>()
-//            .map { it.referenceInfo }
-//        updateInsideReferenceInfosIfNeeded(insideReferences, pathMapping)
-//        retargetReferencesProcessor.retargetReferences(insideReferences)
-//        retargetReferencesProcessor.optimizeImports()
+        //        val insideReferences = usages
+        //            .filterIsInstance<ElmPathUsageInfo>()
+        //            .map { it.referenceInfo }
+        //        updateInsideReferenceInfosIfNeeded(insideReferences, pathMapping)
+        //        retargetReferencesProcessor.retargetReferences(insideReferences)
+        //        retargetReferencesProcessor.optimizeImports()
     }
 
 //    private fun updateOutsideReferencesInVisRestrictions() {

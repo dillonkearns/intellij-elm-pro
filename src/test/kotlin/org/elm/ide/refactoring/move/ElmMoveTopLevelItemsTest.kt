@@ -46,6 +46,53 @@ value =
     42"""
 )
 
+    fun `test multiple`() = doTest(
+        """
+--@ A.elm
+
+module A exposing (value, value2, example)
+
+<selection>value = 42
+
+value2 = 123
+</selection>
+
+example = value + value2
+
+--@ B.elm
+module B exposing (existing)
+
+existing = "Existing"
+{-target-}
+"""
+        , """
+--@ A.elm
+
+module A exposing (example)
+
+import B
+
+
+example =
+    B.value + B.value2
+
+--@ B.elm
+
+module B exposing (existing, value, value2)
+
+
+existing =
+    "Existing"
+
+
+value =
+    42
+
+
+value2 =
+    123"""
+    )
+
     fun `test target module exposing all`() = doTest(
         """
 --@ A.elm

@@ -19,6 +19,9 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.refactoring.move.MoveCallback
 import com.intellij.refactoring.move.MoveHandlerDelegate
 import com.intellij.refactoring.util.CommonRefactoringUtil
+import org.elm.ide.utils.collectElements
+import org.elm.ide.utils.getElementRange
+import org.elm.ide.utils.getTopmostParentInside
 import org.elm.lang.core.ElmLanguage
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
@@ -114,17 +117,18 @@ class ElmMoveTopLevelItemsHandler : MoveHandlerDelegate() {
         file: PsiFile,
         selection: SelectionModel
     ): Pair<Set<ElmExposableTag>, ElmFile>? {
-//        val (leafElement1, leafElement2) = file.getElementRange(selection.selectionStart, selection.selectionEnd)
-//            ?: return null
+        val (leafElement1, leafElement2) = file.getElementRange(selection.selectionStart, selection.selectionEnd)
+            ?: return null
 //        val element1 = leafElement1.ancestorOrSelf<ElmExposableTag>() ?: return null
 //        val element2 = leafElement2.ancestorOrSelf<ElmExposableTag>() ?: return null
-//        val containingMod = element1.elmFile
-//        val item1 = element1.getTopmostParentInside(containingMod)
-//        val item2 = element2.getTopmostParentInside(containingMod)
-//        val items = collectElements(item1, item2.nextSibling) { it is ElmItemElement }
-//            .mapTo(mutableSetOf()) { it as ElmItemElement }
-//        return items to containingMod
-        return null
+        val element1 = leafElement1.ancestorOrSelf<ElmPsiElement>() ?: leafElement1
+        val element2 = leafElement2.ancestorOrSelf<ElmPsiElement>() ?: leafElement2
+        val containingMod = element1.containingFile as ElmFile
+        val item1 = element1.getTopmostParentInside(containingMod)
+        val item2 = element2.getTopmostParentInside(containingMod)
+        val items = collectElements(item1, item2.nextSibling) { it is ElmValueDeclaration }
+            .mapTo(mutableSetOf()) { (it as ElmValueDeclaration).functionDeclarationLeft as ElmExposableTag }
+        return items to containingMod
     }
 
     private fun collectedItemsUnderCaret(file: PsiFile, caretModel: CaretModel): Pair<Set<ElmExposableTag>, ElmFile>? {

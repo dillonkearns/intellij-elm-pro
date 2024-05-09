@@ -30,6 +30,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.psi.util.PsiUtilCore
 import org.elm.lang.core.psi.*
 
 /**
@@ -118,4 +119,17 @@ fun PsiElement.getTopmostParentInside(parent: PsiElement): PsiElement {
         element = element.parent
     }
     return element
+}
+
+fun collectElements(start: PsiElement, stop: PsiElement?, pred: (PsiElement) -> Boolean): Array<out PsiElement> {
+    check(stop == null || start.parent == stop.parent)
+
+    val psiSeq = generateSequence(start) {
+        if (it.nextSibling == stop)
+            null
+        else
+            it.nextSibling
+    }
+
+    return PsiUtilCore.toPsiElementArray(psiSeq.filter(pred).toList())
 }

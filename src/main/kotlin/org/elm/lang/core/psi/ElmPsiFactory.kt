@@ -310,6 +310,8 @@ class ElmPsiFactory(private val project: Project) {
 
 $annotation
 $fn
+
+
 """)
         return createElements("module Foo exposing (..)\n${annotation}\n${fn}").drop(1)
     }

@@ -40,8 +40,7 @@ abstract class ElmMoveTopLevelItemsTestBase : ElmTestBase() {
         checkByDirectory(before.trimIndent(), "", ::performMove)
 
     private fun prepareSourceFile(testProject: TestProject): PsiFile {
-//        val fileWithCaret = testProject.fileWithCaretOrSelection
-        val fileWithCaret = testProject.fileWithCaret
+        val fileWithCaret = testProject.fileWithCaretOrSelection
         val sourceFile = myFixture.findFileInTempDir(fileWithCaret).toPsiFile(project)!!
         myFixture.configureFromExistingVirtualFile(sourceFile.virtualFile)
         return sourceFile
