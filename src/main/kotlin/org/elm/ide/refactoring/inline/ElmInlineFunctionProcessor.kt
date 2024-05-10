@@ -15,8 +15,11 @@ import com.intellij.usageView.UsageInfo
 import com.intellij.usageView.UsageViewBundle
 import com.intellij.usageView.UsageViewDescriptor
 import com.intellij.util.containers.MultiMap
-import org.elm.lang.core.psi.*
+import org.elm.lang.core.psi.ElmPsiFactory
+import org.elm.lang.core.psi.ancestors
 import org.elm.lang.core.psi.elements.*
+import org.elm.lang.core.psi.prevSiblings
+import org.elm.lang.core.psi.withoutWsOrComments
 import org.elm.lang.core.resolve.reference.ElmReference
 
 class ElmInlineFunctionProcessor(
@@ -126,6 +129,10 @@ class ElmInlineFunctionProcessor(
         val declaration = element.ancestors.takeWhile { it !is ElmValueDeclaration }
             .last()
             .parent
+        val fdl = (declaration as? ElmValueDeclaration)?.functionDeclarationLeft
+        val moduleDecl = fdl?.elmFile?.getModuleDecl()
+        val exposedItem = moduleDecl?.exposingList?.findMatchingItemFor(fdl)
+        exposedItem?.let { moduleDecl.exposingList?.removeItem(it) }
         when (val parentThing = declaration.parent) {
             is ElmLetInExpr -> {
                 if (parentThing.valueDeclarationList.size == 1) {

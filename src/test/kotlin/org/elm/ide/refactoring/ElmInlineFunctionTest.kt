@@ -425,6 +425,26 @@ anotherExclaimGreeting =
         ++ "!"
 """)
 
+    @Test
+    fun `test removes exposing`() =
+        doTest(
+        """
+--@ A.elm
+
+module A exposing (value, value2)
+
+value = {-caret-}42
+
+value2 = value + 123
+"""
+        , """module A exposing (value2)
+
+
+
+value2 = 42 + 123"""
+    )
+
+
     private fun doTest(@Language("Elm") before: String, @Language("Elm") after: String) {
         configureByFileTree(before)
         myFixture.performEditorAction("Inline")
