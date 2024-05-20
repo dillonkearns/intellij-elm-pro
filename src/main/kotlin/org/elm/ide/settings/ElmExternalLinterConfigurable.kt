@@ -36,12 +36,19 @@ class ElmExternalLinterConfigurable(project: Project) : ElmConfigurableBase(proj
                 .bindSelected(state::enableExtractVariable)
         }
 
+        row {
+            checkBox(ElmBundle.message("settings.elm.feature.unstable.wip.label"))
+                .comment(ElmBundle.message("settings.elm.feature.unstable.wip.comment"))
+                .bindSelected(state::enableWipFeatures)
+        }
+
         onApply {
             settings.modify {
                 it.additionalArguments = state.additionalArguments
                 it.enableDebugIntention = state.enableDebugIntention
                 it.enableExtractVariable = state.enableExtractVariable
                 it.enableElmReviewOnTheFly = state.enableElmReviewOnTheFly
+                it.enableWipFeatures = state.enableWipFeatures
             }
         }
     }

@@ -8,6 +8,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.PsiSearchHelper
 import com.intellij.psi.search.PsiSearchHelper.SearchCostResult.TOO_MANY_OCCURRENCES
 import com.intellij.psi.search.searches.ReferencesSearch
+import org.elm.ide.settings.experimentalFlags
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
 
@@ -61,7 +62,12 @@ class ElmUnusedSymbolInspection : ElmLocalInspection() {
 
     private fun markAsUnused(holder: ProblemsHolder, element: ElmNameIdentifierOwner, name: String) {
         val fixes = when (element) {
-            is ElmLowerPattern -> arrayOf(RenameToWildcardFix())
+            is ElmLowerPattern ->
+                if (holder.project.experimentalFlags.wipFeaturesEnabled) {
+                    arrayOf(RenameToWildcardFix(), RemoveUnusedParameterFix())
+                } else {
+                    arrayOf(RenameToWildcardFix())
+                }
             else -> emptyArray()
             // TODO should I re-enable RemoveUnused, or is it obsolete with elm-review integration?
 //            else -> arrayOf(RemoveUnusedFix())
@@ -79,6 +85,19 @@ private class RenameToWildcardFix : NamedQuickFix("Rename to _") {
     override fun applyFix(element: PsiElement, project: Project) {
         (element.parent as? ElmLowerPattern)
                 ?.replace(ElmPsiFactory(project).createAnythingPattern())
+    }
+}
+
+
+private class RemoveUnusedParameterFix : NamedQuickFix("Remove parameter") {
+    override fun applyFix(element: PsiElement, project: Project) {
+        val refs = ReferencesSearch.search(element.parent.parent).findAll().toList().map { (it.element.parent as ElmFunctionCallExpr) }
+        val arguments = ((element.parent as ElmLowerPattern).parent as ElmFunctionDeclarationLeft).patterns.toList()
+        val argumentIndex = arguments.indexOf(element.parent)
+        refs.forEach { ref ->
+            ref.arguments.elementAt(argumentIndex).delete()
+        }
+        (element.parent as? ElmLowerPattern)?.delete()
     }
 }
 
