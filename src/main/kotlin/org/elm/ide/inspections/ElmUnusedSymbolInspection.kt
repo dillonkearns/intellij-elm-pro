@@ -91,9 +91,18 @@ private class RenameToWildcardFix : NamedQuickFix("Rename to _") {
 
 private class RemoveUnusedParameterFix : NamedQuickFix("Remove parameter") {
     override fun applyFix(element: PsiElement, project: Project) {
-        val refs = ReferencesSearch.search(element.parent.parent).findAll().toList().map { (it.element.parent as ElmFunctionCallExpr) }
+        val refs = ReferencesSearch.search(element.parent.parent).findAll().toList().mapNotNull { (it.element.parent as? ElmFunctionCallExpr) }
         val arguments = ((element.parent as ElmLowerPattern).parent as ElmFunctionDeclarationLeft).patterns.toList()
         val argumentIndex = arguments.indexOf(element.parent)
+        val maybeAnnotation: ElmTypeAnnotation? = ReferencesSearch.search(element.parent.parent).findAll().toList()
+            .firstNotNullOfOrNull { (it.element as? ElmTypeAnnotation) }
+
+        maybeAnnotation?.let { annotation ->
+            val segments = annotation.typeExpression?.allSegments?.map { it.text }?.filterIndexed { index, _ -> index != argumentIndex }?.joinToString(" -> ").orEmpty()
+            val newAnnotation = ElmPsiFactory(project).createTypeAnnotation("${annotation.referenceName} : $segments")
+            maybeAnnotation.replace(newAnnotation)
+        }
+
         refs.forEach { ref ->
             ref.arguments.elementAt(argumentIndex).delete()
         }

@@ -315,4 +315,10 @@ $fn
 """)
         return createElements("module Foo exposing (..)\n${annotation}\n${fn}").drop(1)
     }
+
+    fun createTypeAnnotation(annotation: String): ElmTypeAnnotation {
+        return createFromText<ElmTypeAnnotation>(annotation)
+                ?: error("Failed to create type annotation")
+    }
+
 }

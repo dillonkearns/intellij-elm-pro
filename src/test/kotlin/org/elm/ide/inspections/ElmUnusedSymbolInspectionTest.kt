@@ -117,6 +117,26 @@ class ElmUnusedSymbolInspectionTest : ElmInspectionsTestBase(ElmUnusedSymbolInsp
         main = f 
         """.trimIndent())
 
+    fun `test remove param with annotation`() = checkFixByText("Remove parameter", """
+        f : Int -> ()
+        f <warning descr="'x' is never used">x{-caret-}</warning> = ()
+        main = f 123
+        """.trimIndent(),"""
+        f : ()
+        f = ()
+        main = f 
+        """.trimIndent())
+
+    fun `test remove param with annotation with multiple params`() = checkFixByText("Remove parameter", """
+        f : String -> Int -> String -> String -> String
+        f w <warning descr="'x' is never used">x{-caret-}</warning> y z = w ++ y ++ z
+        main = f "w" 123 "y" "z"
+        """.trimIndent(),"""
+        f : String -> String -> String -> String
+        f w  y z = w ++ y ++ z
+        main = f "w"  "y" "z"
+        """.trimIndent())
+
     fun `test renames lambda parameters`() = checkFixByText("Rename to _",
             """main = (\<warning descr="'x' is never used">x{-caret-}</warning> -> ())""",
             """main = (\_ -> ())""")
