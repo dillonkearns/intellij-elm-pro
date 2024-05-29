@@ -13,6 +13,7 @@ import com.intellij.codeInsight.editorActions.enter.EnterHandlerDelegateAdapter
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
+import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
@@ -20,10 +21,15 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.TokenType
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.text.CharArrayUtil
+import org.elm.ide.settings.experimentalFlags
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.ElmCaseOfBranch
 import org.elm.lang.core.psi.elements.ElmRecordExpr
+import org.elm.lang.core.psi.elements.ElmStringConstantExpr
 import org.elm.lang.core.psi.elements.ElmTypeDeclaration
+
+//import org.elm.lang.core.psi.ElmStringConstantExpr
+
 
 /**
  * Poor-man's formatter for Elm code. In the long-term it would be nice
@@ -67,6 +73,20 @@ class ElmOnEnterIndentHandler : EnterHandlerDelegateAdapter() {
         // bail out if the caret is not at the end of the line/file
         val isEOL = isEOF || offset < text.length && text[offset] == '\n'
         if (!isEOL) {
+            if (!file.project.experimentalFlags.wipFeaturesEnabled) {
+                return Result.Continue
+            }
+            val highlighter = (editor as EditorEx).highlighter
+            val iterator = highlighter.createIterator(caretOffset)
+            if (iterator.tokenType in ELM_STRINGS) {
+                if ((file.findElementAt(offset)?.parent as? ElmStringConstantExpr)?.isTripleQuoted != true) {
+                    editor.document.insertString(caretOffset, "\" ++ \"")
+                    caretOffsetRef.set(caretOffset + 1)
+                    return Result.Continue
+                } else {
+                    return Result.DefaultSkipIndent
+                }
+            }
             return Result.Continue
         }
 

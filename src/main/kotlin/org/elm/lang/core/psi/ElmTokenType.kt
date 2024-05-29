@@ -46,6 +46,8 @@ val ELM_IDENTIFIERS = tokenSetOf(
         LOWER_CASE_IDENTIFIER
 )
 
+val ELM_STRINGS = tokenSetOf(STRING_CONSTANT_EXPR, REGULAR_STRING_PART)
+
 /**
  * The tokens corresponding to top-level code declarations.
  *
