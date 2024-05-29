@@ -7,6 +7,7 @@ package org.elm.ide.refactoring.move
 
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.observable.util.bindEnabled
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
@@ -18,9 +19,9 @@ import com.intellij.refactoring.ui.RefactoringDialog
 import com.intellij.refactoring.util.CommonRefactoringUtil
 import com.intellij.ui.ColoredTreeCellRenderer
 import com.intellij.ui.SimpleTextAttributes
+import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.components.JBTextField
-import com.intellij.ui.dsl.builder.bindSelected
-import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.util.IncorrectOperationException
 import com.intellij.util.ui.JBUI
@@ -125,24 +126,39 @@ class ElmMoveTopLevelItemsDialog(
     }
 
     override fun createCenterPanel(): JComponent {
+        var newModuleUi = true
+
         return panel {
             row(ElmBundle.message("from")) {
                 fullWidthCell(sourceFileField)
             }
-            row(ElmBundle.message("source.directory")) {
-                fullWidthCell(sourceDirectory)
-            }
-            row(ElmBundle.message("source.directory")) {
-                fullWidthCell(existingModules)
-            }
-            row(ElmBundle.message("to")) {
-                fullWidthCell(targetFileChooser).focused()
-            }
-            row {
-                resizableRow()
-                fullWidthCell(memberPanel)
-                    .verticalAlign(VerticalAlign.FILL)
-            }
+            lateinit var rb: Cell<JBRadioButton>
+            lateinit var rb2: Cell<JBRadioButton>
+            buttonsGroup {
+                    row {
+                        resizableRow()
+                        fullWidthCell(memberPanel)
+                            .verticalAlign(VerticalAlign.FILL)
+                    }
+                row {
+                    rb = radioButton("New Module", true)
+                    fullWidthCell(targetFileChooser).focused().enabledIf(rb.selected)
+                }
+                group("To existing:") {
+                    row {
+                        rb2 = radioButton("Existing Module", false)
+                    }
+                    row(ElmBundle.message("source.directory")) {
+                        fullWidthCell(sourceDirectory)
+                    }.enabledIf(rb2.selected)
+                    row(ElmBundle.message("source.directory")) {
+                        fullWidthCell(existingModules)
+                    }.enabledIf(rb2.selected)
+
+
+                }
+
+            }.bind({ newModuleUi }, { newModuleUi = it })
             row {
                 checkBox(RefactoringBundle.message("search.for.references"))
                     .bindSelected(::searchForReferences)
