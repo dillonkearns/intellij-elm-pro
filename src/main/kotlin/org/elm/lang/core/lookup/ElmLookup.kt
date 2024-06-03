@@ -47,6 +47,16 @@ object ElmLookup {
                 .filterIsInstance<T>()
     }
 
+    /** Find the named element with [name] which is visible to [clientLocation] */
+    inline fun <reified T : ElmNamedElement> findByName(
+        name: String,
+        project: Project
+    ): List<T> {
+        return ElmNamedElementIndex.find(name, project, GlobalSearchScope.projectScope(project))
+            .filterIsInstance<T>()
+    }
+
+
     /**
      * Find the named element with [name] in [module] which is visible to [clientLocation].
      *

@@ -7,14 +7,16 @@ package org.elm.ide.refactoring.move
 
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.observable.util.bindEnabled
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.NlsContexts.DialogMessage
 import com.intellij.openapi.vfs.*
+import com.intellij.psi.PsiDirectory
 import com.intellij.refactoring.RefactoringBundle
+import com.intellij.refactoring.classMembers.MemberInfoChange
+import com.intellij.refactoring.classMembers.MemberInfoModel
 import com.intellij.refactoring.ui.RefactoringDialog
 import com.intellij.refactoring.util.CommonRefactoringUtil
 import com.intellij.ui.ColoredTreeCellRenderer
@@ -23,26 +25,24 @@ import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
+import com.intellij.ui.layout.selected
 import com.intellij.util.IncorrectOperationException
-import com.intellij.util.ui.JBUI
-import org.jetbrains.annotations.Nls
 import org.elm.ElmBundle
-//import org.elm.ide.docs.signature
-//import org.elm.lang.ElmConstants
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
 import org.elm.lang.core.stubs.index.ElmModulesIndex
-//import org.elm.lang.core.psi.ext.ElmItemElement
-//import org.elm.lang.core.psi.ext.ElmMod
 import org.elm.openapiext.*
+import org.elm.utils.toPsiDirectory
+import org.elm.utils.toPsiFile
 import org.elm.workspace.ElmPackageProject
 import org.elm.workspace.elmWorkspace
-//import org.elm.stdext.mapToSet
-//import org.elm.stdext.toPath
+import org.jetbrains.annotations.Nls
 import java.awt.Dimension
+import java.io.File
 import java.nio.file.Path
 import javax.swing.JComponent
 import kotlin.io.path.nameWithoutExtension
+
 
 class ElmMoveTopLevelItemsDialog(
     project: Project,
@@ -63,6 +63,8 @@ class ElmMoveTopLevelItemsDialog(
         }
 
     }
+
+    private var newModuleUi: Boolean = true
     private val existingModules = ComboBox<DeclarationWrapper>().apply {
         ElmModulesIndex.getAll(itemsToMove.first().elmFile).filter { it.elmProject !is ElmPackageProject }
             .filter {
@@ -74,13 +76,8 @@ class ElmMoveTopLevelItemsDialog(
             .forEach(::addItem)
     }
 
-    private val targetFileChooser: TextFieldWithBrowseButton = createTargetFileChooser(project)
-    private val memberPanel: ElmMoveMemberSelectionPanel = createMemberSelectionPanel().apply {
-        // Small hack to make Kotlin UI DSL 2 use proper minimal size
-        // Actually, I don't know why it helps
-        preferredSize = JBUI.size(0, 0)
-    }
-
+    private val targetFileChooser = createTargetFileChooser(project)
+    private val memberPanel: ElmMemberSelectionTable = createMemberSelectionPanel()
     private var searchForReferences: Boolean = true
 
     init {
@@ -91,43 +88,62 @@ class ElmMoveTopLevelItemsDialog(
     }
 
     private fun createTargetFileChooser(project: Project): TextFieldWithBrowseButton {
-        return pathToElmFileTextField(disposable, ElmBundle.message("dialog.title.choose.destination.file"), project, ::validateButtons)
-            .also {
-                it.text = sourceFilePath
-                it.textField.caretPosition = sourceFilePath.removeSuffix(".elm").length
-                it.textField.moveCaretPosition(sourceFilePath.lastIndexOf('/') + 1)
+        val fileChooser = TextFieldWithBrowseButton()
+        fileChooser.addActionListener {
+            val dialog = ElmFileChooserDialog(
+                ElmBundle.message("text.choose.containing.file"),
+                project,
+                null,
+                null,
+                itemsToMove.first()
+            )
+            val targetFile1 = File(fileChooser.text);
+            val targetPsiFile = targetFile1.toPsiFile(myProject)
+
+            if (targetPsiFile != null) {
+                if (targetPsiFile is ElmFile) {
+                    dialog.select(targetPsiFile);
+                } else {
+                    val targetDir: PsiDirectory? = targetFile1.getParentFile().toPsiDirectory(myProject)
+                    if (targetDir != null) {
+                        dialog.selectDirectory(targetDir);
+                    } else {
+//                            dialog.selectDirectory(sourceDir);
+                    }
+                }
+            } else {
+//                    dialog.selectDirectory(sourceDir);
             }
+            dialog.showDialog()
+            val selectedFile: ElmFile? = if (dialog.isOK) {
+                dialog.selected
+            } else {
+                null
+            }
+            if (selectedFile != null) {
+                fileChooser.text = selectedFile.virtualFile.path;
+            }
+        }
+        return fileChooser
     }
 
-    private fun createMemberSelectionPanel(): ElmMoveMemberSelectionPanel {
+    private fun createMemberSelectionPanel(): ElmMemberSelectionTable {
         val topLevelItems = getTopLevelItems()
+        val memberInfos: List<ElmMemberInfo> = topLevelItems.map { ElmMemberInfo(it, it in itemsToMove) }
+        val selectionPanel = ElmMemberSelectionPanel(title, memberInfos, null)
+        val memberTable = selectionPanel.getTable()
+        val memberInfoModel = MemberInfoModelImpl()
+        memberInfoModel.memberInfoChanged(MemberInfoChange(memberInfos))
+        selectionPanel.getTable().memberInfoModel = memberInfoModel
+        selectionPanel.getTable().addMemberInfoChangeListener(memberInfoModel)
+//        selectionPanel.getTable().addMemberInfoChangeListener { listener -> updateControls() }
+//        cbApplyMPPDeclarationsMove.addChangeListener { e -> updateControls() }
 
-//        val nodesGroupedWithImpls = groupImplsByStructOrTrait(sourceMod, topLevelItems.toSet())
-//            .map { ElmMoveItemAndImplsInfo(it.key, it.value) }
-//        val itemsGroupedWithImpls = nodesGroupedWithImpls.flatMap { it.children }.map { it.member }
-//
-//        val nodesWithoutGrouping = topLevelItems.subtract(itemsGroupedWithImpls).map { ElmMoveMemberInfo(it) }
-//        val nodesAll = nodesGroupedWithImpls + nodesWithoutGrouping
-//
-        val nodesAll = topLevelItems.map { ElmMoveItemAndImplsInfo(it) }
-//        val nodesSelected = emptyList<ElmMoveNodeInfo>()
+        return memberTable
 
-        val nodesSelected = nodesAll
-//            .flatMap {
-//                when (it) {
-//                    is ElmMoveItemAndImplsInfo -> it.children
-////                    is ElmMoveMemberInfo -> listOf(it)
-//                    else -> error("unexpected node info type: $it")
-//                }
-//            }
-            .filter { it.item in itemsToMove }
-        return ElmMoveMemberSelectionPanel(project, ElmBundle.message("separator.items.to.move"), nodesAll, nodesSelected)
-            .also { it.tree.setInclusionListener { validateButtons() } }
     }
 
     override fun createCenterPanel(): JComponent {
-        var newModuleUi = true
-
         return panel {
             row(ElmBundle.message("from")) {
                 fullWidthCell(sourceFileField)
@@ -141,12 +157,12 @@ class ElmMoveTopLevelItemsDialog(
                             .verticalAlign(VerticalAlign.FILL)
                     }
                 row {
-                    rb = radioButton("New Module", true)
+                    rb = radioButton("New Module", true).onChanged { newModuleUi = it.selected() }
                     fullWidthCell(targetFileChooser).focused().enabledIf(rb.selected)
                 }
                 group("To existing:") {
                     row {
-                        rb2 = radioButton("Existing Module", false)
+                        rb2 = radioButton("Existing Module", false) //.onChanged { newModuleUi = !rb.selected() }
                     }
                     row(ElmBundle.message("source.directory")) {
                         fullWidthCell(sourceDirectory)
@@ -189,9 +205,8 @@ class ElmMoveTopLevelItemsDialog(
         return sourceMod.virtualFile.pathAsPath != existingModules.item.declaration.elmFile.virtualFile.pathAsPath && getSelectedItems().isNotEmpty()
     }
 
-    // TODO
     private fun getSelectedItems(): Set<ElmExposableTag> {
-        return memberPanel.tree.includedSet.map { ( it as ElmMoveItemAndImplsInfo).item }.toSet()
+        return memberPanel.selectedMemberInfos.mapNotNull { it.member as? ElmExposableTag }.toSet()
     }
 
     override fun doAction() {
@@ -206,7 +221,7 @@ class ElmMoveTopLevelItemsDialog(
 
     private fun doActionUndoCommand() {
         val itemsToMove = getSelectedItems()
-        val targetFilePath = existingModules.item.declaration.elmFile.virtualFile.path.toPath()
+        val targetFilePath = selectedPath()
         val targetMod = getOrCreateTargetMod(targetFilePath, project, sourceMod) ?: return
         try {
             val processor = ElmMoveTopLevelItemsProcessor(project, itemsToMove, targetMod, searchForReferences)
@@ -219,6 +234,12 @@ class ElmMoveTopLevelItemsDialog(
             }
             project.showErrorMessage(e.message)
         }
+    }
+
+    private fun selectedPath() = if (newModuleUi) {
+        targetFileChooser.text.toPath()
+    } else {
+        existingModules.item.declaration.elmFile.virtualFile.path.toPath()
     }
 
     companion object {
@@ -248,6 +269,39 @@ class ElmMoveTopLevelItemsDialog(
             val title = RefactoringBundle.message("error.title")
             CommonRefactoringUtil.showErrorMessage(title, message, null, this)
         }
+    }
+}
+
+class MemberInfoModelImpl: MemberInfoModel<ElmNamedElement, ElmMemberInfo> {
+    override fun memberInfoChanged(p0: MemberInfoChange<ElmNamedElement, ElmMemberInfo>) {
+    }
+
+    override fun isMemberEnabled(p0: ElmMemberInfo?): Boolean {
+        return true
+    }
+
+    override fun isCheckedWhenDisabled(p0: ElmMemberInfo?): Boolean {
+        return false
+    }
+
+    override fun isAbstractEnabled(p0: ElmMemberInfo?): Boolean {
+        return false
+    }
+
+    override fun isAbstractWhenDisabled(p0: ElmMemberInfo?): Boolean {
+        return false
+    }
+
+    override fun isFixedAbstract(p0: ElmMemberInfo?): Boolean {
+        return false
+    }
+
+    override fun checkForProblems(p0: ElmMemberInfo): Int {
+        return 0
+    }
+
+    override fun getTooltipText(p0: ElmMemberInfo?): String {
+        return ""
     }
 }
 
@@ -349,6 +403,6 @@ private fun <T> createNewFile(
     return null
 }
 
-class DeclarationWrapper(public val declaration: ElmModuleDeclaration) {
+class DeclarationWrapper(val declaration: ElmModuleDeclaration) {
     override fun toString(): String = declaration.name
 }
