@@ -264,6 +264,51 @@ toRoman n =
     )
 
 
+    fun `test add import when needed`() = doTest(
+        """
+--@ A.elm
+
+module A exposing (value, value2)
+
+import Favorite
+
+value = {-caret-}Favorite.number * 10
+
+value2 = 123
+
+--@ B.elm
+module B exposing (existing)
+
+existing = "Existing"
+{-target-}
+"""
+        , """
+--@ A.elm
+
+module A exposing (value2)
+
+import Favorite
+
+
+value2 =
+    123
+
+--@ B.elm
+
+module B exposing (existing, value)
+
+import Favorite
+
+
+existing =
+    "Existing"
+
+
+value =
+    Favorite.number * 10"""
+    )
+
+
 //"""
 //    //- lib.rs
 //        mod mod1 {

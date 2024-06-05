@@ -25,12 +25,14 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.searches.ReferencesSearch
+import com.intellij.psi.util.childrenOfType
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.IncorrectOperationException
 import com.intellij.util.containers.addIfNotNull
 import org.elm.lang.core.imports.ImportAdder
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
+import org.elm.lang.core.resolve.reference.QualifiedValueReference
 
 //import org.elm.openapiext.runWithCancelableProgress
 
@@ -324,6 +326,19 @@ class ElmMoveCommonProcessor(
                     e.replace(psiFactory.createValueQID(e.referenceName))
                 }
             }
+        val importsToAdd = element.body!!.childrenOfType<ElmValueExpr>().map {
+            when (val ref = it.reference) {
+                is QualifiedValueReference ->
+                    ImportAdder.Import(ref.qualifierPrefix, null, ref.canonicalText)
+
+                else -> {
+                    TODO()
+                }
+            }
+        }
+        importsToAdd.forEach { import ->
+            ImportAdder.addImport(import, targetMod, true)
+        }
         if (annotation != null) {
             val elements = mutableListOf<PsiElement>()
             elements.addIfNotNull(docComment)
