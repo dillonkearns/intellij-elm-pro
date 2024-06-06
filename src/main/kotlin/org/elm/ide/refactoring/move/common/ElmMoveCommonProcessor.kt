@@ -351,6 +351,8 @@ class ElmMoveCommonProcessor(
                     if (conflictingImport == null) {
                         ImportAdder.Import(importClause.referenceName, importClause.asClause?.name, ref.canonicalText)
                     } else {
+                        val valueExpr = (ref.element as ElmValueExpr).valueQID!!
+                        updateQid(valueExpr, conflictingImport)
                         null
                     }
                 }
@@ -363,7 +365,7 @@ class ElmMoveCommonProcessor(
         importsToAdd.forEach { import ->
             ImportAdder.addImport(import, targetMod, true)
         }
-        val targetText = updateImportReferences(element.parent.text, conflictingImports)
+        val targetText = element.parent.text
         if (annotation != null) {
             val elements = mutableListOf<PsiElement>()
             elements.addIfNotNull(docComment)
@@ -407,13 +409,15 @@ class ElmMoveCommonProcessor(
         //        retargetReferencesProcessor.optimizeImports()
     }
 
-    private fun updateImportReferences(body: String, conflictingImports: List<ConflictingImport>): String {
-        return conflictingImports.fold(body) { acc, conflictingImport ->
-            acc.replace(
-                conflictingImport.source.aliasName ?: conflictingImport.source.moduleName,
-                conflictingImport.target.aliasName ?: conflictingImport.target.moduleName
+    private fun updateQid(valueExpr: ElmValueQID, conflictingImport: ConflictingImport) {
+        valueExpr.replace(
+            psiFactory.createValueQID(
+                valueExpr.text.replace(
+                    conflictingImport.source.aliasName ?: conflictingImport.source.moduleName,
+                    conflictingImport.target.aliasName ?: conflictingImport.target.moduleName
+                )
             )
-        }
+        )
     }
 
 //    private fun updateOutsideReferencesInVisRestrictions() {
