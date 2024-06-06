@@ -32,6 +32,8 @@ import com.intellij.util.containers.addIfNotNull
 import org.elm.lang.core.imports.ImportAdder
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
+import org.elm.lang.core.resolve.ElmReferenceElement
+import org.elm.lang.core.resolve.reference.ModuleNameQualifierReference
 import org.elm.lang.core.resolve.reference.QualifiedValueReference
 
 //import org.elm.openapiext.runWithCancelableProgress
@@ -326,10 +328,32 @@ class ElmMoveCommonProcessor(
                     e.replace(psiFactory.createValueQID(e.referenceName))
                 }
             }
-        val importsToAdd = element.body!!.childrenOfType<ElmValueExpr>().map {
+        val targetModuleImports = targetMod.getImportClauses().map {
+            ImportInfo(it.referenceName, it.asClause?.name)
+        }
+        val sourceImports = sourceMod.getImportClauses().map {
+            ImportInfo(it.referenceName, it.asClause?.name)
+        }
+        val conflictingImports = targetModuleImports.mapNotNull { targetImport ->
+            sourceImports.find { targetImport.moduleName == it.moduleName && targetImport.aliasName != it.aliasName }?.let { conflict ->
+                ConflictingImport(conflict, targetImport)
+            }
+
+        }
+        val importsToAdd = element.body!!.childrenOfType<ElmValueExpr>().mapNotNull {
             when (val ref = it.reference) {
-                is QualifiedValueReference ->
-                    ImportAdder.Import(ref.qualifierPrefix, null, ref.canonicalText)
+                is QualifiedValueReference -> {
+                    val importClause =
+                        (((ref.element as ElmValueExpr).references.filterIsInstance<ModuleNameQualifierReference<ElmReferenceElement>>()
+                            .first().resolve() as? ElmAsClause)?.parent as ElmImportClause)
+
+                    val conflictingImport = conflictingImports.find { importInfo -> importInfo.target.moduleName == importClause.referenceName }
+                    if (conflictingImport == null) {
+                        ImportAdder.Import(importClause.referenceName, importClause.asClause?.name, ref.canonicalText)
+                    } else {
+                        null
+                    }
+                }
 
                 else -> {
                     TODO()
@@ -339,16 +363,17 @@ class ElmMoveCommonProcessor(
         importsToAdd.forEach { import ->
             ImportAdder.addImport(import, targetMod, true)
         }
+        val targetText = updateImportReferences(element.parent.text, conflictingImports)
         if (annotation != null) {
             val elements = mutableListOf<PsiElement>()
             elements.addIfNotNull(docComment)
 
-            elements.addAll(psiFactory.createTopLevelFunctionWithAnnotation(annotation.text, element.parent.text))
+            elements.addAll(psiFactory.createTopLevelFunctionWithAnnotation(annotation.text, targetText))
             targetMod.addAll(elements)
             docComment?.delete()
             annotation.delete()
         } else {
-            targetMod.add(psiFactory.createDeclaration(element.parent.text + "\n\n"))
+            targetMod.add(psiFactory.createDeclaration(targetText + "\n\n"))
             targetMod.add(psiFactory.createWhitespace("\n"))
             targetMod.add(psiFactory.createWhitespace("\n"))
         }
@@ -380,6 +405,15 @@ class ElmMoveCommonProcessor(
         //        updateInsideReferenceInfosIfNeeded(insideReferences, pathMapping)
         //        retargetReferencesProcessor.retargetReferences(insideReferences)
         //        retargetReferencesProcessor.optimizeImports()
+    }
+
+    private fun updateImportReferences(body: String, conflictingImports: List<ConflictingImport>): String {
+        return conflictingImports.fold(body) { acc, conflictingImport ->
+            acc.replace(
+                conflictingImport.source.aliasName ?: conflictingImport.source.moduleName,
+                conflictingImport.target.aliasName ?: conflictingImport.target.moduleName
+            )
+        }
     }
 
 //    private fun updateOutsideReferencesInVisRestrictions() {
@@ -480,6 +514,9 @@ class ElmMoveCommonProcessor(
 //        private val RS_TARGET_BEFORE_MOVE_KEY: Key<ElmQualifiedNamedElement> = Key.create("RS_TARGET_BEFORE_MOVE_KEY")
 //    }
 }
+
+data class ImportInfo(val moduleName: String, val aliasName: String?)
+data class ConflictingImport(val source: ImportInfo, val target: ImportInfo)
 
 sealed class ElmMoveUsageInfo(open val element: ElmPsiElement) : UsageInfo(element)
 
