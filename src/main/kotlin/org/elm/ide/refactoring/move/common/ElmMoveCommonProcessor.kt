@@ -32,8 +32,6 @@ import com.intellij.util.containers.addIfNotNull
 import org.elm.lang.core.imports.ImportAdder
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
-import org.elm.lang.core.resolve.ElmReferenceElement
-import org.elm.lang.core.resolve.reference.ModuleNameQualifierReference
 import org.elm.lang.core.resolve.reference.QualifiedValueReference
 
 //import org.elm.openapiext.runWithCancelableProgress
@@ -343,13 +341,10 @@ class ElmMoveCommonProcessor(
         val importsToAdd = element.body!!.childrenOfType<ElmValueExpr>().mapNotNull {
             when (val ref = it.reference) {
                 is QualifiedValueReference -> {
-                    val importClause =
-                        (((ref.element as ElmValueExpr).references.filterIsInstance<ModuleNameQualifierReference<ElmReferenceElement>>()
-                            .first().resolve() as? ElmAsClause)?.parent as ElmImportClause)
-
-                    val conflictingImport = conflictingImports.find { importInfo -> importInfo.target.moduleName == importClause.referenceName }
+                    val conflictingImport = conflictingImports.find { importInfo -> importInfo.source.resolveModuleName() == ref.qualifierPrefix }
+                    val sourceImport = sourceImports.find { importInfo -> importInfo.resolveModuleName() == ref.qualifierPrefix }
                     if (conflictingImport == null) {
-                        ImportAdder.Import(importClause.referenceName, importClause.asClause?.name, ref.canonicalText)
+                        ImportAdder.Import(sourceImport!!.moduleName, sourceImport.aliasName, ref.canonicalText)
                     } else {
                         val valueExpr = (ref.element as ElmValueExpr).valueQID!!
                         updateQid(valueExpr, conflictingImport)
@@ -519,7 +514,9 @@ class ElmMoveCommonProcessor(
 //    }
 }
 
-data class ImportInfo(val moduleName: String, val aliasName: String?)
+data class ImportInfo(val moduleName: String, val aliasName: String?) {
+   fun resolveModuleName(): String = aliasName ?: moduleName
+}
 data class ConflictingImport(val source: ImportInfo, val target: ImportInfo)
 
 sealed class ElmMoveUsageInfo(open val element: ElmPsiElement) : UsageInfo(element)
