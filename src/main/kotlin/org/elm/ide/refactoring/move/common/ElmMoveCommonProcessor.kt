@@ -408,8 +408,8 @@ class ElmMoveCommonProcessor(
         valueExpr.replace(
             psiFactory.createValueQID(
                 valueExpr.text.replace(
-                    conflictingImport.source.aliasName ?: conflictingImport.source.moduleName,
-                    conflictingImport.target.aliasName ?: conflictingImport.target.moduleName
+                    conflictingImport.source.resolveModuleName(),
+                    conflictingImport.target.resolveModuleName()
                 )
             )
         )
