@@ -47,6 +47,7 @@ import junit.framework.AssertionFailedError
 import org.elm.FileTree
 import org.elm.TestProject
 import org.elm.fileTreeFromText
+import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.psi.parentOfType
 import org.elm.workspace.ElmToolchain
 import org.elm.workspace.ElmToolchain.Companion.ELM_JSON
@@ -121,10 +122,10 @@ abstract class ElmTestBase : LightPlatformCodeInsightFixture4TestCase(), ElmTest
     protected fun checkByText(
             @Language("Elm") before: String,
             @Language("Elm") after: String,
-            action: () -> Unit
+            action: (ElmFile) -> Unit
     ) {
-        InlineFile(before)
-        action()
+        InlineFile(before, "Main.elm")
+        action(myFixture.file as ElmFile)
         myFixture.checkResult(replaceCaretMarker(after))
     }
 
