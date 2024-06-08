@@ -1,9 +1,7 @@
 package org.elm.lang.core.imports
 
 import com.intellij.lang.ASTNode
-import org.elm.lang.core.psi.ELM_TOP_LEVEL_DECLARATIONS
-import org.elm.lang.core.psi.ElmFile
-import org.elm.lang.core.psi.ElmPsiFactory
+import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.ElmExposedType
 import org.elm.lang.core.psi.elements.ElmExposingList
 import org.elm.lang.core.psi.elements.ElmImportClause
@@ -76,7 +74,10 @@ object ImportAdder {
 
     private fun prepareInsertInNewSection(sourceFile: ElmFile): ASTNode {
         // prepare for insert immediately before the first top-level declaration
-        return sourceFile.node.findChildByType(ELM_TOP_LEVEL_DECLARATIONS)!!
+        return when (val docComment = sourceFile.getModuleDecl()?.docComment) {
+            null -> sourceFile.node.findChildByType(ELM_TOP_LEVEL_DECLARATIONS)!!
+            else ->     docComment.nextSiblings.withoutWs.firstOrNull()?.prevSibling?.node ?: docComment.node.treeNext
+        }
     }
 
     private fun getSortedInsertPosition(moduleName: String, existingImports: List<ElmImportClause>): ASTNode {

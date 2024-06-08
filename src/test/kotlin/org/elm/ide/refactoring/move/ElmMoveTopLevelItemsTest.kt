@@ -190,8 +190,8 @@ module A exposing (value2)
 import B
 
 
-
-value2 = B.value + 123
+value2 =
+    B.value + 123
 
 --@ B.elm
 

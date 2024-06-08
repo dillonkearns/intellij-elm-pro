@@ -19,6 +19,27 @@ value = 42
 """
     )
 
+    fun `test add import between module and top-level doc comment`() = doTest(
+        """
+module Main  exposing (value)
+
+{-| Module doc comment -}
+
+{-| Function doc comment -}
+value : Int
+value = 42
+""", """
+module Main  exposing (value)
+
+{-| Module doc comment -}
+import A exposing (value)
+
+{-| Function doc comment -}
+value : Int
+value = 42
+"""
+    )
+
 
     fun doTest(@Language("Elm") before: String, @Language("Elm") after: String) =
         checkByText(before.trimIndent(), after.trimIndent()) {
