@@ -75,7 +75,7 @@ object ImportAdder {
     private fun prepareInsertInNewSection(sourceFile: ElmFile): ASTNode {
         // prepare for insert immediately before the first top-level declaration
         return when (val docComment = sourceFile.getModuleDecl()?.docComment) {
-            null -> sourceFile.node.findChildByType(ELM_TOP_LEVEL_DECLARATIONS)!!
+            null -> sourceFile.node.findChildByType(ELM_TOP_LEVEL_DECLARATIONS) ?: sourceFile.children.last().node
             else ->     docComment.nextSiblings.withoutWs.firstOrNull()?.prevSibling?.node ?: docComment.node.treeNext
         }
     }

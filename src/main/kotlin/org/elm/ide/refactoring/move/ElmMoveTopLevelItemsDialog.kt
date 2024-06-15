@@ -24,17 +24,16 @@ import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.*
-import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.layout.selected
 import com.intellij.util.IncorrectOperationException
 import org.elm.ElmBundle
-import org.elm.lang.core.psi.*
+import org.elm.lang.core.psi.ElmExposableTag
+import org.elm.lang.core.psi.ElmFile
+import org.elm.lang.core.psi.ElmNamedElement
 import org.elm.lang.core.psi.elements.*
-import org.elm.lang.core.stubs.index.ElmModulesIndex
 import org.elm.openapiext.*
 import org.elm.utils.toPsiDirectory
 import org.elm.utils.toPsiFile
-import org.elm.workspace.ElmPackageProject
 import org.elm.workspace.elmWorkspace
 import org.jetbrains.annotations.Nls
 import java.awt.Dimension
@@ -61,19 +60,11 @@ class ElmMoveTopLevelItemsDialog(
         elmProject?.sourceDirectories.orEmpty().forEach {
             this.addItem(it)
         }
-
+        this.addItem(project.basePath!!.toPath().relativize(itemsToMove.first().elmFile.virtualFile.pathAsPath.parent))
     }
 
     private var newModuleUi: Boolean = true
-    private val existingModules = ComboBox<DeclarationWrapper>().apply {
-        ElmModulesIndex.getAll(itemsToMove.first().elmFile).filter { it.elmProject !is ElmPackageProject }
-            .filter {
-                it.elmFile.virtualFile.pathAsPath.startsWith(it.elmFile.elmProject?.projectDirPath?.toRealPath()
-                    ?.resolve(sourceDirectory.item) ?: return@filter false)
-            }
-            .sortedBy { it.moduleName  }
-            .map { DeclarationWrapper(it) }
-            .forEach(::addItem)
+    private val existingModules = JBTextField("").apply {
     }
 
     private val targetFileChooser = createTargetFileChooser(project)
@@ -167,7 +158,7 @@ class ElmMoveTopLevelItemsDialog(
                     row(ElmBundle.message("source.directory")) {
                         fullWidthCell(sourceDirectory)
                     }.enabledIf(rb2.selected)
-                    row(ElmBundle.message("source.directory")) {
+                    row(ElmBundle.message("module.name")) {
                         fullWidthCell(existingModules)
                     }.enabledIf(rb2.selected)
 
@@ -202,7 +193,8 @@ class ElmMoveTopLevelItemsDialog(
         @Suppress("SENSELESS_COMPARISON")
         if (memberPanel == null) return false
 
-        return sourceMod.virtualFile.pathAsPath != existingModules.item.declaration.elmFile.virtualFile.pathAsPath && getSelectedItems().isNotEmpty()
+        // TODO restore validation
+        return /* sourceMod.virtualFile.pathAsPath!= existingModules.item.declaration.elmFile.virtualFile.pathAsPath &&  */ getSelectedItems().isNotEmpty()
     }
 
     private fun getSelectedItems(): Set<ElmExposableTag> {
@@ -236,10 +228,11 @@ class ElmMoveTopLevelItemsDialog(
         }
     }
 
-    private fun selectedPath() = if (newModuleUi) {
+    private fun selectedPath(): Path = if (newModuleUi) {
         targetFileChooser.text.toPath()
     } else {
-        existingModules.item.declaration.elmFile.virtualFile.path.toPath()
+        val moduleFilePathPart = existingModules.text + ".elm"
+        project.basePath?.toPath()?.resolve(sourceDirectory.item)?.resolve(moduleFilePathPart)!!
     }
 
     companion object {
