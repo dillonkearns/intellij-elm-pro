@@ -148,15 +148,15 @@ class ElmMoveTopLevelItemsDialog(
                     row {
                         resizableRow()
                         fullWidthCell(memberPanel)
-                            .verticalAlign(VerticalAlign.FILL)
+//                            .verticalAlign(VerticalAlign.FILL)
                     }
                 row {
-                    rb = radioButton("New Module", true).onChanged { newModuleUi = it.selected() }
+                    rb = radioButton("To Existing:", true).onChanged { newModuleUi = it.selected() }
                     fullWidthCell(targetFileChooser).focused().enabledIf(rb.selected)
                 }
-                group("To existing:") {
+                group("New Module:") {
                     row {
-                        rb2 = radioButton("Existing Module", false) //.onChanged { newModuleUi = !rb.selected() }
+                        rb2 = radioButton("New Module", false) //.onChanged { newModuleUi = !rb.selected() }
                     }
                     row(ElmBundle.message("source.directory")) {
                         fullWidthCell(sourceDirectory)
