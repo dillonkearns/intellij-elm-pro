@@ -40,7 +40,6 @@ import java.awt.Dimension
 import java.io.File
 import java.nio.file.Path
 import javax.swing.JComponent
-import kotlin.io.path.nameWithoutExtension
 
 
 class ElmMoveTopLevelItemsDialog(
@@ -231,8 +230,13 @@ class ElmMoveTopLevelItemsDialog(
     private fun selectedPath(): Path = if (newModuleUi) {
         targetFileChooser.text.toPath()
     } else {
-        val moduleFilePathPart = existingModules.text + ".elm"
-        project.basePath?.toPath()?.resolve(sourceDirectory.item)?.resolve(moduleFilePathPart)!!
+        val moduleFilePathPart = toElmFilePaths(existingModules.text!!)
+        val resolvedModuleFilePath = project.basePath?.toPath()?.resolve(sourceDirectory.item)?.resolve(moduleFilePathPart)!!
+        resolvedModuleFilePath
+    }
+
+    private fun toElmFilePaths(s: String): String {
+        return s.replace(".", "/") + ".elm"
     }
 
     companion object {
@@ -298,6 +302,15 @@ class MemberInfoModelImpl: MemberInfoModel<ElmNamedElement, ElmMemberInfo> {
     }
 }
 
+fun elmFilePathToModuleName(project: Project, elmFilePath: Path): String {
+    // find which of the source-directories it belongs to, then get the file path relative to that
+    val elmProject = project.elmWorkspace.allProjects.firstOrNull()
+    val sourceDirs = elmProject?.sourceDirectories.orEmpty().map { SourceDirectory(project, it) }
+    val sourceDir = sourceDirs.find { elmFilePath.startsWith(it.absolute()) }
+    return sourceDir!!.absolute().relativize(elmFilePath).toString().replace(".elm", "").replace("/", ".")
+}
+
+
 //class ElmMoveMemberInfo(val member: ElmExposableTag) : ElmMoveNodeInfo {
 //    override fun render(renderer: ColoredTreeCellRenderer) {
 //        val description = if (member is ElmModItem) {
@@ -343,7 +356,8 @@ private fun createNewElmFile(filePath: Path, project: Project, crateRoot: ElmFil
     return project.runWriteCommandAction() {
         val fileSystem = (crateRoot as? ElmFile)?.virtualFile?.fileSystem ?: LocalFileSystem.getInstance()
         createNewFile(filePath, fileSystem, requestor) { virtualFile ->
-            virtualFile.writeText("module ${filePath.nameWithoutExtension} exposing (todoRemoveThis)\n\n")
+            val moduleName = elmFilePathToModuleName(project, filePath)
+            virtualFile.writeText("module $moduleName exposing (todoRemoveThis)\n\n")
             val file = (virtualFile.toPsiFile(project) as? ElmFile) ?: return@createNewFile null
 
 //            if (!attachFileToParentMod(file, project, crateRoot)) return@createNewFile null
@@ -394,6 +408,12 @@ private fun <T> createNewFile(
         fileSystem.findFileByPath(directory.toString())?.delete(requestor)
     }
     return null
+}
+
+data class SourceDirectory(val project: Project, val path: Path) {
+    fun absolute(): Path {
+        return project.basePath!!.toPath().resolve(path)
+    }
 }
 
 class DeclarationWrapper(val declaration: ElmModuleDeclaration) {
