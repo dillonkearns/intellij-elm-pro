@@ -56,10 +56,14 @@ class ElmMoveTopLevelItemsDialog(
     private val sourceDirectory: ComboBox<Path> = ComboBox<Path>().apply {
         isEnabled = true
         val elmProject = project.elmWorkspace.allProjects.firstOrNull()
-        elmProject?.sourceDirectories.orEmpty().forEach {
-            this.addItem(it)
-        }
-        this.addItem(project.basePath!!.toPath().relativize(itemsToMove.first().elmFile.virtualFile.pathAsPath.parent))
+        val sorted = createSortedSetWithTopItem(elmProject?.sourceDirectories.orEmpty(), project.basePath!!.toPath().relativize(itemsToMove.first().elmFile.virtualFile.pathAsPath.parent))
+        sorted.forEach(::addItem)
+    }
+    private fun createSortedSetWithTopItem(strings: List<Path>, topItem: Path): List<Path> {
+        val sortedSet = strings.sorted().toCollection(LinkedHashSet())
+        sortedSet.remove(topItem)
+        sortedSet.add(topItem)
+        return sortedSet.toList().reversed()
     }
 
     private var newModuleUi: Boolean = true
@@ -305,7 +309,7 @@ class MemberInfoModelImpl: MemberInfoModel<ElmNamedElement, ElmMemberInfo> {
 fun elmFilePathToModuleName(project: Project, elmFilePath: Path): String {
     // find which of the source-directories it belongs to, then get the file path relative to that
     val elmProject = project.elmWorkspace.allProjects.firstOrNull()
-    val sourceDirs = elmProject?.sourceDirectories.orEmpty().map { SourceDirectory(project, it) }
+    val sourceDirs = elmProject?.allSourceDirs.orEmpty().map { SourceDirectory(project, it) }
     val sourceDir = sourceDirs.find { elmFilePath.startsWith(it.absolute()) }
     return sourceDir!!.absolute().relativize(elmFilePath).toString().replace(".elm", "").replace("/", ".")
 }
@@ -350,11 +354,11 @@ class ElmMoveItemAndImplsInfo(
 
 val MOVE_TARGET_MOD_KEY: Key<ElmFile> = Key("ELM_MOVE_TARGET_MOD_KEY")
 val MOVE_TARGET_FILE_PATH_KEY: Key<Path> = Key("ELM_MOVE_TARGET_FILE_PATH_KEY")
-//
-///** Creates new elm file and attaches it to parent mod */
+
+/** Creates new elm file and attaches it to parent mod */
 private fun createNewElmFile(filePath: Path, project: Project, crateRoot: ElmFile?, requestor: Any?): ElmFile? {
     return project.runWriteCommandAction() {
-        val fileSystem = (crateRoot as? ElmFile)?.virtualFile?.fileSystem ?: LocalFileSystem.getInstance()
+        val fileSystem = crateRoot?.virtualFile?.fileSystem ?: LocalFileSystem.getInstance()
         createNewFile(filePath, fileSystem, requestor) { virtualFile ->
             val moduleName = elmFilePathToModuleName(project, filePath)
             virtualFile.writeText("module $moduleName exposing (todoRemoveThis)\n\n")
