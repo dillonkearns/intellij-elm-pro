@@ -354,6 +354,44 @@ value =
     Favorite.number * 10"""
     )
 
+    fun `test simple type`() = doTest(
+        """
+--@ A.elm
+
+module A exposing (value, MyType)
+
+type MyType = {-caret-}MyType
+
+value = 42
+
+--@ B.elm
+module B exposing (existing)
+
+existing = "Existing"
+{-target-}
+"""
+        , """
+--@ A.elm
+
+module A exposing (value)
+
+
+value =
+    42
+
+--@ B.elm
+
+module B exposing (MyType, existing)
+
+
+existing =
+    "Existing"
+
+
+type MyType
+    = MyType"""
+    )
+
 
 
 //"""

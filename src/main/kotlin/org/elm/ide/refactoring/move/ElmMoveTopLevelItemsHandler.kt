@@ -24,6 +24,7 @@ import org.elm.ide.utils.getElementRange
 import org.elm.ide.utils.getTopmostParentInside
 import org.elm.lang.core.ElmLanguage
 import org.elm.lang.core.psi.*
+import org.elm.lang.core.psi.elements.ElmTypeDeclaration
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.openapiext.isUnitTestMode
 import org.elm.openapiext.toPsiFile
@@ -140,7 +141,7 @@ class ElmMoveTopLevelItemsHandler : MoveHandlerDelegate() {
                 leafElement
             }
             // TODO ensure that it is top-level
-            element?.ancestorOrSelf<ElmValueDeclaration>()?.functionDeclarationLeft
+            element?.ancestorOrSelf<ElmValueDeclaration>()?.functionDeclarationLeft ?: element?.ancestorOrSelf<ElmTypeDeclaration>()
         }
         val containingMod = elements.first().elmFile ?: return null
         return elements.toSet() to containingMod

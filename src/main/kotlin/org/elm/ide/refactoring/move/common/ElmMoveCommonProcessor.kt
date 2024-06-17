@@ -309,18 +309,16 @@ class ElmMoveCommonProcessor(
             ImportAdder.addImport(ImportAdder.Import(targetMod.name, null, ref.referenceName), ref.elmFile, true)
             ref.replace(psiFactory.createValueQID("${targetMod.getModuleDecl()?.name}.${ref.referenceName}"))
         }
-        this.elementsToMove.forEach { it ->
-            moveElement(it.element as ElmFunctionDeclarationLeft)
-        }
+        this.elementsToMove.forEach { moveElement(it.element) }
     }
 
     private fun moveElement(
-        element: ElmFunctionDeclarationLeft
+        element: ElmExposableTag
     ) {
         val exposedItem = sourceMod.getModuleDecl()?.exposingList?.findMatchingItemFor(element)
         val annotation = (element.parent as? ElmValueDeclaration)?.typeAnnotation
         val docComment = (element.parent as? ElmValueDeclaration)?.docComment
-        element.body?.descendantsOfType<ElmValueExpr>()
+        (element as? ElmFunctionDeclarationLeft)?.body?.descendantsOfType<ElmValueExpr>()
             ?.forEach { e ->
                 if (e.reference.resolve()?.moduleName == targetMod.getModuleDecl()?.name) {
                     e.replace(psiFactory.createValueQID(e.referenceName))
@@ -338,7 +336,7 @@ class ElmMoveCommonProcessor(
             }
 
         }
-        val importsToAdd = element.body!!.childrenOfType<ElmValueExpr>().mapNotNull {
+        (element as? ElmFunctionDeclarationLeft)?.body?.childrenOfType<ElmValueExpr>()?.mapNotNull {
             when (val ref = it.reference) {
                 is QualifiedValueReference -> {
                     val conflictingImport = conflictingImports.find { importInfo -> importInfo.source.resolveModuleName() == ref.qualifierPrefix }
@@ -356,23 +354,37 @@ class ElmMoveCommonProcessor(
                     TODO()
                 }
             }
+        }?.let { importsToAdd ->
+            importsToAdd.forEach { import ->
+                ImportAdder.addImport(import, targetMod, true)
+            }
         }
-        importsToAdd.forEach { import ->
-            ImportAdder.addImport(import, targetMod, true)
-        }
+        // TODO add imports in case of type declaration or type alias as well
         val targetText = element.parent.text
-        if (annotation != null) {
-            val elements = mutableListOf<PsiElement>()
-            elements.addIfNotNull(docComment)
+        when (element) {
+            is ElmFunctionDeclarationLeft -> {
+                if (annotation != null) {
+                    val elements = mutableListOf<PsiElement>()
+                    elements.addIfNotNull(docComment)
 
-            elements.addAll(psiFactory.createTopLevelFunctionWithAnnotation(annotation.text, targetText))
-            targetMod.addAll(elements)
-            docComment?.delete()
-            annotation.delete()
-        } else {
-            targetMod.add(psiFactory.createDeclaration(targetText + "\n\n"))
-            targetMod.add(psiFactory.createWhitespace("\n"))
-            targetMod.add(psiFactory.createWhitespace("\n"))
+                    elements.addAll(psiFactory.createTopLevelFunctionWithAnnotation(annotation.text, targetText))
+                    targetMod.addAll(elements)
+                    docComment?.delete()
+                    annotation.delete()
+                } else {
+                    targetMod.add(psiFactory.createDeclaration(targetText + "\n\n"))
+                    targetMod.add(psiFactory.createWhitespace("\n"))
+                    targetMod.add(psiFactory.createWhitespace("\n"))
+                }
+            }
+            is ElmTypeDeclaration -> {
+                targetMod.add(psiFactory.createTypeDeclaration(targetText + "\n\n"))
+                targetMod.add(psiFactory.createWhitespace("\n"))
+                targetMod.add(psiFactory.createWhitespace("\n"))
+            }
+            else -> {
+                TODO()
+            }
         }
         targetMod.getModuleDecl()?.exposingList?.addItem(element.name)
         val todoRemoveThis =
@@ -380,7 +392,17 @@ class ElmMoveCommonProcessor(
         if (todoRemoveThis != null) {
             targetMod.getModuleDecl()?.exposingList?.removeItem(todoRemoveThis)
         }
-        element.parent.delete()
+        when (element) {
+            is ElmFunctionDeclarationLeft -> {
+                element.parent.delete()
+            }
+            is ElmTypeDeclaration -> {
+                element.delete()
+            }
+            else -> {
+                TODO()
+            }
+        }
         if (exposedItem != null) {
             sourceMod.getModuleDecl()?.exposingList?.removeItem(exposedItem)
         }

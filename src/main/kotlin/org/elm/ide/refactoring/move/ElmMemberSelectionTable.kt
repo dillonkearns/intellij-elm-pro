@@ -5,6 +5,9 @@ import com.intellij.refactoring.classMembers.MemberInfoModel
 import com.intellij.refactoring.ui.AbstractMemberSelectionTable
 import com.intellij.ui.RowIcon
 import org.elm.lang.core.psi.ElmNamedElement
+import org.elm.lang.core.psi.elements.ElmFunctionDeclarationLeft
+import org.elm.lang.core.psi.elements.ElmTypeAliasDeclaration
+import org.elm.lang.core.psi.elements.ElmTypeDeclaration
 import org.jetbrains.annotations.Nls
 import javax.swing.Icon
 
@@ -21,9 +24,21 @@ class ElmMemberSelectionTable(
         return false
     }
 
+    override fun getMemberIcon(memberInfo: ElmMemberInfo?, flags: Int): Icon {
+        // don't show any member icons, not applicable for Elm
+        return AllIcons.Nodes.EmptyNode
+    }
+
     override fun setVisibilityIcon(memberInfo: ElmMemberInfo, icon: RowIcon) {
         // TODO support moving Type, Port... anything else?
-        icon.setIcon(AllIcons.Nodes.Function, 1)
+        when (memberInfo.member) {
+            is ElmFunctionDeclarationLeft -> {
+                icon.setIcon(AllIcons.Nodes.Function, 1)
+            }
+            is ElmTypeDeclaration, is ElmTypeAliasDeclaration -> {
+                icon.setIcon(AllIcons.Nodes.Type, 1)
+            }
+        }
     }
 
     override fun getOverrideIcon(memberInfo: ElmMemberInfo): Icon? {
