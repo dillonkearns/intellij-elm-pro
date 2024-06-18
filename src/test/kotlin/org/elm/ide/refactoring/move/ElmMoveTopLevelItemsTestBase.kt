@@ -33,7 +33,7 @@ abstract class ElmMoveTopLevelItemsTestBase : ElmTestBase() {
 
     protected fun doTestConflictsError(@Language("Elm") before: String) =
         expect<BaseRefactoringProcessor.ConflictsInTestsException> {
-            checkByDirectory(before.trimIndent(), "", ::performMove)
+            checkByDirectory(before.trimIndent(), before.trimIndent(), true, ::performMove)
         }
 
     protected fun doTestNoConflicts(@Language("Elm") before: String) =

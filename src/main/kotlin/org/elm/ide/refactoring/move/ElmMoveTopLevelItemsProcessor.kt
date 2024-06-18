@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsContexts
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiElement
+import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.refactoring.BaseRefactoringProcessor
 import com.intellij.refactoring.move.MoveMultipleElementsViewDescriptor
 import com.intellij.usageView.UsageInfo
@@ -18,6 +19,7 @@ import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.elements.findMatchingItemFor
 import org.elm.lang.core.psi.elements.removeItem
 import org.elm.lang.core.psi.startOffset
+import org.elm.lang.core.stubs.index.ElmNamedElementIndex
 
 /** See overview of move refactoring in comment for [ElmMoveCommonProcessor] */
 class ElmMoveTopLevelItemsProcessor(
@@ -40,7 +42,13 @@ class ElmMoveTopLevelItemsProcessor(
     }
 
     private fun checkNoItemsWithSameName(@Suppress("UnstableApiUsage") conflicts: MultiMap<PsiElement, @NlsContexts.DialogMessage String>) {
-        if (!searchForReferences) return
+//        if (!searchForReferences) return
+        itemsToMove.forEach {
+            val conflict = ElmNamedElementIndex.find(it.name, project, GlobalSearchScope.fileScope(targetMod)).firstOrNull()
+            if (conflict != null) {
+                conflicts.putValue(it, "Target file already contains item with name ${it.name}")
+            }
+        }
 
 //        val targetModItems = targetMod.expandedItemsExceptImplsAndUses
 //            .filterIsInstance<ElmExposableTag>()
@@ -63,8 +71,7 @@ class ElmMoveTopLevelItemsProcessor(
         val conflicts = MultiMap<PsiElement, String>()
         checkNoItemsWithSameName(conflicts)
 //        return commonProcessor.preprocessUsages(usages, conflicts) && showConflicts(conflicts, usages)
-        // TODO
-        return true
+        return showConflicts(conflicts, usages)
     }
 
     override fun performRefactoring(usages: Array<out UsageInfo>) {

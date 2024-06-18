@@ -392,6 +392,25 @@ type MyType
     = MyType"""
     )
 
+    fun `test conflicting name`() = doTestConflictsError(
+        """
+--@ A.elm
+
+module A exposing (value, existing)
+
+existing = {-caret-}123
+
+value = 42
+
+--@ B.elm
+module B exposing (existing)
+
+existing = "Existing"
+{-target-}
+"""
+    )
+
+
 
 
 //"""

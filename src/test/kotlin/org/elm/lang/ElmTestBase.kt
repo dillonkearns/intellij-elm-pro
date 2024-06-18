@@ -112,11 +112,16 @@ abstract class ElmTestBase : LightPlatformCodeInsightFixture4TestCase(), ElmTest
         PlatformTestUtil.assertDirectoriesEqual(afterDir!!, beforeDir)
     }
 
-    protected fun checkByDirectory(@Language("Elm") before: String, @Language("Elm") after: String, action: (TestProject) -> Unit) {
+    protected fun checkByDirectory(@Language("Elm") before: String, @Language("Elm") after: String, expectError: Boolean, action: (TestProject) -> Unit) {
         val testProject = fileTreeFromText(before).create()
         action(testProject)
+        if (expectError) return
         FileDocumentManager.getInstance().saveAllDocuments()
         fileTreeFromText(after).assertEquals(myFixture.findFileInTempDir("."))
+    }
+
+    protected fun checkByDirectory(@Language("Elm") before: String, @Language("Elm") after: String, action: (TestProject) -> Unit) {
+        checkByDirectory(before, after, false, action)
     }
 
     protected fun checkByText(
