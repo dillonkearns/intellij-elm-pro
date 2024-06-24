@@ -86,6 +86,9 @@ inline fun <reified T : PsiElement> PsiElement.descendantOfType(): T? =
 inline fun <reified T : PsiElement> PsiElement.descendantsOfType(): Collection<T> =
         PsiTreeUtil.findChildrenOfType(this, T::class.java)
 
+inline fun <reified T : PsiElement> PsiElement.ancestorsOfType(): Collection<T> =
+    PsiTreeUtil.findChildrenOfType(this, T::class.java)
+
 inline fun <reified T : PsiElement> PsiElement.descendantsOfTypeOrSelf(): Collection<T> =
     PsiTreeUtil.findChildrenOfAnyType(this, false, T::class.java)
 

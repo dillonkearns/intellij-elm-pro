@@ -304,10 +304,20 @@ class ElmMoveCommonProcessor(
 //    }
 
     fun performRefactoring(usages: Array<out UsageInfo>, moveElements: () -> List<ElementToMove>) {
+        val containingDefinitions = elementsToMove.map {
+            it.element.containingTopLevelDefinition()
+        }
         usages.forEach { usage ->
             val ref = (usage as ElmPathUsageInfo).element
             ImportAdder.addImport(ImportAdder.Import(targetMod.name, null, ref.referenceName), ref.elmFile, true)
-            ref.replace(psiFactory.createValueQID("${targetMod.getModuleDecl()?.name}.${ref.referenceName}"))
+            val usageIsBeingMoved = containingDefinitions.contains(ref.containingTopLevelDefinition())
+            ref.replace(psiFactory.createValueQID(
+                if (usageIsBeingMoved) {
+                    ref.referenceName
+                } else {
+                    "${targetMod.getModuleDecl()?.name}.${ref.referenceName}"
+                }
+            ))
         }
         this.elementsToMove.forEach { moveElement(it.element) }
     }

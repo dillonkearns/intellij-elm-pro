@@ -10,6 +10,8 @@ import com.intellij.psi.search.SearchScope
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.stubs.StubElement
 import org.elm.lang.core.ElmFileType
+import org.elm.lang.core.psi.elements.ElmFunctionDeclarationLeft
+import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.resolve.reference.ElmReference
 import org.elm.workspace.ElmProject
 import org.elm.workspace.elmWorkspace
@@ -31,6 +33,17 @@ interface ElmPsiElement : PsiElement {
      * yet been attached to the workspace.
      */
     val elmProject: ElmProject?
+
+    fun containingTopLevelDefinition(): ElmPsiElement? {
+        return when (val thisParent = this.parent) {
+            is ElmFunctionDeclarationLeft -> thisParent
+            is ElmValueDeclaration -> thisParent
+            is ElmFile -> null
+            is ElmPsiElement -> thisParent.containingTopLevelDefinition()
+            else -> null
+        }
+    }
+
 }
 
 /**

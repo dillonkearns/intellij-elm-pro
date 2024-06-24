@@ -410,6 +410,54 @@ existing = "Existing"
 """
     )
 
+    fun `test move all mutual references`() = doTest(
+        """
+--@ A.elm
+
+module A exposing (dependent1, dependent2, value)
+
+<selection>
+dependent1 = 123
+
+dependent2 = dependent1 + 456
+
+</selection>
+
+value = "value"
+
+--@ B.elm
+module B exposing (existing)
+
+existing = "Existing"
+{-target-}
+"""
+        , """
+--@ A.elm
+
+module A exposing (value)
+
+import B
+
+
+value =
+    "value"
+
+--@ B.elm
+
+module B exposing (dependent1, dependent2, existing)
+
+
+existing =
+    "Existing"
+
+
+dependent1 =
+    123
+
+
+dependent2 =
+    dependent1 + 456"""
+    )
 
 
 
