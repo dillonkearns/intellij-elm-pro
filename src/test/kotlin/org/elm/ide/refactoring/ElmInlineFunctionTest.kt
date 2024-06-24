@@ -444,6 +444,34 @@ value2 = value + 123
 value2 = 42 + 123"""
     )
 
+    fun `test foo`() =
+        doTest(
+            """
+--@ Main.elm
+myNum =
+    123
+
+
+myFn a =
+    a
+
+example =
+    myFn myNum
+          --^
+
+""",
+            """
+
+
+myFn a =
+    a
+
+example =
+    myFn 123
+          --^
+""")
+
+
 
     private fun doTest(@Language("Elm") before: String, @Language("Elm") after: String) {
         configureByFileTree(before)

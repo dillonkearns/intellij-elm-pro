@@ -155,7 +155,7 @@ class ElmInlineFunctionProcessor(
     }
 
     private fun containingFunctionCall(caller: PsiElement): PsiElement {
-        return if (caller.parent is ElmFunctionCallExpr) {
+        return if ((caller.parent as? ElmFunctionCallExpr)?.target == caller) {
             caller.parent
         } else if (caller is ElmFunctionCallExpr || caller is ElmValueExpr) {
             caller
