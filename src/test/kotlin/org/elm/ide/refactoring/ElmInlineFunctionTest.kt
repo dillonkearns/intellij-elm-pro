@@ -411,7 +411,7 @@ anotherExclaimGreeting =
     greet "First" "Last"
         ++ "!"
 """,
-                    """import Other
+                    """
 
 exclaimGreeting =
     (

@@ -15,6 +15,7 @@ import com.intellij.usageView.UsageInfo
 import com.intellij.usageView.UsageViewBundle
 import com.intellij.usageView.UsageViewDescriptor
 import com.intellij.util.containers.MultiMap
+import org.elm.ide.refactoring.ElmImportOptimizer
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.ancestors
 import org.elm.lang.core.psi.elements.*
@@ -100,6 +101,10 @@ class ElmInlineFunctionProcessor(
         }
         if (removeDefinition) {
             deleteDeclaration(function.originalElement)
+        }
+        val filesToOptimize = usages.mapNotNull { it.file }.toSet()
+        filesToOptimize.forEach {
+            ElmImportOptimizer().processFile(it).run()
         }
     }
 
