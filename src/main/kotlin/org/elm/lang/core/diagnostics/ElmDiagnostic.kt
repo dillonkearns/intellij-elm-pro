@@ -4,6 +4,7 @@ import com.intellij.codeInspection.LocalQuickFix
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import org.elm.ide.inspections.NamedQuickFix
+import org.elm.ide.refactoring.uniqueValueName
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.elements.ElmFunctionCallExpr
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
@@ -22,7 +23,9 @@ private class AddParameterFix() : NamedQuickFix("Add Parameter") {
         val psiFactory = ElmPsiFactory(project)
         // TODO update type annotation if present
         decl?.functionDeclarationLeft?.let { fdl ->
-            val newDecl = psiFactory.createTopLevelFunction("${fdl.name} x = ${fdl.body?.text}")
+            fdl.patterns.toList()
+            val newParamName = uniqueValueName(fdl.body!!, "x")
+            val newDecl = psiFactory.createTopLevelFunction("${fdl.name} ${(fdl.patterns.map { it.text }.plus(newParamName)).joinToString(" ")} = ${fdl.body?.text}")
             decl.replace(newDecl)
         }
     }

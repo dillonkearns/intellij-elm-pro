@@ -25,4 +25,21 @@ main = foo 1
 """
     )
 
+    fun `test add second parameter`() = checkFixByFileTree("Add Parameter",
+        """
+--@ main.elm
+module Main exposing (main)
+
+foo x = ()
+
+main = <error descr="The function expects 1 argument, but it got 2 instead.">{-caret-}foo 1 2</error>
+""", """
+module Main exposing (main)
+
+foo x x2 = ()
+
+main = foo 1 2
+"""
+    )
+
 }
