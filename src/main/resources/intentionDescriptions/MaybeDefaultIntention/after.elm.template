@@ -1,0 +1,8 @@
+module Example exposing (example)
+
+example maybeBackslashes =
+    <spot>(
+         maybeBackslashes
+        |> Maybe.map String.length
+        |> Maybe.withDefault 0
+        )</spot>

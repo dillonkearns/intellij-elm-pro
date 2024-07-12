@@ -28,6 +28,9 @@ class ElmCaseOfBranch(node: ASTNode) : ElmPsiElementImpl(node) {
     val expression: ElmExpressionTag?
         get() = findChildByClass(ElmExpressionTag::class.java)
 
+    val caseOfExpression: ElmCaseOfExpr
+        get() = PsiTreeUtil.getParentOfType(this, ElmCaseOfExpr::class.java)!!
+
 
     /**
      * Named elements introduced by pattern destructuring on the left-hand side of the branch.

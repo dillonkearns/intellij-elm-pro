@@ -177,6 +177,10 @@
             <category>Elm</category>
         </intentionAction>
         <intentionAction>
+            <className>org.elm.ide.intentions.MaybeDefaultIntention</className>
+            <category>Elm</category>
+        </intentionAction>
+        <intentionAction>
             <className>org.elm.ide.intentions.RegularToTripleQuotedStringIntention</className>
             <category>Elm</category>
         </intentionAction>

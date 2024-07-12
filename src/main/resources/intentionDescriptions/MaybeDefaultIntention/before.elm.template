@@ -1,0 +1,10 @@
+module Example exposing (example)
+
+example maybeBackslashes =
+    <spot>case maybeBackslashes of
+        Just backslashes ->
+            String.length backslashes
+
+        Nothing ->
+            0</spot>
+
