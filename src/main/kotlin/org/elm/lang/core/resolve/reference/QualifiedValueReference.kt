@@ -21,4 +21,7 @@ class QualifiedValueReference(element: ElmReferenceElement, valueQID: ElmValueQI
 
     override val qualifierPrefix = valueQID.qualifierPrefix
     override val nameWithoutQualifier = element.referenceName
+
+    val canonicalName: String
+        get() = "$qualifierPrefix.$nameWithoutQualifier"
 }

@@ -253,6 +253,16 @@ class ElmPsiFactory(private val project: Project) {
                 ?: error("Failed to create case of branches from $patterns")
     }
 
+    fun createCaseExpression(existingIndent: String, expression: ElmValueExpr, branches: List<Pair<String, String>>): ElmCaseOfExpr {
+        val indent = "    "
+        val text = branches.joinToString("\n\n", prefix = "foo = case ${expression.text} of\n") {
+            "$existingIndent$indent${it.first} ->\n$existingIndent$indent$indent${it.second}"
+        }
+        return createFromText<ElmValueDeclaration>(text)
+                ?.descendantOfType<ElmCaseOfExpr>()
+                ?: error("Failed to create case expression from $branches")
+    }
+
     fun createLetInWrapper(existingIndent: String, indent: String, newDeclName: String, newDeclBody: String, bodyText: String): ElmLetInExpr {
         // NOTE: Assumes that each line in newDeclBody has had its indent normalized to match the indent of the first line.
         //       Each line of newDeclBody must start with a non-whitespace character.
