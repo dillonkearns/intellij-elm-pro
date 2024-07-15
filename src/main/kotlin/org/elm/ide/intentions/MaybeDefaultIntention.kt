@@ -5,10 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiWhiteSpace
 import org.elm.lang.core.psi.ElmPsiFactory
-import org.elm.lang.core.psi.elements.ElmCaseOfBranch
-import org.elm.lang.core.psi.elements.ElmCaseOfExpr
-import org.elm.lang.core.psi.elements.ElmFunctionCallExpr
-import org.elm.lang.core.psi.elements.ElmUnionPattern
+import org.elm.lang.core.psi.elements.*
 import org.elm.lang.core.psi.prevSiblings
 
 class MaybeDefaultIntention : ElmAtCaretIntentionActionBase<MaybeDefaultIntention.Context>() {
@@ -33,7 +30,7 @@ class MaybeDefaultIntention : ElmAtCaretIntentionActionBase<MaybeDefaultIntentio
 
     override fun invoke(project: Project, editor: Editor, context: Context) {
         val justBranch = context.maybeCaseExpression.branches.first()
-        val justPatternName = (justBranch.pattern.child as ElmUnionPattern).argumentPatterns.first()
+        val justPattern = (justBranch.pattern.child as ElmUnionPattern).argumentPatterns.first()
         val factory = ElmPsiFactory(project)
         // TODO get correct branch order
         // TODO handle case where there is a missing Just or Nothing branch (_ -> or similar)
@@ -42,18 +39,31 @@ class MaybeDefaultIntention : ElmAtCaretIntentionActionBase<MaybeDefaultIntentio
         val justFunction = (justBranch.expression as ElmFunctionCallExpr).target.text
         val nothingBranch = context.maybeCaseExpression.branches.last()
         val defaultValue = nothingBranch.expression!!.text
-        context.maybeCaseExpression.replace(
-            factory.createPipeChain(
-                // TODO get existing indentation?
-                context.maybeCaseExpression.prevSiblings.firstNotNullOf { it as? PsiWhiteSpace }.text,
-                "    ",
-                listOf(
-                    maybeValue,
-                    "Maybe.map $justFunction",
-                    "Maybe.withDefault $defaultValue"
+        if (justPattern is ElmLowerPattern) {
+            context.maybeCaseExpression.replace(
+                factory.createPipeChain(
+                    context.maybeCaseExpression.prevSiblings.firstNotNullOf { it as? PsiWhiteSpace }.text,
+                    "    ",
+                    listOf(
+                        maybeValue,
+                        "Maybe.map $justFunction",
+                        "Maybe.withDefault $defaultValue"
+                    )
                 )
             )
-        )
+        } else {
+            context.maybeCaseExpression.replace(
+                factory.createPipeChain(
+                    context.maybeCaseExpression.prevSiblings.firstNotNullOf { it as? PsiWhiteSpace }.text,
+                    "    ",
+                    listOf(
+                        maybeValue,
+                        "Maybe.map (\\(${justPattern.text}) -> ${justBranch.expression!!.text})",
+                        "Maybe.withDefault $defaultValue"
+                    )
+                )
+            )
+        }
 
 //        val mapCallExpr = context.mapInvocation
 //        val itemVarName = uniqueValueName(mapCallExpr, "item")
