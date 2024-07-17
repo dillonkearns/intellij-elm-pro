@@ -75,9 +75,16 @@ class MaybeDefaultToCaseIntention : ElmAtCaretIntentionActionBase<MaybeDefaultTo
     }
 
     private fun extractContextFromNested(element: PsiElement) : Context? {
-        val qid = (element.parent as ElmValueQID)
-        val extractFromFunction = extractFromFunction(qid)
-        return Context(extractFromFunction.first().second.last() as ElmValueExpr, extractFromFunction.first().second.first(), extractFromFunction.last().second.first(), qid.parent.parent.parent.parent)
+        return (element.parent as? ElmValueQID)?.let { qid ->
+            val extractFromFunction = extractFromFunction(qid)
+            val maybeWithDefaultCall = extractFromFunction.last().first.parent
+            return Context(
+                extractFromFunction.first().second.last() as ElmValueExpr,
+                extractFromFunction.first().second.first(),
+                extractFromFunction.last().second.first(),
+                maybeWithDefaultCall
+            )
+        }
     }
 
     override fun invoke(project: Project, editor: Editor, context: Context) {

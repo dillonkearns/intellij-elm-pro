@@ -45,4 +45,24 @@ leftFringeLength maybeLeftFringe =
             0
 """)
 
+    fun `test nested function calls with extra parens`() = doAvailableTest(
+        """
+module Foo exposing (leftFringeLength)
+
+
+leftFringeLength maybeLeftFringe =
+    Maybe.withDefault 0 ( ( Maybe.map String.length maybeLe{-caret-}ftFringe ) )
+""", """
+module Foo exposing (leftFringeLength)
+
+
+leftFringeLength maybeLeftFringe =
+    case maybeLeftFringe of
+        Just something ->
+            String.length something
+
+        Nothing ->
+            0
+""")
+
 }
