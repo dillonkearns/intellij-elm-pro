@@ -25,4 +25,24 @@ leftFringeLength maybeLeftFringe =
             0
 """)
 
+    fun `test nested function calls`() = doAvailableTest(
+        """
+module Foo exposing (leftFringeLength)
+
+
+leftFringeLength maybeLeftFringe =
+    Maybe.withDefault 0 (Maybe.map String.length maybeLeftFrin{-caret-}ge)
+""", """
+module Foo exposing (leftFringeLength)
+
+
+leftFringeLength maybeLeftFringe =
+    case maybeLeftFringe of
+        Just something ->
+            String.length something
+
+        Nothing ->
+            0
+""")
+
 }
