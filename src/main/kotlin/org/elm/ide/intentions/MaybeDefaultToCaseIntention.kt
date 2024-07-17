@@ -22,12 +22,7 @@ class MaybeDefaultToCaseIntention : ElmAtCaretIntentionActionBase<MaybeDefaultTo
     override fun getFamilyName() = text
 
     private fun isMaybeMap(element: PsiElement): Pipeline? {
-        val qid = (element as? ElmValueQID ?: element.parent as? ElmValueQID)
-        return if (qid?.text == "Maybe.map") {
-            qid.parentOfType<ElmBinOpExpr>()?.asPipeline()
-        } else {
-            null
-        }
+        return element.parentOfType<ElmBinOpExpr>()?.asPipeline()
     }
 
     private fun extractFromFunction(element: ElmPsiElement): ImmutableList<Pair<ElmAtomTag, List<ElmAtomTag>>>? {
