@@ -5,7 +5,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiWhiteSpace
 import org.elm.lang.core.psi.ElmPsiFactory
-import org.elm.lang.core.psi.elements.*
+import org.elm.lang.core.psi.ancestors
+import org.elm.lang.core.psi.elements.ElmCaseOfExpr
+import org.elm.lang.core.psi.elements.ElmFunctionCallExpr
+import org.elm.lang.core.psi.elements.ElmLowerPattern
+import org.elm.lang.core.psi.elements.ElmUnionPattern
 import org.elm.lang.core.psi.prevSiblings
 
 class MaybeDefaultIntention : ElmAtCaretIntentionActionBase<MaybeDefaultIntention.Context>() {
@@ -14,19 +18,17 @@ class MaybeDefaultIntention : ElmAtCaretIntentionActionBase<MaybeDefaultIntentio
     override fun getText() = "Convert Maybe case to withDefault"
     override fun getFamilyName() = text
 
-    override fun findApplicableContext(project: Project, editor: Editor, element: PsiElement): Context? =
-//        null
-        // TODO confirm that it is a case of on a Maybe
-        ((element.parent.parent).parent.parent as? ElmCaseOfBranch)?.caseOfExpression?.let { Context(it) }
-//        element.parent as? ElmUpperCaseQID
-//            element.ancestors.filterIsInstance<ElmFunctionCallExpr>()
-//                    .firstOrNull()
-//                    ?.let {
-//                        when (it.target.text) {
-//                            "List.map" -> Context(it)
-//                            else -> null
-//                        }
-//                    }
+    override fun findApplicableContext(project: Project, editor: Editor, element: PsiElement): Context? {
+        return (element.ancestors.filterIsInstance<ElmUnionPattern>().firstOrNull())?.let { unionPattern ->
+            if (unionPattern.upperCaseQID.refName == "Just" || unionPattern.upperCaseQID.refName == "Nothing") {
+                unionPattern.ancestors.filterIsInstance<ElmCaseOfExpr>().firstOrNull()?.let { caseOfExpr ->
+                    Context(caseOfExpr)
+                }
+            } else {
+                null
+            }
+        }
+    }
 
     override fun invoke(project: Project, editor: Editor, context: Context) {
         val justBranch = context.maybeCaseExpression.branches.first()
