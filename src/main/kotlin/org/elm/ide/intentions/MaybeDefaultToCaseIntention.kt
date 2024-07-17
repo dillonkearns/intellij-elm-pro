@@ -30,7 +30,7 @@ class MaybeDefaultToCaseIntention : ElmAtCaretIntentionActionBase<MaybeDefaultTo
         }
     }
 
-    fun extractFromFunction(element: ElmPsiElement): ImmutableList<Pair<ElmAtomTag, List<ElmAtomTag>>> {
+    private fun extractFromFunction(element: ElmPsiElement): ImmutableList<Pair<ElmAtomTag, List<ElmAtomTag>>>? {
         val innermost = element.parent.parent.parent
         var current = innermost
         val collected = mutableListOf<Pair<ElmAtomTag, List<ElmAtomTag>>>()
@@ -39,17 +39,24 @@ class MaybeDefaultToCaseIntention : ElmAtCaretIntentionActionBase<MaybeDefaultTo
                 is ElmValueExpr -> {
                     collected.add(Pair(current, emptyList()))
                 }
+
                 is ElmParenthesizedExpr -> {
                     current = current.expression
                 }
+
                 is ElmFunctionCallExpr -> {
                     collected.add(Pair(current.target, current.arguments.toList()))
+                    val reference = current.target.reference
+                    if (reference is QualifiedValueReference && reference.qualifierPrefix == "Maybe" && reference.nameWithoutQualifier == "withDefault") {
+                        return collected.toImmutableList()
+                    }
                     current = current.parentOfType<ElmFunctionCallExpr>() ?: break
                 }
-                else -> return collected.toImmutableList()
+
+                else -> return null
             }
         }
-        return collected.toImmutableList()
+        return null
     }
 
     override fun findApplicableContext(project: Project, editor: Editor, element: PsiElement): Context? {
@@ -74,16 +81,17 @@ class MaybeDefaultToCaseIntention : ElmAtCaretIntentionActionBase<MaybeDefaultTo
         } ?: extractContextFromNested(element)
     }
 
-    private fun extractContextFromNested(element: PsiElement) : Context? {
+    private fun extractContextFromNested(element: PsiElement): Context? {
         return (element.parent as? ElmValueQID)?.let { qid ->
-            val extractFromFunction = extractFromFunction(qid)
-            val maybeWithDefaultCall = extractFromFunction.last().first.parent
-            return Context(
-                extractFromFunction.first().second.last() as ElmValueExpr,
-                extractFromFunction.first().second.first(),
-                extractFromFunction.last().second.first(),
-                maybeWithDefaultCall
-            )
+            extractFromFunction(qid)?.let { extractFromFunction ->
+                val maybeWithDefaultCall = extractFromFunction.last().first.parent
+                return Context(
+                    extractFromFunction.first().second.last() as ElmValueExpr,
+                    extractFromFunction.first().second.first(),
+                    extractFromFunction.last().second.first(),
+                    maybeWithDefaultCall
+                )
+            }
         }
     }
 
