@@ -6,14 +6,11 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiWhiteSpace
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.ancestors
-import org.elm.lang.core.psi.elements.ElmCaseOfExpr
-import org.elm.lang.core.psi.elements.ElmFunctionCallExpr
-import org.elm.lang.core.psi.elements.ElmLowerPattern
-import org.elm.lang.core.psi.elements.ElmUnionPattern
+import org.elm.lang.core.psi.elements.*
 import org.elm.lang.core.psi.prevSiblings
 
 class MaybeDefaultIntention : ElmAtCaretIntentionActionBase<MaybeDefaultIntention.Context>() {
-    data class Context(val maybeCaseExpression: ElmCaseOfExpr)
+    data class Context(val maybeCaseExpression: ElmCaseOfExpr, val justBranch: ElmCaseOfBranch, val nothingBranch: ElmCaseOfBranch)
 
     override fun getText() = "Convert Maybe case to withDefault"
     override fun getFamilyName() = text
@@ -22,7 +19,21 @@ class MaybeDefaultIntention : ElmAtCaretIntentionActionBase<MaybeDefaultIntentio
         return (element.ancestors.filterIsInstance<ElmUnionPattern>().firstOrNull())?.let { unionPattern ->
             if (unionPattern.upperCaseQID.refName == "Just" || unionPattern.upperCaseQID.refName == "Nothing") {
                 unionPattern.ancestors.filterIsInstance<ElmCaseOfExpr>().firstOrNull()?.let { caseOfExpr ->
-                    Context(caseOfExpr)
+
+                    val justBranch = caseOfExpr.branches.firstOrNull {
+                        val pattern = it.pattern.child as? ElmUnionPattern
+                        pattern?.upperCaseQID?.refName == "Just"
+                    }
+                    val nothingBranch = caseOfExpr.branches.firstOrNull {
+                        val pattern = it.pattern.child as? ElmUnionPattern
+                        pattern?.upperCaseQID?.refName == "Nothing"
+                    }
+
+                    if (justBranch != null && nothingBranch != null) {
+                        Context(caseOfExpr, justBranch, nothingBranch)
+                    } else {
+                        null
+                    }
                 }
             } else {
                 null
@@ -31,7 +42,7 @@ class MaybeDefaultIntention : ElmAtCaretIntentionActionBase<MaybeDefaultIntentio
     }
 
     override fun invoke(project: Project, editor: Editor, context: Context) {
-        val justBranch = context.maybeCaseExpression.branches.first()
+        val justBranch = context.justBranch
         val justPattern = (justBranch.pattern.child as ElmUnionPattern).argumentPatterns.first()
         val factory = ElmPsiFactory(project)
         // TODO get correct branch order
@@ -39,7 +50,7 @@ class MaybeDefaultIntention : ElmAtCaretIntentionActionBase<MaybeDefaultIntentio
         val maybeValue = context.maybeCaseExpression.expression!!.text
         // TODO handle case where it isn't ElmFunctionCallExpr
         val justFunction = (justBranch.expression as ElmFunctionCallExpr).target.text
-        val nothingBranch = context.maybeCaseExpression.branches.last()
+        val nothingBranch = context.nothingBranch
         val defaultValue = nothingBranch.expression!!.text
         if (justPattern is ElmLowerPattern) {
             context.maybeCaseExpression.replace(
