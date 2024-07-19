@@ -193,6 +193,11 @@
         </intentionAction>
         <intentionAction>
             <language>Elm</language>
+            <className>org.elm.ide.intentions.UnwrapLambdaIntention</className>
+            <category>Elm</category>
+        </intentionAction>
+        <intentionAction>
+            <language>Elm</language>
             <className>org.elm.ide.intentions.RegularToTripleQuotedStringIntention</className>
             <category>Elm</category>
         </intentionAction>

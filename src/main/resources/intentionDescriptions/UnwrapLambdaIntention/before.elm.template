@@ -1,0 +1,5 @@
+module Example exposing (example)
+
+example list =
+    list
+        |> List.map <spot>String.fromInt</spot>
