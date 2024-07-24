@@ -2,7 +2,6 @@ package org.elm.ide.navigation
 
 import com.intellij.psi.PsiElement
 import com.intellij.testIntegration.TestFinder
-import com.intellij.testIntegration.TestFinderHelper
 import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.psi.elements.ElmModuleDeclaration
 import org.elm.lang.core.psi.moduleName
@@ -10,11 +9,7 @@ import org.elm.lang.core.stubs.index.ElmModulesIndex
 
 class ElmTestFinder : TestFinder {
     override fun findSourceElement(element: PsiElement): PsiElement? {
-        val testModule = (element.containingFile as? ElmFile)?.getModuleDecl() ?: return null
-
-        return ElmModulesIndex.getAll(element.containingFile as ElmFile).sortedBy {
-            TestFinderHelper.calcTestNameProximity(it.moduleName, nonTestName(testModule))
-        }.firstOrNull()
+        return (element.containingFile as? ElmFile)?.getModuleDecl()
     }
 
     override fun findTestsForClass(element: PsiElement): Collection<PsiElement> {
