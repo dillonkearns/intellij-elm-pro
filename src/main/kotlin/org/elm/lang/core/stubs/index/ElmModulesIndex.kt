@@ -11,6 +11,7 @@ import org.elm.lang.core.lookup.ElmLookup
 import org.elm.lang.core.psi.elements.ElmModuleDeclaration
 import org.elm.lang.core.stubs.ElmFileStub
 import org.elm.lang.core.stubs.ElmModuleDeclarationStub
+import org.elm.openapiext.pathAsPath
 import org.elm.workspace.ElmProject
 
 /**
@@ -42,6 +43,16 @@ class ElmModulesIndex : StringStubIndexExtension<ElmModuleDeclaration>() {
          */
         fun getAll(clientLocation: ClientLocation): List<ElmModuleDeclaration> =
                 rawGetAll(clientLocation.intellijProject, ElmLookup.searchScopeAt(clientLocation))
+
+        fun getAll(clientLocation: Project): List<ElmModuleDeclaration> =
+            rawGetAll(clientLocation, GlobalSearchScope.allScope(clientLocation))
+
+        fun getAllTestModules(elmProject: ElmProject, project: Project): List<ElmModuleDeclaration> {
+            elmProject.testsDirPath
+            return rawGetAll(project, GlobalSearchScope.projectScope(project)).filter {
+                it.containingFile.virtualFile.pathAsPath.startsWith(elmProject.testsDirPath)
+            }
+        }
 
 
         /**

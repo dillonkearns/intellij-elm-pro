@@ -74,6 +74,9 @@
         <!-- New Project for WebStorm -->
         <directoryProjectGenerator implementation="org.elm.ide.project.ElmWebProjectTemplate"/>
 
+        <testFinder implementation="org.elm.ide.navigation.ElmTestFinder"/>
+
+
         <!-- DEPRECATED. See `ElmModuleType` for details! -->
         <moduleType id="ELM_MODULE" implementationClass="org.elm.ide.project.ElmModuleType"/>
 
