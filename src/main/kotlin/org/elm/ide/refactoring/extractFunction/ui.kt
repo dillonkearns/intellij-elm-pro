@@ -63,21 +63,29 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
     companion object {
         fun createConfig(file: ElmFile, start: Int, end: Int): ElmExtractFunctionConfig? {
             val expressionToExtract = findExpressionInRange(file, start, end) ?: return null
+            val parameters: List<Parameter> = parametersToExtract(expressionToExtract)
             val moduleScopeNames = ModuleScope.getVisibleValues(expressionToExtract.elmFile).all.toSet()
-            var relevantPatterns: Set<ElmReferenceElement> = expressionToExtract.originalElement?.descendantsOfTypeOrSelf<ElmValueExpr>()?.toSet().orEmpty()
-            relevantPatterns = relevantPatterns.plus(
-                expressionToExtract.descendantsOfTypeOrSelf<ElmRecordExpr>().mapNotNull { it.baseRecordIdentifier }.toSet()
-            )
-            val localScopedValues = ExpressionScope(expressionToExtract).getVisibleValues().toSet().minus(moduleScopeNames)
-            val parameters: List<Parameter> = relevantPatterns.toList().distinctBy { it.referenceName }.flatMap { pattern ->
-                val resolved = (pattern.reference as? LexicalValueReference)?.resolveShallow() ?: pattern.reference.resolve()
-                if (localScopedValues.contains(resolved)) {
-                    listOf(Parameter(resolved?.name!!, pattern.findTy()))
-                } else {
-                    emptyList()
-                }
-            }
             return ElmExtractFunctionConfig("", false, parameters, Pair(start, end), expressionToExtract, moduleScopeNames.toList().mapNotNull { it.name }.toSet())
+        }
+    }
+}
+
+fun parametersToExtract(expressionToExtract: ElmExpressionTag): List<Parameter> {
+    val moduleScopeNames = ModuleScope.getVisibleValues(expressionToExtract.elmFile).all.toSet()
+    var relevantPatterns: Set<ElmReferenceElement> = expressionToExtract.originalElement?.descendantsOfTypeOrSelf<ElmValueExpr>()?.toSet().orEmpty()
+    relevantPatterns = relevantPatterns.plus(
+        expressionToExtract.descendantsOfTypeOrSelf<ElmRecordExpr>().mapNotNull { it.baseRecordIdentifier }.toSet()
+    )
+    val localScopedValues = ExpressionScope(expressionToExtract).getVisibleValues().toSet().minus(moduleScopeNames)
+
+    return relevantPatterns.toList().distinctBy { it.referenceName }.flatMap { pattern ->
+
+        val resolved =
+            (pattern.reference as? LexicalValueReference)?.resolveShallow() ?: pattern.reference.resolve()
+        if (localScopedValues.contains(resolved)) {
+            listOf(Parameter(resolved?.name!!, pattern.findTy()))
+        } else {
+            emptyList()
         }
     }
 }
