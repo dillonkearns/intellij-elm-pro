@@ -80,7 +80,7 @@ fun parametersToExtract(expressionToExtract: ElmExpressionTag, forLetExpression:
     val localScopedValues =
         ExpressionScope(expressionToExtract).getVisibleValues().toSet().minus(moduleScopeNames).let {
                 if (forLetExpression) {
-                    it.minus((expressionToExtract.parent as? ElmValueDeclaration)?.functionDeclarationLeft?.patterns?.toSet())
+                    it.minus((expressionToExtract.parent as? ElmValueDeclaration)?.functionDeclarationLeft?.patterns!!.toSet())
                         .minus((expressionToExtract.parent as? ElmValueDeclaration)?.functionDeclarationLeft)
                 } else {
                     it

@@ -24,6 +24,28 @@ example =
         a + b
 a = 1""")
 
+    fun `test independent let function with sibling bindings`() = doAvailableTest(
+        """
+module Foo exposing (example)
+
+example =
+    let
+        {-caret-}myFn a = a + 1
+        b = 2
+    in
+        myFn 123 + b
+""", """
+module Foo exposing (example)
+
+example =
+    let
+        
+        b = 2
+    in
+        myFn 123 + b
+myFn a = a + 1""")
+
+
     fun `test independent let with no sibling bindings`() = doAvailableTest(
         """
 module Foo exposing (example)
