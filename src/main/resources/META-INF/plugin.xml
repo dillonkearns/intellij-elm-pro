@@ -191,6 +191,11 @@
         </intentionAction>
         <intentionAction>
             <language>Elm</language>
+            <className>org.elm.ide.intentions.InvertIfConditionIntention</className>
+            <category>Elm</category>
+        </intentionAction>
+        <intentionAction>
+            <language>Elm</language>
             <className>org.elm.ide.intentions.MaybeDefaultToCaseIntention</className>
             <category>Elm</category>
         </intentionAction>
