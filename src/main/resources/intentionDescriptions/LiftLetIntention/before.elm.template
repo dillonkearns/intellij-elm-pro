@@ -1,0 +1,8 @@
+module Example exposing (example)
+
+example =
+let
+    <spot>a = 1</spot>
+    b = 2
+in
+    a + b

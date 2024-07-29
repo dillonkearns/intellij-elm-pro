@@ -13,8 +13,6 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import org.elm.openapiext.checkReadAccessAllowed
-import org.elm.openapiext.checkWriteAccessAllowed
 
 /**
  * A base class for implementing intentions: actions available via "light bulb" / `Alt+Enter`.
@@ -45,12 +43,10 @@ abstract class ElmAtCaretIntentionActionBase<Ctx> : BaseElementAtCaretIntentionA
 
     final override fun invoke(project: Project, editor: Editor, element: PsiElement) {
         val context = findApplicableContext(project, editor, element) ?: return
-        checkWriteAccessAllowed()
         invoke(project, editor, context)
     }
 
     final override fun isAvailable(project: Project, editor: Editor, element: PsiElement): Boolean {
-        checkReadAccessAllowed()
         return findApplicableContext(project, editor, element) != null
     }
 

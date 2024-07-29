@@ -15,6 +15,7 @@ import org.elm.lang.core.psi.ElmExpressionTag
 import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.psi.descendantsOfTypeOrSelf
 import org.elm.lang.core.psi.elements.ElmRecordExpr
+import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.psi.elements.ElmValueExpr
 import org.elm.lang.core.resolve.ElmReferenceElement
 import org.elm.lang.core.resolve.reference.LexicalValueReference
@@ -70,15 +71,24 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
     }
 }
 
-fun parametersToExtract(expressionToExtract: ElmExpressionTag): List<Parameter> {
+fun parametersToExtract(expressionToExtract: ElmExpressionTag, forLetExpression: Boolean = false): List<Parameter> {
     val moduleScopeNames = ModuleScope.getVisibleValues(expressionToExtract.elmFile).all.toSet()
     var relevantPatterns: Set<ElmReferenceElement> = expressionToExtract.originalElement?.descendantsOfTypeOrSelf<ElmValueExpr>()?.toSet().orEmpty()
     relevantPatterns = relevantPatterns.plus(
         expressionToExtract.descendantsOfTypeOrSelf<ElmRecordExpr>().mapNotNull { it.baseRecordIdentifier }.toSet()
     )
-    val localScopedValues = ExpressionScope(expressionToExtract).getVisibleValues().toSet().minus(moduleScopeNames)
+    val localScopedValues =
+        ExpressionScope(expressionToExtract).getVisibleValues().toSet().minus(moduleScopeNames).let {
+                if (forLetExpression) {
+                    it.minus((expressionToExtract.parent as? ElmValueDeclaration)?.functionDeclarationLeft?.patterns?.toSet())
+                        .minus((expressionToExtract.parent as? ElmValueDeclaration)?.functionDeclarationLeft)
+                } else {
+                    it
+                }
+            }
 
     return relevantPatterns.toList().distinctBy { it.referenceName }.flatMap { pattern ->
+
 
         val resolved =
             (pattern.reference as? LexicalValueReference)?.resolveShallow() ?: pattern.reference.resolve()
