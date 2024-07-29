@@ -7,6 +7,7 @@ import org.elm.lang.core.psi.ElmExpressionTag
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.ElmTypes
 import org.elm.lang.core.psi.ancestorOrSelf
+import org.elm.lang.core.psi.elements.ElmFunctionCallExpr
 import org.elm.lang.core.psi.elements.ElmIfElseExpr
 
 class InvertIfConditionIntention : ElmAtCaretIntentionActionBase<InvertIfConditionIntention.Context>() {
@@ -35,10 +36,23 @@ class InvertIfConditionIntention : ElmAtCaretIntentionActionBase<InvertIfConditi
 
     override fun invoke(project: Project, editor: Editor, context: Context) {
         val factory = ElmPsiFactory(project)
-        context.condition.replace(factory.createExpression("not (${context.condition.text})"))
+        val negatedExpression = negatedConditionExpression(context.condition)
+        if (negatedExpression != null) {
+            context.condition.replace(negatedExpression)
+        } else {
+            context.condition.replace(factory.createExpression("not (${context.condition.text})"))
+        }
         val originalThen = factory.createExpression(context.thenBranch.text)
         val originalElse = factory.createExpression(context.elseBranch.text)
         context.thenBranch.replace(originalElse)
         context.elseBranch.replace(originalThen)
+    }
+
+    fun negatedConditionExpression(condition: ElmExpressionTag): ElmExpressionTag? {
+        return if (condition is ElmFunctionCallExpr && condition.target.text == "not") {
+            condition.arguments.first()
+        } else {
+            null
+        }
     }
 }
