@@ -60,4 +60,24 @@ example positive =
         -1
 """)
 
+    fun `test negated number comparison`() = doAvailableTest(
+        """
+module Foo exposing (example)
+
+example n =
+    i{-caret-}f n >= 0 then
+        "non-negative"
+    else
+        "negative"
+""", """
+module Foo exposing (example)
+
+example n =
+    if n < 0 then
+        "negative"
+    else
+        "non-negative"
+""")
+
+
 }

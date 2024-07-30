@@ -1,0 +1,8 @@
+module Example exposing (example)
+
+example n =
+    <spot>if n < 0 then
+        "negative"
+    else
+        "non-negative"
+</spot>

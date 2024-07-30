@@ -7,8 +7,10 @@ import org.elm.lang.core.psi.ElmExpressionTag
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.ElmTypes
 import org.elm.lang.core.psi.ancestorOrSelf
+import org.elm.lang.core.psi.elements.ElmBinOpExpr
 import org.elm.lang.core.psi.elements.ElmFunctionCallExpr
 import org.elm.lang.core.psi.elements.ElmIfElseExpr
+import org.elm.lang.core.psi.elements.ElmOperator
 import org.elm.lang.core.withoutParens
 
 class InvertIfConditionIntention : ElmAtCaretIntentionActionBase<InvertIfConditionIntention.Context>() {
@@ -49,11 +51,39 @@ class InvertIfConditionIntention : ElmAtCaretIntentionActionBase<InvertIfConditi
         factory: ElmPsiFactory,
         condition: ElmExpressionTag
     ): ElmExpressionTag {
-        val negatedExpression = negatedConditionExpression(condition)
-        return if (negatedExpression != null) {
-            negatedExpression
+        return negatedConditionExpression(condition)
+            ?: (negateCondition(factory, condition) ?: factory.createExpression("not (${condition.text})"))
+    }
+
+    private fun negateCondition(factory: ElmPsiFactory, condition: ElmExpressionTag): ElmExpressionTag? {
+        return if (condition is ElmBinOpExpr) {
+            val binOpExpr = condition.parts.toList()
+            if (binOpExpr.size == 3) {
+                val maybeOperator = binOpExpr[1] as? ElmOperator
+                val newOperator = maybeOperator?.let { invertedOperator(it) }
+                if (newOperator != null) {
+                    val newBinOpExpr = binOpExpr.map { it.text }.toMutableList()
+                    newBinOpExpr[1] = newOperator
+                    return factory.createExpression(newBinOpExpr.joinToString(" "))
+                }
+                null
+            } else {
+                null
+            }
         } else {
-            factory.createExpression("not (${condition.text})")
+            null
+        }
+    }
+
+    private fun invertedOperator(operator: ElmOperator): String? {
+        return when (operator.text) {
+            "==" -> "/="
+            "/=" -> "=="
+            "<" -> ">="
+            ">" -> "<="
+            "<=" -> ">"
+            ">=" -> "<"
+            else -> null
         }
     }
 
