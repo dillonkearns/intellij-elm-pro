@@ -3,11 +3,8 @@ package org.elm.lang.core
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiDocumentManager
-import org.elm.lang.core.psi.ElmPsiElement
-import org.elm.lang.core.psi.directChildren
+import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.ElmParenthesizedExpr
-import org.elm.lang.core.psi.indentStyle
-import org.elm.lang.core.psi.startOffset
 import org.elm.utils.getIndent
 import java.util.*
 import kotlin.math.ceil
@@ -43,6 +40,7 @@ val ElmPsiElement.textWithNormalizedIndents: String
     }
 
 val ElmPsiElement.withoutParens: ElmPsiElement get() { return unwrapParensHelp(this) }
+val ElmExpressionTag.withoutParens: ElmExpressionTag get() { return unwrapParensHelp(this) }
 val ElmParenthesizedExpr.withoutExtraParens: ElmParenthesizedExpr get() { return unwrapNestedParensHelp(this) }
 
 val ElmParenthesizedExpr.comments : Sequence<PsiComment>
@@ -51,11 +49,19 @@ val ElmParenthesizedExpr.comments : Sequence<PsiComment>
 }
 
 private fun unwrapParensHelp(expression: ElmPsiElement): ElmPsiElement {
+    return if (expression is ElmExpressionTag) {
+        unwrapParensHelp(expression)
+    } else {
+        expression
+    }
+}
+
+private fun unwrapParensHelp(expression: ElmExpressionTag): ElmExpressionTag {
     return when (expression) {
         is ElmParenthesizedExpr -> {
             val nestedExpression = expression.expression
             if (nestedExpression == null) {
-               expression
+                expression
             } else {
                 if (expression.comments.count() == 0) {
                     unwrapParensHelp(nestedExpression)
@@ -69,6 +75,7 @@ private fun unwrapParensHelp(expression: ElmPsiElement): ElmPsiElement {
         }
     }
 }
+
 
 private fun unwrapNestedParensHelp(expression: ElmParenthesizedExpr): ElmParenthesizedExpr {
     val nestedExpression = expression.expression

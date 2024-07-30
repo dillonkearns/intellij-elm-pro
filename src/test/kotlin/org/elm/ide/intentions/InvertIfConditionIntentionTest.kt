@@ -41,4 +41,23 @@ example positive =
         -1
 """)
 
+    fun `test negated condition with parens`() = doAvailableTest(
+        """
+module Foo exposing (example)
+
+example positive =
+    i{-caret-}f not (positive) then
+        -1
+    else
+        1
+""", """
+module Foo exposing (example)
+
+example positive =
+    if positive then
+        1
+    else
+        -1
+""")
+
 }

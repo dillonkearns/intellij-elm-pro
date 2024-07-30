@@ -9,6 +9,7 @@ import org.elm.lang.core.psi.ElmTypes
 import org.elm.lang.core.psi.ancestorOrSelf
 import org.elm.lang.core.psi.elements.ElmFunctionCallExpr
 import org.elm.lang.core.psi.elements.ElmIfElseExpr
+import org.elm.lang.core.withoutParens
 
 class InvertIfConditionIntention : ElmAtCaretIntentionActionBase<InvertIfConditionIntention.Context>() {
     data class Context(
@@ -48,9 +49,10 @@ class InvertIfConditionIntention : ElmAtCaretIntentionActionBase<InvertIfConditi
         context.elseBranch.replace(originalThen)
     }
 
-    fun negatedConditionExpression(condition: ElmExpressionTag): ElmExpressionTag? {
+    private fun negatedConditionExpression(condition: ElmExpressionTag): ElmExpressionTag? {
         return if (condition is ElmFunctionCallExpr && condition.target.text == "not") {
-            condition.arguments.first()
+            val inner = condition.arguments.firstOrNull() ?: return null
+            inner.withoutParens
         } else {
             null
         }
