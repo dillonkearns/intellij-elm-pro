@@ -14,6 +14,7 @@ import org.elm.lang.core.ElmFileType
 import org.elm.lang.core.psi.ElmExpressionTag
 import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.psi.descendantsOfTypeOrSelf
+import org.elm.lang.core.psi.elements.ElmAnonymousFunctionExpr
 import org.elm.lang.core.psi.elements.ElmRecordExpr
 import org.elm.lang.core.psi.elements.ElmValueDeclaration
 import org.elm.lang.core.psi.elements.ElmValueExpr
@@ -24,6 +25,7 @@ import org.elm.lang.core.resolve.scope.ModuleScope
 import org.elm.lang.core.types.Ty
 import org.elm.lang.core.types.findTy
 import org.elm.lang.core.types.renderedText
+import org.elm.lang.core.withoutParens
 import org.elm.openapiext.fullWidthCell
 import org.elm.openapiext.isUnitTestMode
 import org.jetbrains.annotations.TestOnly
@@ -66,12 +68,17 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
             val expressionToExtract = findExpressionInRange(file, start, end) ?: return null
             val parameters: List<Parameter> = parametersToExtract(expressionToExtract)
             val moduleScopeNames = ModuleScope.getVisibleValues(expressionToExtract.elmFile).all.toSet()
-            return ElmExtractFunctionConfig("", false, parameters, Pair(start, end), expressionToExtract, moduleScopeNames.toList().mapNotNull { it.name }.toSet())
+            return ElmExtractFunctionConfig("", false, parameters, Pair(start, end), unwrapTopLevelLambda(expressionToExtract), moduleScopeNames.toList().mapNotNull { it.name }.toSet())
         }
     }
 }
 
+private fun unwrapTopLevelLambda(expressionToExtract: ElmExpressionTag): ElmExpressionTag {
+    return findTopLevelLambda(expressionToExtract)?.expression ?: expressionToExtract
+}
+
 fun parametersToExtract(expressionToExtract: ElmExpressionTag, forLetExpression: Boolean = false): List<Parameter> {
+    val lambdaParams = findTopLevelLambda(expressionToExtract)?.patternList.orEmpty().map { Parameter(it.text, it.findTy(), isFromLambda = true) }
     val moduleScopeNames = ModuleScope.getVisibleValues(expressionToExtract.elmFile).all.toSet()
     var relevantPatterns: Set<ElmReferenceElement> = expressionToExtract.originalElement?.descendantsOfTypeOrSelf<ElmValueExpr>()?.toSet().orEmpty()
     relevantPatterns = relevantPatterns.plus(
@@ -97,7 +104,11 @@ fun parametersToExtract(expressionToExtract: ElmExpressionTag, forLetExpression:
         } else {
             emptyList()
         }
-    }
+    }.plus(lambdaParams)
+}
+
+private fun findTopLevelLambda(expressionToExtract: ElmExpressionTag): ElmAnonymousFunctionExpr? {
+    return expressionToExtract.withoutParens as? ElmAnonymousFunctionExpr
 }
 
 
@@ -198,6 +209,7 @@ private class ElmSignatureComponent(
 class Parameter constructor(
     var name: String,
     val type: Ty? = null,
+    val isFromLambda: Boolean = false,
     private val isReference: Boolean = false,
     var isMutable: Boolean = false,
     private val requiresMut: Boolean = false,

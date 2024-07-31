@@ -192,6 +192,23 @@ test renamedParam =
     )
 
 
+    fun `test turns lambda argument into parameter in extracted function`() = doTest(
+        """
+example =
+    [1, 2, 3]
+        |> List.map {-selection-}(\item -> item + 1){-selection--}
+""", """
+example =
+    [1, 2, 3]
+        |> List.map test
+
+
+test item =
+    item + 1
+""", "test"
+    )
+
+
     private fun doTest(
         @Language("Elm") code: String,
         @Language("Elm") excepted: String,

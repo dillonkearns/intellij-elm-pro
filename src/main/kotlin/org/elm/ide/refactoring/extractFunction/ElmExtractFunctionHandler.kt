@@ -12,7 +12,7 @@ import com.intellij.usageView.UsageInfo
 import org.elm.ide.refactoring.ElmRenamePsiElementProcessor
 import org.elm.ide.utils.findExpressionInRange
 import org.elm.lang.core.psi.*
-import org.elm.lang.core.psi.elements.ElmValueDeclaration
+import org.elm.lang.core.psi.elements.*
 import org.elm.lang.core.types.Ty
 import org.elm.lang.core.types.findTy
 import org.elm.lang.core.types.renderedText
@@ -35,15 +35,24 @@ class ElmExtractFunctionHandler : RefactoringActionHandler {
         }
     }
 
+    private fun parenthesizeIf(condition: Boolean, expression: String): String {
+        return if (condition) {
+            "($expression)"
+        } else {
+            expression
+        }
+    }
+
     private fun extractFunction(project: Project, file: PsiFile, config: ElmExtractFunctionConfig) {
         project.runWriteCommandAction(
         ) {
             if (file !is ElmFile) return@runWriteCommandAction
             val psiFactory = ElmPsiFactory(project)
             val (start, end) = config.selection
-            val expressionToExtract = findExpressionInRange(file, start, end)
-            val fnBody = expressionToExtract?.text
-            val signatureTypes: List<Ty?> = (config.parameters.map { it.type }) + listOf(expressionToExtract?.findTy())
+            val originalExpressionToExtract = findExpressionInRange(file, start, end)
+            val expressionToExtract = config.expressionToExtract //findExpressionInRange(file, start, end)
+            val fnBody = expressionToExtract.text
+            val signatureTypes: List<Ty?> = (config.parameters.map { it.type }) + listOf(expressionToExtract.findTy())
             val signature = if (signatureTypes.all { it != null }) {
                 signatureTypes.joinToString(" -> ") { it!!.renderedText(withModule = true).replace("→", "->") }
             } else { null }
@@ -56,13 +65,23 @@ class ElmExtractFunctionHandler : RefactoringActionHandler {
             }
             val declaredNames = file.directChildrenOfType<ElmValueDeclaration>()
             val declarationStartOffsets = declaredNames.map { Pair(it.endOffset, it) }
-            val nearestDeclaration = declarationStartOffsets.filter { it.first >= expressionToExtract!!.endOffset }.first().second
+            val nearestDeclaration = declarationStartOffsets.filter { it.first >= originalExpressionToExtract!!.endOffset }.first().second
             nearestDeclaration.addAllAfter(
                 listOf(
                 psiFactory.createWhitespace("\n\n\n"),
                 ).plus(newTopLevel)
             )
-            expressionToExtract?.replace(psiFactory.createExpression((listOf(config.name) + config.parameters.map { it.originalName }).joinToString(" ")))
+            val nonLambdaParams = config.parameters.filter { !it.isFromLambda }
+            originalExpressionToExtract?.replace(
+                psiFactory.createExpression(
+                    parenthesizeIf(
+                        nonLambdaParams.isNotEmpty() && parentNeedsParens(originalExpressionToExtract),
+                        (listOf(config.name) + nonLambdaParams
+                            .map { it.originalName })
+                            .joinToString(" ")
+                    )
+                )
+            )
             val extractedFunction = file.directChildrenOfType<ElmValueDeclaration>().find { it.functionDeclarationLeft?.name == config.name }!!
             extractedFunction.functionDeclarationLeft?.namedParameters?.withIndex()
                 ?.forEach { (parameterIndex, parameter) ->
@@ -79,6 +98,19 @@ class ElmExtractFunctionHandler : RefactoringActionHandler {
 //            renameFunctionParameters(extractedFunction, parameters.map { it.name })
 //            importTypeReferencesFromTys(extractedFunction, config.parametersAndReturnTypes)
 
+        }
+    }
+
+    private fun parentNeedsParens(originalExpressionToExtract: ElmExpressionTag): Boolean {
+        val parent = originalExpressionToExtract.parent
+        return when (parent) {
+            is ElmParenthesizedExpr -> false
+            is ElmValueDeclaration -> false
+            is ElmLetInExpr -> false
+            is ElmListExpr -> false
+            is ElmBinOpExpr -> false
+            is ElmCaseOfBranch -> false
+            else -> true
         }
     }
 
