@@ -22,6 +22,10 @@ import org.elm.lang.core.psi.elements.*
 import org.elm.lang.core.psi.prevSiblings
 import org.elm.lang.core.psi.withoutWsOrComments
 import org.elm.lang.core.resolve.reference.ElmReference
+import org.elm.openapiext.isUnitTestMode
+import org.elm.workspace.commandLineTools.ElmFormatCLI
+import org.elm.workspace.elmToolchain
+import kotlin.math.absoluteValue
 
 class ElmInlineFunctionProcessor(
     private val project: Project,
@@ -55,7 +59,7 @@ class ElmInlineFunctionProcessor(
 
 
     override fun performRefactoring(usages: Array<out UsageInfo>) {
-        usages.asIterable().forEach loop@{ it ->
+        usages.asIterable().forEach loop@{
             when (val reference = it.reference) {
                 is ElmReference -> {
                     if (reference.element is ElmTypeAnnotation) {
@@ -172,8 +176,10 @@ class ElmInlineFunctionProcessor(
         when (val realCaller = containingFunctionCall(caller)) {
             is ElmFunctionCallExpr -> {
                 val needsLambda = needsLambdaReplacement(functionLeft)
+
                 if (!needsLambda) {
                     val copied = factory.createDeclaration(functionLeft.parent.text)
+                    val curriedParams = copied.functionDeclarationLeft!!.patterns.drop(realCaller.arguments.count())
                     copied.functionDeclarationLeft?.patterns?.withIndex()
                         ?.forEach { (parameterIndex, namedParameter) ->
                             when (namedParameter) {
@@ -181,7 +187,9 @@ class ElmInlineFunctionProcessor(
                                     ReferencesSearch.search(namedParameter, LocalSearchScope(copied)).findAll()
                                         .forEach { parameterReference ->
                                             if (parameterReference.canonicalText.equals(namedParameter.name)) {
-                                                parameterReference.element.replace(realCaller.arguments.toList()[parameterIndex])
+                                                realCaller.arguments.toList().getOrNull(parameterIndex)?.let {
+                                                    parameterReference.element.replace(it)
+                                                }
                                             }
                                         }
                                 }
@@ -197,14 +205,17 @@ class ElmInlineFunctionProcessor(
                                 }
                             }
                         }
+                    val rawPointFreeArgumentCount =
+                        ((copied.functionDeclarationLeft?.patterns?.toList()?.size ?: 0)) - (realCaller.arguments.toList().size) - curriedParams.count()
                     val pointFreeArgumentCount =
-                        realCaller.arguments.toList().size - (copied.functionDeclarationLeft?.patterns?.toList()?.size
-                            ?: 0)
+                        rawPointFreeArgumentCount.absoluteValue
 
-                    val copied2 = if (pointFreeArgumentCount > 0) {
-                        factory.createParens(copied.expression?.text!!, "")
-                    } else {
+                    val copied2 = if (curriedParams.count() > 0) {
+                        factory.createLambda("\\${curriedParams.joinToString(" ") { it.text }} -> ${copied.expression?.text!!}")
+                    } else if (pointFreeArgumentCount == 0) {
                         copied.expression!!
+                    } else {
+                        factory.createParens(copied.expression?.text!!, "")
                     }
                     realCaller.arguments.toList().takeLast(pointFreeArgumentCount).forEach {
                         copied2.addAfter(factory.createWhitespace(" "), copied2)

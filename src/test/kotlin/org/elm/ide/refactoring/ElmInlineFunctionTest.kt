@@ -471,6 +471,33 @@ example =
           --^
 """)
 
+    fun `test inline partially applied function into lambda if more than one param`() =
+        doTest(
+            """
+--@ Main.elm
+
+example =
+    let
+        letScoped =
+            123
+    in
+    m{-caret-}yFn letScoped
+           --^
+
+myFn letScoped a b c =
+    a + b + c + letScoped
+
+""",
+            """example =
+    let
+        letScoped =
+            123
+    in
+    (\a b c -> a + b + c + letScoped)
+           --^
+
+""")
+
 
 
     private fun doTest(@Language("Elm") before: String, @Language("Elm") after: String) {
