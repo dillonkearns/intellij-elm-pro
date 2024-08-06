@@ -63,6 +63,93 @@ hello x greeting =
     greeting ++ ", " ++ x ++ "!"
     """)
 
+    fun `test example 2`() = doTest("""
+parser : Bool -> Parser ( UnorderedListMarker, Int, ListItem )
+parser previousWasBody =
+    succeed getIntendedCodeItem
+        |= getCol
+        |= backtrackable unorderedListMarkerParser
+        |= getCol
+        |= (if previousWasBody then
+                unorderedListItemBodyParser
+
+            else
+                oneOf
+                    [ unorderedListEmptyItemParser
+                    , unorderedListItemBodyParser
+                    ]
+           )
+
+getIntendedCodeItem : Int -> b -> Int -> ( Int, ListItem ) -> ( b, Int, ListItem )
+getIntendedCodeItem markerStartPos listMarker markerEndPos ( bodyStartPos, item ) =
+    let
+        spaceNum : Int
+        spaceNum =
+            bodyStartPos - markerEndPos
+    in
+    if spaceNum <= {-selection-}4{-selection--} then
+        ( listMarker, bodyStartPos - markerStartPos, item )
+
+    else
+        let
+            intendedCodeItem : ListItem
+            intendedCodeItem =
+                case item of
+                    TaskItem completion string ->
+                        TaskItem completion (String.repeat (spaceNum - 1) " " ++ string)
+
+                    PlainItem string ->
+                        PlainItem (String.repeat (spaceNum - 1) " " ++ string)
+
+                    EmptyItem ->
+                        EmptyItem
+        in
+        ( listMarker, markerEndPos - markerStartPos + 1, intendedCodeItem )
+""", listOf("4"), 0, 0,
+        """
+parser : Bool -> Parser ( UnorderedListMarker, Int, ListItem )
+parser previousWasBody =
+    succeed (getIntendedCodeItem 4)
+        |= getCol
+        |= backtrackable unorderedListMarkerParser
+        |= getCol
+        |= (if previousWasBody then
+                unorderedListItemBodyParser
+
+            else
+                oneOf
+                    [ unorderedListEmptyItemParser
+                    , unorderedListItemBodyParser
+                    ]
+           )
+
+getIntendedCodeItem : unknown -> Int -> b -> Int -> ( Int, ListItem ) -> ( b, Int, ListItem )
+getIntendedCodeItem x markerStartPos listMarker markerEndPos ( bodyStartPos, item ) =
+    let
+        spaceNum : Int
+        spaceNum =
+            bodyStartPos - markerEndPos
+    in
+    if spaceNum <= x then
+        ( listMarker, bodyStartPos - markerStartPos, item )
+
+    else
+        let
+            intendedCodeItem : ListItem
+            intendedCodeItem =
+                case item of
+                    TaskItem completion string ->
+                        TaskItem completion (String.repeat (spaceNum - 1) " " ++ string)
+
+                    PlainItem string ->
+                        PlainItem (String.repeat (spaceNum - 1) " " ++ string)
+
+                    EmptyItem ->
+                        EmptyItem
+        in
+        ( listMarker, markerEndPos - markerStartPos + 1, intendedCodeItem )
+""")
+
 
     private fun doTest(
         @Language("Elm") before: String,

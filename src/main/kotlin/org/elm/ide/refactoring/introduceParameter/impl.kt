@@ -16,7 +16,6 @@ import org.elm.ide.refactoring.showOccurrencesChooser
 import org.elm.ide.refactoring.suggestedNames
 import org.elm.lang.core.psi.ElmExpressionTag
 import org.elm.lang.core.psi.ElmPsiFactory
-import org.elm.lang.core.psi.addAllAfter
 import org.elm.lang.core.psi.ancestors
 import org.elm.lang.core.psi.elements.ElmFunctionCallExpr
 import org.elm.lang.core.psi.elements.ElmFunctionDeclarationLeft
@@ -108,7 +107,7 @@ private class ParamIntroducer(
               } else if (it is ElmValueExpr) {
                   // TODO avoid extra parens around value when possible
                   if (it.parent is ElmFunctionCallExpr) {
-                      it.addAllAfter(listOf(psiFactory.createWhitespace(" ",), psiFactory.createExpression("(${value.text})")))
+                      it.replace(psiFactory.createExpression("(${it.text} ${value.text})"))
                   } else {
                     it.replace(psiFactory.createFunctionCallExpr("${it.text} (${value.text})"))
                   }
