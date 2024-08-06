@@ -61,7 +61,7 @@ class ElmExtractFunctionConfig(var name: String, var visibilityLevelPublic: Bool
             } else { null }
 
             val parameterString = (listOf(name) + parameters.map { it.name } + listOf("=")).joinToString(" ")
-            return "$annotation\n$parameterString"
+            return listOf(annotation, parameterString).mapNotNull { it }.joinToString("\n")
         }
     companion object {
         fun createConfig(file: ElmFile, start: Int, end: Int): ElmExtractFunctionConfig? {
