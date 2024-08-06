@@ -498,6 +498,26 @@ myFn letScoped a b c =
 
 """)
 
+    fun `test inline lambda 2`() =
+        doTest(
+            """
+--@ Main.elm
+
+example =
+    identity pa{-caret-}ir
+
+
+pair item1 item2 =
+    ( item1, item2 )
+
+""",
+            """example =
+    identity (\item1 item2 -> ( item1, item2 ))
+
+
+""")
+
+
 
 
     private fun doTest(@Language("Elm") before: String, @Language("Elm") after: String) {

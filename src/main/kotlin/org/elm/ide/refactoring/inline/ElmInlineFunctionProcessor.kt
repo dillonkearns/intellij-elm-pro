@@ -234,8 +234,15 @@ class ElmInlineFunctionProcessor(
                 }
             }
             is ElmValueExpr -> {
+                val pointFreeArgumentCount =
+                    functionLeft.patterns.toList().size
+                val curriedParams = functionLeft.patterns
                 if (bodyExpression != null) {
-                    realCaller.replace(bodyExpression)
+                    if (pointFreeArgumentCount > 0) {
+                        realCaller.replace(factory.createLambda("\\${curriedParams.joinToString(" ") { it.text }} -> ${bodyExpression.text}"))
+                    } else {
+                        realCaller.replace(bodyExpression)
+                    }
                 }
             }
 
