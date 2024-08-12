@@ -456,6 +456,63 @@ value =
     Favorite.myFavoriteNumber * 10"""
     )
 
+    fun `test qualify unqualified types`() = doTest(
+        """
+--@ Favorite.elm
+module Favorite exposing (Favorite)
+
+type alias Favorite = Int
+
+--@ A.elm
+
+module A exposing (value, value2)
+
+import Favorite exposing (Favorite)
+
+value : Favorite
+value = {-caret-}10
+
+value2 = 123
+
+--@ B.elm
+module B exposing (existing)
+
+existing = "Existing"
+{-target-}
+"""
+        , """
+--@ Favorite.elm
+module Favorite exposing (Favorite)
+
+type alias Favorite = Int
+
+--@ A.elm
+
+module A exposing (value2)
+
+import Favorite exposing (Favorite)
+
+
+value2 =
+    123
+
+--@ B.elm
+
+module B exposing (existing, value)
+
+import Favorite
+
+
+existing =
+    "Existing"
+
+
+value : Favorite.Favorite
+value =
+    10"""
+    )
+
+
 
     fun `test add import with conflicting import alias`() = doTest(
         """

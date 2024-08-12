@@ -347,7 +347,7 @@ class ElmMoveCommonProcessor(
             }
 
         }
-        annotation?.typeExpression?.allSegments.orEmpty().forEach { segment ->
+        val annotationImportsToAdd = annotation?.typeExpression?.allSegments.orEmpty().mapNotNull { segment ->
 //            segment.upperCaseQID.isQualified
             when (segment) {
                 is ElmTypeRef -> {
@@ -356,8 +356,17 @@ class ElmMoveCommonProcessor(
                         val moduleName = ModuleScope.getVisibleTypes(sourceMod)[segment.upperCaseQID.refName]?.moduleName
                         val qualifiedName = listOf(moduleName, segment.upperCaseQID.refName).mapNotNull { it }.joinToString(".")
                         segment.upperCaseQID.replace(psiFactory.createUpperCaseQID(qualifiedName))
-
+                        if (moduleName != null) {
+                            ImportAdder.Import(moduleName, null, segment.upperCaseQID.refName)
+                        } else {
+                            null
+                        }
+                    } else {
+                        null
                     }
+                }
+                else -> {
+                    null
                 }
             }
         }
@@ -382,7 +391,7 @@ class ElmMoveCommonProcessor(
                 }
             }
         }.let { importsToAdd ->
-            importsToAdd.forEach { import ->
+            importsToAdd.plus(annotationImportsToAdd).forEach { import ->
                 ImportAdder.addImport(import, targetMod, true)
             }
         }
