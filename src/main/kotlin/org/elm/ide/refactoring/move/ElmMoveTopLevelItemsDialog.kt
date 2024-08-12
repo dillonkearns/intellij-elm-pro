@@ -56,7 +56,17 @@ class ElmMoveTopLevelItemsDialog(
     private val sourceDirectory: ComboBox<Path> = ComboBox<Path>().apply {
         isEnabled = true
         val elmProject = project.elmWorkspace.allProjects.firstOrNull()
-        val sorted = createSortedSetWithTopItem(elmProject?.sourceDirectories.orEmpty(), project.basePath!!.toPath().relativize(itemsToMove.first().elmFile.virtualFile.pathAsPath.parent))
+        // add test if this file is within test dir
+        // otherwise, add the source dir that current file is contained in as the top item
+        val testDir = elmProject?.testsRelativeDirPath
+        val currentFilePath = itemsToMove.first().elmFile.virtualFile.pathAsPath
+        val correctTopItem = if (testDir != null && currentFilePath.startsWith(testDir)) {
+            project.basePath!!.toPath().relativize(elmProject.testsDirPath)
+        } else {
+            elmProject?.sourceDirectories.orEmpty().find { currentFilePath.startsWith(project.basePath!!.toPath().resolve(it)) }
+        }
+
+        val sorted = createSortedSetWithTopItem(elmProject?.sourceDirectories.orEmpty(), correctTopItem!!)
         sorted.forEach(::addItem)
     }
     private fun createSortedSetWithTopItem(strings: List<Path>, topItem: Path): List<Path> {
