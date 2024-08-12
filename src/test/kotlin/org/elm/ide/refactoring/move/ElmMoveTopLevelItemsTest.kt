@@ -46,6 +46,45 @@ value =
     42"""
 )
 
+    fun `test qualified module name`() = doTest(
+        """
+--@ Nested/A.elm
+
+module Nested.A exposing (value, value2)
+
+value = {-caret-}42
+
+value2 = 123
+
+--@ Nested/B.elm
+module Nested.B exposing (existing)
+
+existing = "Existing"
+{-target-}
+"""
+        , """
+--@ Nested/A.elm
+
+module Nested.A exposing (value2)
+
+
+value2 =
+    123
+
+--@ Nested/B.elm
+
+module Nested.B exposing (existing, value)
+
+
+existing =
+    "Existing"
+
+
+value =
+    42"""
+    )
+
+
     fun `test multiple`() = doTest(
         """
 --@ A.elm
@@ -307,6 +346,116 @@ existing =
 value =
     Favorite.number * 10"""
     )
+
+    fun `test merge import from target`() = doTest(
+        """
+--@ Favorite.elm
+module Favorite exposing (Favorite)
+
+type alias Favorite = Int
+
+--@ A.elm
+
+module A exposing (value, value2)
+
+import Favorite exposing (Favorite)
+
+value : Favorite
+value = {-caret-}Favorite.number * 10
+
+value2 = 123
+
+--@ B.elm
+module B exposing (existing)
+
+existing = "Existing"
+{-target-}
+"""
+        , """
+--@ Favorite.elm
+module Favorite exposing (Favorite)
+
+type alias Favorite = Int
+--@ A.elm
+
+module A exposing (value2)
+
+import Favorite exposing (Favorite)
+
+
+value2 =
+    123
+
+--@ B.elm
+
+module B exposing (existing, value)
+
+import Favorite
+
+
+existing =
+    "Existing"
+
+
+value : Favorite.Favorite
+value =
+    Favorite.number * 10"""
+    )
+
+    fun `test qualify unqualified values`() = doTest(
+        """
+--@ Favorite.elm
+module Favorite exposing (myFavoriteNumber)
+
+myFavoriteNumber = 42
+
+--@ A.elm
+
+module A exposing (value, value2)
+
+import Favorite exposing (myFavoriteNumber)
+
+value = {-caret-}myFavoriteNumber * 10
+
+value2 = 123
+
+--@ B.elm
+module B exposing (existing)
+
+existing = "Existing"
+{-target-}
+"""
+        , """
+--@ Favorite.elm
+module Favorite exposing (myFavoriteNumber)
+
+myFavoriteNumber = 42
+
+--@ A.elm
+
+module A exposing (value2)
+
+import Favorite exposing (myFavoriteNumber)
+
+
+value2 =
+    123
+
+--@ B.elm
+
+module B exposing (existing, value)
+
+import Favorite
+
+
+existing =
+    "Existing"
+
+
+value =
+    Favorite.myFavoriteNumber * 10"""
+    )
+
 
     fun `test add import with conflicting import alias`() = doTest(
         """

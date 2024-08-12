@@ -33,6 +33,7 @@ import org.elm.lang.core.imports.ImportAdder
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
 import org.elm.lang.core.resolve.reference.QualifiedValueReference
+import org.elm.lang.core.resolve.scope.ModuleScope
 
 //import org.elm.openapiext.runWithCancelableProgress
 
@@ -309,7 +310,7 @@ class ElmMoveCommonProcessor(
         }
         usages.forEach { usage ->
             val ref = (usage as ElmPathUsageInfo).element
-            ImportAdder.addImport(ImportAdder.Import(targetMod.name, null, ref.referenceName), ref.elmFile, true)
+            ImportAdder.addImport(ImportAdder.Import(targetMod.getModuleDecl()!!.upperCaseQID.text, null, ref.referenceName), ref.elmFile, true)
             val usageIsBeingMoved = containingDefinitions.contains(ref.containingTopLevelDefinition())
             ref.replace(psiFactory.createValueQID(
                 if (usageIsBeingMoved) {
@@ -346,7 +347,21 @@ class ElmMoveCommonProcessor(
             }
 
         }
-        (element as? ElmFunctionDeclarationLeft)?.body?.childrenOfType<ElmValueExpr>()?.mapNotNull {
+        annotation?.typeExpression?.allSegments.orEmpty().forEach { segment ->
+//            segment.upperCaseQID.isQualified
+            when (segment) {
+                is ElmTypeRef -> {
+                    if (!segment.upperCaseQID.isQualified) {
+                        // make the type reference fully qualified
+                        val moduleName = ModuleScope.getVisibleTypes(sourceMod)[segment.upperCaseQID.refName]?.moduleName
+                        val qualifiedName = listOf(moduleName, segment.upperCaseQID.refName).mapNotNull { it }.joinToString(".")
+                        segment.upperCaseQID.replace(psiFactory.createUpperCaseQID(qualifiedName))
+
+                    }
+                }
+            }
+        }
+        (element as? ElmFunctionDeclarationLeft)?.body?.childrenOfType<ElmValueExpr>().orEmpty().mapNotNull {
             when (val ref = it.reference) {
                 is QualifiedValueReference -> {
                     val conflictingImport = conflictingImports.find { importInfo -> importInfo.source.resolveModuleName() == ref.qualifierPrefix }
@@ -361,10 +376,12 @@ class ElmMoveCommonProcessor(
                 }
 
                 else -> {
-                    TODO()
+                    val moduleName = ModuleScope.getVisibleValues(sourceMod)[ref.canonicalText]!!.moduleName
+                    it.replace(psiFactory.createValueQID("${moduleName}.${ref.canonicalText}"))
+                    ImportAdder.Import(ModuleScope.getVisibleValues(sourceMod)[ref.canonicalText]!!.moduleName, null, ref.canonicalText)
                 }
             }
-        }?.let { importsToAdd ->
+        }.let { importsToAdd ->
             importsToAdd.forEach { import ->
                 ImportAdder.addImport(import, targetMod, true)
             }
