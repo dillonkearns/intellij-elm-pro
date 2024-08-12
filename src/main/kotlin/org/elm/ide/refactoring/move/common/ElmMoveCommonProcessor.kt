@@ -311,7 +311,7 @@ class ElmMoveCommonProcessor(
         usages.forEach { usage ->
             val ref = (usage as ElmPathUsageInfo).element
             ImportAdder.addImport(ImportAdder.Import(targetMod.getModuleDecl()!!.upperCaseQID.text, null, ref.referenceName), ref.elmFile, true)
-            val usageIsBeingMoved = containingDefinitions.contains(ref.containingTopLevelDefinition())
+            val usageIsBeingMoved = containingDefinitions.contains(ref.containingTopLevelDefinition()) || usage.element.containingFile == targetMod
             ref.replace(psiFactory.createValueQID(
                 if (usageIsBeingMoved) {
                     ref.referenceName
@@ -348,7 +348,6 @@ class ElmMoveCommonProcessor(
 
         }
         val annotationImportsToAdd = annotation?.typeExpression?.allSegments.orEmpty().mapNotNull { segment ->
-//            segment.upperCaseQID.isQualified
             when (segment) {
                 is ElmTypeRef -> {
                     if (!segment.upperCaseQID.isQualified) {
@@ -391,7 +390,10 @@ class ElmMoveCommonProcessor(
                 }
             }
         }.let { importsToAdd ->
-            importsToAdd.plus(annotationImportsToAdd).forEach { import ->
+            importsToAdd.forEach { import ->
+                ImportAdder.addImport(import, targetMod, true)
+            }
+            annotationImportsToAdd.forEach { import ->
                 ImportAdder.addImport(import, targetMod, true)
             }
         }

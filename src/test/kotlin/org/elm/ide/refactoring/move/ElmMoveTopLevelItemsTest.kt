@@ -46,6 +46,48 @@ value =
     42"""
 )
 
+    fun `test uses unqualified values to reference definitions in target module`() = doTest(
+        """
+--@ A.elm
+
+module A exposing (value, value2)
+
+value = {-caret-}42
+
+value2 = 123
+
+--@ B.elm
+module B exposing (existing)
+
+import A
+
+existing = A.value + 1
+{-target-}
+"""
+        , """
+--@ A.elm
+
+module A exposing (value2)
+
+
+value2 =
+    123
+
+--@ B.elm
+
+module B exposing (existing, value)
+
+import A
+
+
+existing =
+    value + 1
+
+
+value =
+    42"""
+    )
+
     fun `test qualified module name`() = doTest(
         """
 --@ Nested/A.elm

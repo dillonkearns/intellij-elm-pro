@@ -37,7 +37,7 @@ interface ElmPsiElement : PsiElement {
     fun containingTopLevelDefinition(): ElmPsiElement? {
         return when (val thisParent = this.parent) {
             is ElmFunctionDeclarationLeft -> thisParent
-            is ElmValueDeclaration -> thisParent
+            is ElmValueDeclaration -> thisParent.functionDeclarationLeft ?: thisParent
             is ElmFile -> null
             is ElmPsiElement -> thisParent.containingTopLevelDefinition()
             else -> null

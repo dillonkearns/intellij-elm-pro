@@ -43,7 +43,10 @@ object ImportAdder {
         } else {
             // insert a new import clause
             val insertPosition = getInsertPosition(file, candidate.moduleName)
-            doInsert(newImport, insertPosition)
+            // don't insert a self import as this is invalid and causes a compiler error
+            if (newImport.moduleQID.fullName != file.getModuleDecl()?.moduleName) {
+                doInsert(newImport, insertPosition)
+            }
         }
     }
 
