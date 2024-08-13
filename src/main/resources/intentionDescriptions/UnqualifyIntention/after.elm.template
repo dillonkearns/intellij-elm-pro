@@ -1,0 +1,12 @@
+module Markdown.Entities exposing (entities)
+
+import Dict exposing (Dict)
+
+
+entities : <spot>Dict</spot> String Int
+entities =
+    [ ( "quot", 34 )
+    , ( "amp", 38 )
+    , ( "apos", 39 )
+    ]
+    |> Dict.fromList

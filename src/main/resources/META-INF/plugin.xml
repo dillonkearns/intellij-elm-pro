@@ -186,6 +186,11 @@
         </intentionAction>
         <intentionAction>
             <language>Elm</language>
+            <className>org.elm.ide.intentions.UnqualifyIntention</className>
+            <category>Elm</category>
+        </intentionAction>
+        <intentionAction>
+            <language>Elm</language>
             <className>org.elm.ide.intentions.LiftLetIntention</className>
             <category>Elm</category>
         </intentionAction>
