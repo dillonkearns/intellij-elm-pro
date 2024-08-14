@@ -14,6 +14,10 @@ class UnqualifyIntention : ElmAtCaretIntentionActionBase<UnqualifyIntention.Cont
     )
 
     override fun getText() = "Unqualify"
+    override fun showPreview(): Boolean {
+        return true
+    }
+
     override fun getFamilyName() = text
 
     override fun findApplicableContext(project: Project, editor: Editor, element: PsiElement): Context? {
