@@ -46,6 +46,42 @@ value =
     42"""
 )
 
+    fun `test moving last exposed item adds a stub exposed value`() = doTest(
+        """
+--@ A.elm
+
+module A exposing (value)
+
+value = {-caret-}42
+
+--@ B.elm
+module B exposing (existing)
+
+existing = "Existing"
+{-target-}
+"""
+        , """
+--@ A.elm
+
+module A exposing (stub)
+
+
+stub =
+    ()
+
+--@ B.elm
+
+module B exposing (existing, value)
+
+
+existing =
+    "Existing"
+
+
+value =
+    42"""
+    )
+
     fun `test uses unqualified values to reference definitions in target module`() = doTest(
         """
 --@ A.elm

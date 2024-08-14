@@ -442,6 +442,10 @@ class ElmMoveCommonProcessor(
             }
         }
         if (exposedItem != null) {
+            if ((exposedItem.elmFile.getModuleDecl()?.exposingList?.allExposedItems?.size ?: 0) == 1) {
+                exposedItem.elmFile.getModuleDecl()?.exposingList?.addItem("stub")
+                sourceMod.add(psiFactory.createDeclaration("stub = ()"))
+            }
             sourceMod.getModuleDecl()?.exposingList?.removeItem(exposedItem)
         }
 
