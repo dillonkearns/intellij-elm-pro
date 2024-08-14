@@ -50,7 +50,15 @@ abstract class ElmAtCaretIntentionActionBase<Ctx> : BaseElementAtCaretIntentionA
         return findApplicableContext(project, editor, element) != null
     }
 
+    open fun showPreview(): Boolean {
+        return false
+    }
+
     override fun generatePreview(project: Project, editor: Editor, file: PsiFile): IntentionPreviewInfo {
-        return IntentionPreviewInfo.EMPTY
+        return if (showPreview()) {
+            super.generatePreview(project, editor, file)
+        } else {
+            IntentionPreviewInfo.EMPTY
+        }
     }
 }
