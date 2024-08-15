@@ -19,7 +19,7 @@ object ImportAdder {
     data class Import(
             val moduleName: String,
             val moduleAlias: String?,
-            val nameToBeExposed: String
+            val nameToBeExposed: String?
     )
 
     /**
@@ -27,7 +27,7 @@ object ImportAdder {
      */
     fun addImport(candidate: Import, file: ElmFile, isQualified: Boolean) {
         val factory = ElmPsiFactory(file.project)
-        val newImport = if (isQualified)
+        val newImport = if (isQualified || candidate.nameToBeExposed == null)
             factory.createImport(candidate.moduleName, alias = candidate.moduleAlias)
         else
             factory.createImportExposing(candidate.moduleName, listOf(candidate.nameToBeExposed))
@@ -50,7 +50,7 @@ object ImportAdder {
         }
     }
 
-    private fun isBuiltIn(candidate: Import): Boolean {
+    internal fun isBuiltIn(candidate: Import): Boolean {
         val builtInImports = setOf("Basics", "List", "Maybe", "Result", "String", "Char", "Tuple", "Debug", "Platform", "Platform.Cmd", "Platform.Sub")
         return builtInImports.contains(candidate.moduleName)
     }

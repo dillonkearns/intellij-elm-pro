@@ -52,7 +52,7 @@ abstract class AnnotationBasedGeneratorIntention : ElmAtCaretIntentionActionBase
                 // Commit the string changes so we can work with the new PSI
                 PsiDocumentManager.getInstance(context.file.project).commitDocument(editor.document)
                 for (import in imports) {
-                    ImportAdder.addImport(import, context.file, import.nameToBeExposed.isEmpty())
+                    ImportAdder.addImport(import, context.file, import.nameToBeExposed.orEmpty().isEmpty())
                 }
             }
         }

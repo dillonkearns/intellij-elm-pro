@@ -1,5 +1,9 @@
 package org.elm.lang.core.types
 
+import org.elm.lang.core.imports.ImportAdder.Import
+import org.elm.lang.core.psi.ElmFile
+import org.elm.lang.core.resolve.scope.ModuleScope
+
 /**
  * A type in the inference system.
  *
@@ -305,6 +309,36 @@ fun Ty.allDeclarations(
     alias?.let {
         yield(DeclarationInTy(it.module, it.name, isUnion = false))
         it.parameters.forEach { p -> yieldAll(p.allDeclarations()) }
+    }
+}
+
+/** Create a lazy sequence of all union and alias instances within a [Ty], with the context of the file's imports. */
+fun Ty.importsForAllDeclarations(elmFile: ElmFile): Sequence<Import> = sequence {
+    when (this@importsForAllDeclarations) {
+        is TyVar -> {}
+        is TyTuple -> types.forEach { yieldAll(it.importsForAllDeclarations(elmFile)) }
+        is TyRecord -> {
+            fields.values.forEach { yieldAll(it.importsForAllDeclarations(elmFile)) }
+            if (baseTy != null) yieldAll(baseTy.importsForAllDeclarations(elmFile))
+        }
+        is MutableTyRecord -> {
+            fields.values.forEach { yieldAll(it.importsForAllDeclarations(elmFile)) }
+            if (baseTy != null) yieldAll(baseTy.importsForAllDeclarations(elmFile))
+        }
+        is TyFunction -> {
+            if (true) {
+                yieldAll(ret.importsForAllDeclarations(elmFile))
+                parameters.forEach { yieldAll(it.importsForAllDeclarations(elmFile)) }
+            }
+        }
+        is TyUnion -> {
+            val qualifier = ModuleScope.getQualifierForName(elmFile, alias?.module ?: this@importsForAllDeclarations.module, alias?.name ?: this@importsForAllDeclarations.name)
+            val nameToBeExposed = if (qualifier == null || qualifier == "") { alias?.name ?: name } else { null }
+            yield(Import(alias?.module ?: this@importsForAllDeclarations.module, alias?.name ?: this@importsForAllDeclarations.name , nameToBeExposed))
+            (alias?.parameters ?: parameters).forEach { yieldAll(it.importsForAllDeclarations(elmFile)) }
+        }
+        is TyUnit, is TyUnknown, TyInProgressBinding -> {
+        }
     }
 }
 

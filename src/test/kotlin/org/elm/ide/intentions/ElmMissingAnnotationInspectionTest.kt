@@ -200,4 +200,47 @@ import Foo as F
 main : Int -> F.Bar
 main i = F.foo i
 """)
+
+    fun `test type alias is imported instead of the resolved alias`() = checkFixByFileTree("Add Annotation",
+        """
+--@ main.elm
+import Direct exposing (Direct)
+import Indirect
+main{-caret-} i = Indirect.example i
+--@ Indirect.elm
+module Indirect exposing (..)
+import Direct
+type alias Indirect = Direct
+example : Int -> Indirect
+example i = Direct.Direct i
+--@ Direct.elm
+module Direct exposing (..)
+type alias Direct = { i : Int }
+""", """
+import Direct exposing (Direct)
+import Indirect
+main : Int -> Indirect.Indirect
+main i = Indirect.example i
+""")
+
+    fun `test add import if needed`() = checkFixByFileTree("Add Annotation",
+        """
+--@ main.elm
+import Direct exposing (Direct)
+import Indirect
+main{-caret-} i = Indirect.example i
+--@ Indirect.elm
+module Indirect exposing (..)
+import Direct
+example i = Direct.Direct i
+--@ Direct.elm
+module Direct exposing (..)
+type alias Direct = { i : Int }
+""", """
+import Direct exposing (Direct)
+import Indirect
+main : Int -> Direct
+main i = Indirect.example i
+""")
+
 }
