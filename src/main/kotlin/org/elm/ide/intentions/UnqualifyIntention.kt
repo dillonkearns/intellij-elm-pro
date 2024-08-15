@@ -21,8 +21,9 @@ class UnqualifyIntention : ElmAtCaretIntentionActionBase<UnqualifyIntention.Cont
     override fun getFamilyName() = text
 
     override fun findApplicableContext(project: Project, editor: Editor, element: PsiElement): Context? {
-        return if ((element.parent as ElmUpperCaseQID).isQualified) {
-            return Context(element.parent as ElmUpperCaseQID)
+        val parent = element.parent
+        return if ((parent is ElmUpperCaseQID) && parent.isQualified) {
+            return Context(parent)
         } else {
             null
         }
