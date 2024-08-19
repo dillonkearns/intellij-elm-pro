@@ -26,14 +26,16 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.searches.ReferencesSearch
-import com.intellij.psi.util.childrenOfType
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.IncorrectOperationException
 import com.intellij.util.containers.addIfNotNull
 import org.elm.lang.core.imports.ImportAdder
 import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
+import org.elm.lang.core.resolve.ElmReferenceElement
 import org.elm.lang.core.resolve.reference.QualifiedValueReference
+import org.elm.lang.core.resolve.reference.SimpleUnionConstructorReference
+import org.elm.lang.core.resolve.reference.SimpleUnionOrRecordConstructorReference
 import org.elm.lang.core.resolve.scope.ModuleScope
 import org.elm.openapiext.saveAllDocuments
 
@@ -352,7 +354,7 @@ class ElmMoveCommonProcessor(
             }
 
         }
-        val annotationImportsToAdd = annotation?.typeExpression?.allSegments.orEmpty().mapNotNull { segment ->
+        val annotationImportsToAdd = annotation?.typeExpression?.allSegmentsRecursively.orEmpty().mapNotNull { segment ->
             when (segment) {
                 is ElmTypeRef -> {
                     if (!segment.upperCaseQID.isQualified) {
@@ -374,24 +376,64 @@ class ElmMoveCommonProcessor(
                 }
             }
         }
-        (element as? ElmFunctionDeclarationLeft)?.body?.childrenOfType<ElmValueExpr>().orEmpty().mapNotNull {
+        (element as? ElmFunctionDeclarationLeft)?.body?.descendantsOfType<ElmUnionPattern>()
+        val fdlBody = (element as? ElmFunctionDeclarationLeft)?.body
+        val list2: Collection<ElmReferenceElement> = fdlBody?.descendantsOfType<ElmUnionPattern>().orEmpty()//.map { it.upperCaseQID }
+        val expressionsToMap: Collection<ElmReferenceElement> = fdlBody?.descendantsOfType<ElmValueExpr>().orEmpty().plus(list2)
+         expressionsToMap.mapNotNull {
+            val text = it.text
             when (val ref = it.reference) {
                 is QualifiedValueReference -> {
                     val conflictingImport = conflictingImports.find { importInfo -> importInfo.source.resolveModuleName() == ref.qualifierPrefix }
                     val sourceImport = sourceImports.find { importInfo -> importInfo.resolveModuleName() == ref.qualifierPrefix }
                     if (conflictingImport == null) {
-                        ImportAdder.Import(sourceImport!!.moduleName, sourceImport.aliasName, ref.canonicalText)
+                        // TODO if it's not fully qualified, fully qualify it here. Could revist a feature to pull in the exposed values from `import ... exposing (...) `, but that introduces
+                        // the complexity of introducing possible name collisions to the target module. So even with that feature, fully qualifying values could be a good strategy for avoiding name collisions since that's the only way to resolve it gracefully.
+
+                        if (sourceImport != null) {
+                            ImportAdder.Import(sourceImport.moduleName, sourceImport.aliasName, ref.canonicalText)
+                        } else {
+                            null
+                        }
                     } else {
                         val valueExpr = (ref.element as ElmValueExpr).valueQID!!
                         updateQid(valueExpr, conflictingImport)
                         null
                     }
                 }
+                is SimpleUnionOrRecordConstructorReference, is SimpleUnionConstructorReference -> {
+                    val visibleValue = ModuleScope.getVisibleConstructors(sourceMod)[ref.canonicalText]
+                    if (visibleValue == null) {
+                        // TODO make sure this won't introduce a circular import
+                        null
 
+                    } else {
+                        val moduleName = visibleValue.moduleName
+                        it.directChildrenOfType<ElmUpperCaseQID>().first().replace(psiFactory.createUpperCaseQID("${moduleName}.${ref.canonicalText}"))
+                        ImportAdder.Import(
+                            visibleValue.moduleName,
+                            null,
+                            ref.canonicalText
+                        )
+                    }
+
+
+                }
                 else -> {
-                    val moduleName = ModuleScope.getVisibleValues(sourceMod)[ref.canonicalText]!!.moduleName
-                    it.replace(psiFactory.createValueQID("${moduleName}.${ref.canonicalText}"))
-                    ImportAdder.Import(ModuleScope.getVisibleValues(sourceMod)[ref.canonicalText]!!.moduleName, null, ref.canonicalText)
+                    val visibleValue = ModuleScope.getVisibleValues(sourceMod)[ref.canonicalText]
+                    if (visibleValue == null) {
+                        // TODO make sure this won't introduce a circular import
+                        null
+
+                    } else {
+                        val moduleName = visibleValue.moduleName
+                        it.replace(psiFactory.createValueQID("${moduleName}.${ref.canonicalText}"))
+                        ImportAdder.Import(
+                            ModuleScope.getVisibleValues(sourceMod)[ref.canonicalText]!!.moduleName,
+                            null,
+                            ref.canonicalText
+                        )
+                    }
                 }
             }
         }.let { importsToAdd ->
@@ -414,6 +456,7 @@ class ElmMoveCommonProcessor(
                     targetMod.addAll(elements)
                     docComment?.delete()
                     annotation.delete()
+                    elements.filterIsInstance<ElmValueDeclaration>().singleOrNull()!!.modificationTracker.incModificationCount()
                 } else {
                     targetMod.add(psiFactory.createDeclaration(targetText + "\n\n"))
                     targetMod.add(psiFactory.createWhitespace("\n"))
