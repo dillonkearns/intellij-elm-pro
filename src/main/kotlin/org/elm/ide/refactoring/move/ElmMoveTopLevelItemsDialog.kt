@@ -58,7 +58,7 @@ class ElmMoveTopLevelItemsDialog(
         val elmProject = project.elmWorkspace.allProjects.firstOrNull()
         // add test if this file is within test dir
         // otherwise, add the source dir that current file is contained in as the top item
-        val testDir = elmProject?.testsRelativeDirPath
+        val testDir = elmProject?.testsDirPath
         val currentFilePath = itemsToMove.first().elmFile.virtualFile.pathAsPath
         val correctTopItem = if (testDir != null && currentFilePath.startsWith(testDir)) {
             project.basePath!!.toPath().relativize(elmProject.testsDirPath)
