@@ -20,6 +20,7 @@ package org.elm.ide.refactoring.move.common
 //import org.elm.ide.utils.import.ElmImportHelper
 //import org.elm.lang.core.psi.ext.*
 //import org.elm.openapiext.computeWithCancelableProgress
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
@@ -34,6 +35,7 @@ import org.elm.lang.core.psi.*
 import org.elm.lang.core.psi.elements.*
 import org.elm.lang.core.resolve.reference.QualifiedValueReference
 import org.elm.lang.core.resolve.scope.ModuleScope
+import org.elm.openapiext.saveAllDocuments
 
 //import org.elm.openapiext.runWithCancelableProgress
 
@@ -321,6 +323,9 @@ class ElmMoveCommonProcessor(
             ))
         }
         this.elementsToMove.forEach { moveElement(it.element) }
+        invokeLater {
+            saveAllDocuments()
+        }
     }
 
     private fun moveElement(
