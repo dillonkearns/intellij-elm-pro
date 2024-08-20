@@ -892,6 +892,158 @@ lookupLink key =
             Err <| "Couldn't find key " ++ key
 """
     )
+    fun `test unqualified type constructor references moved to target with import alias`() = doTest(
+        """
+--@ Example.elm
 
+module Example exposing (example)
+
+import Markdown.Block as Block exposing (Inline(..))
+
+
+<selection>
+resolveLinkInInline : Inline -> Result String Inline
+resolveLinkInInline inline =
+    case inline of
+        Link destination title inlines ->
+            destination
+                |> lookupLink
+                |> Result.map (\resolvedLink -> Link resolvedLink title inlines)
+
+        _ ->
+            Ok inline
+
+
+lookupLink : String -> Result String String
+lookupLink key =
+    case key of
+        "elm-lang" ->
+            Ok "https://elm-lang.org"
+
+        _ ->
+            Err <| "Couldn't find key " ++ key
+
+</selection>
+
+example = resolveLinkInInline
+
+--@ Markdown/Block.elm
+module Markdown.Block exposing (Block(..), HeadingLevel(..), Html(..), Inline(..))
+
+{-| An Inline block. Note that `HtmlInline`s can contain Blocks, not just nested `Inline`s.
+-}
+type Inline
+    = Other
+    | Link String (Maybe String) (List Inline)
+--@ Helpers.elm
+module Helpers exposing (existing)
+
+import Markdown.Block as Block
+
+existing = "Existing"
+{-target-}
+
+--@ Example.elm
+
+module Example exposing (example)
+
+import Markdown.Block as Block exposing (Inline(..))
+
+
+<selection>
+resolveLinkInInline : Inline -> Result String Inline
+resolveLinkInInline inline =
+    case inline of
+        Link destination title inlines ->
+            destination
+                |> lookupLink
+                |> Result.map (\resolvedLink -> Link resolvedLink title inlines)
+
+        _ ->
+            Ok inline
+
+
+lookupLink : String -> Result String String
+lookupLink key =
+    case key of
+        "elm-lang" ->
+            Ok "https://elm-lang.org"
+
+        _ ->
+            Err <| "Couldn't find key " ++ key
+
+</selection>
+
+example = resolveLinkInInline
+
+--@ Markdown/Block.elm
+module Markdown.Block exposing (Block(..), HeadingLevel(..), Html(..), Inline(..))
+
+{-| An Inline block. Note that `HtmlInline`s can contain Blocks, not just nested `Inline`s.
+-}
+type Inline
+    = Other
+    | Link String (Maybe String) (List Inline)
+--@ Helpers.elm
+module Helpers exposing (existing)
+
+import Markdown.Block as Block
+
+existing = Block.Other
+
+{-target-}
+"""
+        , """
+--@ Example.elm
+
+module Example exposing (example)
+
+import Helpers
+import Markdown.Block as Block exposing (Inline(..))
+
+
+example =
+    Helpers.resolveLinkInInline
+
+--@ Markdown/Block.elm
+module Markdown.Block exposing (Block(..), HeadingLevel(..), Html(..), Inline(..))
+
+{-| An Inline block. Note that `HtmlInline`s can contain Blocks, not just nested `Inline`s.
+-}
+type Inline
+    = Other
+    | Link String (Maybe String) (List Inline)
+--@ Helpers.elm
+module Helpers exposing (existing, lookupLink, resolveLinkInInline)
+
+import Markdown.Block as Block
+
+
+existing =
+    Block.Other
+
+
+resolveLinkInInline : Block.Inline -> Result String Block.Inline
+resolveLinkInInline inline =
+    case inline of
+        Block.Link destination title inlines ->
+            destination
+                |> lookupLink
+                |> Result.map (\resolvedLink -> Block.Link resolvedLink title inlines)
+
+        _ ->
+            Ok inline
+
+
+lookupLink : String -> Result String String
+lookupLink key =
+    case key of
+        "elm-lang" ->
+            Ok "https://elm-lang.org"
+
+        _ ->
+            Err <| "Couldn't find key " ++ key
+"""
+    )
 
 }

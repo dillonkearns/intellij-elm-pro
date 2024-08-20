@@ -360,7 +360,8 @@ class ElmMoveCommonProcessor(
                     if (!segment.upperCaseQID.isQualified) {
                         // make the type reference fully qualified
                         val moduleName = ModuleScope.getVisibleTypes(sourceMod)[segment.upperCaseQID.refName]?.moduleName
-                        val qualifiedName = listOf(moduleName, segment.upperCaseQID.refName).mapNotNull { it }.joinToString(".")
+                        val conflictingImport = targetModuleImports.find { importInfo -> importInfo.moduleName == moduleName }
+                        val qualifiedName = listOf(conflictingImport?.resolveModuleName() ?: moduleName, segment.upperCaseQID.refName).mapNotNull { it }.joinToString(".")
                         segment.upperCaseQID.replace(psiFactory.createUpperCaseQID(qualifiedName))
                         if (moduleName != null) {
                             ImportAdder.Import(moduleName, null, segment.upperCaseQID.refName)
@@ -402,14 +403,16 @@ class ElmMoveCommonProcessor(
                     }
                 }
                 is SimpleUnionOrRecordConstructorReference, is SimpleUnionConstructorReference -> {
+
                     val visibleValue = ModuleScope.getVisibleConstructors(sourceMod)[ref.canonicalText]
+                    val conflictingImport = targetModuleImports.find { importInfo -> importInfo.moduleName == visibleValue?.moduleName }
                     if (visibleValue == null) {
                         // TODO make sure this won't introduce a circular import
                         null
 
                     } else {
                         val moduleName = visibleValue.moduleName
-                        it.directChildrenOfType<ElmUpperCaseQID>().first().replace(psiFactory.createUpperCaseQID("${moduleName}.${ref.canonicalText}"))
+                        it.directChildrenOfType<ElmUpperCaseQID>().first().replace(psiFactory.createUpperCaseQID("${conflictingImport?.resolveModuleName() ?: moduleName}.${ref.canonicalText}"))
                         ImportAdder.Import(
                             visibleValue.moduleName,
                             null,
@@ -421,13 +424,14 @@ class ElmMoveCommonProcessor(
                 }
                 else -> {
                     val visibleValue = ModuleScope.getVisibleValues(sourceMod)[ref.canonicalText]
+                    val conflictingImport = targetModuleImports.find { importInfo -> importInfo.moduleName == visibleValue?.moduleName }
                     if (visibleValue == null) {
                         // TODO make sure this won't introduce a circular import
                         null
 
                     } else {
                         val moduleName = visibleValue.moduleName
-                        it.replace(psiFactory.createValueQID("${moduleName}.${ref.canonicalText}"))
+                        it.replace(psiFactory.createValueQID("${conflictingImport?.resolveModuleName() ?: moduleName}.${ref.canonicalText}"))
                         ImportAdder.Import(
                             ModuleScope.getVisibleValues(sourceMod)[ref.canonicalText]!!.moduleName,
                             null,
