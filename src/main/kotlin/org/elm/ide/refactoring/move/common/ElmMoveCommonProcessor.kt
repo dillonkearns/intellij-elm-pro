@@ -360,11 +360,10 @@ class ElmMoveCommonProcessor(
                     if (!segment.upperCaseQID.isQualified) {
                         // make the type reference fully qualified
                         val moduleName = ModuleScope.getVisibleTypes(sourceMod)[segment.upperCaseQID.refName]?.moduleName
-                        val conflictingImport = targetModuleImports.find { importInfo -> importInfo.moduleName == moduleName }
-                        val qualifiedName = listOf(conflictingImport?.resolveModuleName() ?: moduleName, segment.upperCaseQID.refName).mapNotNull { it }.joinToString(".")
-                        segment.upperCaseQID.replace(psiFactory.createUpperCaseQID(qualifiedName))
                         if (moduleName != null) {
-                            ImportAdder.Import(moduleName, null, segment.upperCaseQID.refName)
+                            val (newImport, rename) = findConflictingImport(targetModuleImports, moduleName, segment.upperCaseQID.refName)
+                            segment.upperCaseQID.replace(psiFactory.createUpperCaseQID(rename))
+                            newImport
                         } else {
                             null
                         }
