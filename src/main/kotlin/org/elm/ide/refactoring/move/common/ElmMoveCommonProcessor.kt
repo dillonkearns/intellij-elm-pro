@@ -405,19 +405,15 @@ class ElmMoveCommonProcessor(
                 is SimpleUnionOrRecordConstructorReference, is SimpleUnionConstructorReference -> {
 
                     val visibleValue = ModuleScope.getVisibleConstructors(sourceMod)[ref.canonicalText]
-                    val conflictingImport = targetModuleImports.find { importInfo -> importInfo.moduleName == visibleValue?.moduleName }
                     if (visibleValue == null) {
                         // TODO make sure this won't introduce a circular import
                         null
-
                     } else {
-                        val moduleName = visibleValue.moduleName
-                        it.directChildrenOfType<ElmUpperCaseQID>().first().replace(psiFactory.createUpperCaseQID("${conflictingImport?.resolveModuleName() ?: moduleName}.${ref.canonicalText}"))
-                        ImportAdder.Import(
-                            visibleValue.moduleName,
-                            null,
-                            ref.canonicalText
-                        )
+                        val (newImport, newReferenceName) = findConflictingImport(targetModuleImports, visibleValue.moduleName, ref.canonicalText)
+                        it.directChildrenOfType<ElmUpperCaseQID>().first().replace(psiFactory.createUpperCaseQID(
+                            newReferenceName
+                        ))
+                        newImport
                     }
 
 
@@ -518,6 +514,28 @@ class ElmMoveCommonProcessor(
         //        updateInsideReferenceInfosIfNeeded(insideReferences, pathMapping)
         //        retargetReferencesProcessor.retargetReferences(insideReferences)
         //        retargetReferencesProcessor.optimizeImports()
+    }
+
+    private fun findConflictingImport(
+        targetModuleImports: List<ImportInfo>,
+        moduleName: String,
+        canonicalText: String
+    ): Pair<ImportAdder.Import?, String> {
+
+        val existingImport = targetModuleImports.find { importInfo -> importInfo.moduleName == moduleName }
+        return Pair(
+            if (existingImport == null) {
+                ImportAdder.Import(
+                    moduleName,
+                    null,
+                    canonicalText
+                )
+            } else {
+                null
+            }
+
+            ,
+            "${existingImport?.resolveModuleName() ?: moduleName}.${canonicalText}")
     }
 
     private fun updateQid(valueExpr: ElmValueQID, conflictingImport: ConflictingImport) {
