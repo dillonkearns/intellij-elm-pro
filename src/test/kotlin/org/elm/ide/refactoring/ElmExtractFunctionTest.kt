@@ -26,6 +26,48 @@ test =
 """, "test"
     )
 
+    fun `test annotation`() = doTest(
+        """
+--@ User.elm
+module User exposing (..)
+
+type User = Guest | User
+
+--@ Example.elm
+
+module Example exposing (hello)
+
+import User as U
+
+hello : U.User
+hello =
+    -->
+    {-selection-}{-caret-}U.Guest{-selection--}
+""", """
+--@ User.elm
+module User exposing (..)
+
+type User = Guest | User
+
+--@ Example.elm
+
+module Example exposing (hello)
+
+import User as U
+
+
+hello : U.User
+hello =
+    -->
+    test
+
+
+test : U.User
+test =
+    U.Guest
+""", "test"
+    )
+
     @Test
     fun `test depends on function parameter`() = doTest(
         """

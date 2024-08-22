@@ -54,7 +54,7 @@ class ElmExtractFunctionHandler : RefactoringActionHandler {
             val fnBody = expressionToExtract.text
             val signatureTypes: List<Ty?> = (config.parameters.map { it.type }) + listOf(expressionToExtract.findTy())
             val signature = if (signatureTypes.all { it != null }) {
-                signatureTypes.joinToString(" -> ") { it!!.renderedText(withModule = true).replace("→", "->") }
+                signatureTypes.joinToString(" -> ") { it!!.renderedText(withModule = true, elmFile = expressionToExtract.elmFile).replace("→", "->") }
             } else { null }
             
             val parameterString = (listOf(config.name) + config.parameters.map { it.originalName } + listOf("=")).joinToString(" ")
