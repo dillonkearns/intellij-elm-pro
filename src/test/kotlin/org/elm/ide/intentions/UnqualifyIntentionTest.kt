@@ -3,14 +3,23 @@ package org.elm.ide.intentions
 class UnqualifyIntentionTest : ElmIntentionTestBase(UnqualifyIntention()) {
 
 
-    fun `test simple case expression`() = doAvailableTest(
+    fun `test simple case expression`() = doAvailableTestWithFileTree(
             """
+--@ Foo.elm
 module Foo exposing (..)
 
 import Example
 
 example : Example.Ex{-caret-}ample
 example = Example.value
+--@ Example.elm
+
+module Example exposing (Example, value)
+
+type Example = Example
+
+value : Example
+value = Example
 """, """
 module Foo exposing (..)
 
@@ -20,14 +29,23 @@ example : Example
 example = Example.value
 """)
 
-    fun `test import alias`() = doAvailableTest(
+    fun `test import alias`() = doAvailableTestWithFileTree(
         """
+--@ Foo.elm
 module Foo exposing (..)
 
 import Example as E
 
 example : E.Ex{-caret-}ample
 example = E.value
+--@ Example.elm
+
+module Example exposing (Example, value)
+
+type Example = Example
+
+value : Example
+value = Example
 """, """
 module Foo exposing (..)
 
@@ -35,6 +53,40 @@ import Example as E exposing (Example)
 
 example : Example
 example = E.value
+""")
+
+    fun `test import alias with multiple usages`() = doAvailableTestWithFileTree(
+        """
+--@ Foo.elm
+module Foo exposing (..)
+
+import Example as E
+
+example : E.Ex{-caret-}ample
+example = E.value
+
+example2 : E.Example
+example2 = E.value
+
+--@ Example.elm
+
+module Example exposing (Example, value)
+
+type Example = Example
+
+value : Example
+value = Example
+""", """
+module Foo exposing (..)
+
+import Example as E exposing (Example)
+
+example : Example
+example = E.value
+
+example2 : Example
+example2 = E.value
+
 """)
 
 }
