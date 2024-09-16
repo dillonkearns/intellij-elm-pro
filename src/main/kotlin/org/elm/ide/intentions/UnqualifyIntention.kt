@@ -10,6 +10,7 @@ import org.elm.lang.core.imports.ImportAdder
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.elements.ElmUnionVariant
 import org.elm.lang.core.psi.elements.ElmUpperCaseQID
+import org.elm.lang.core.resolve.scope.ModuleScope
 
 class UnqualifyIntention : ElmAtCaretIntentionActionBase<UnqualifyIntention.Context>() {
     data class Context(
@@ -32,7 +33,15 @@ class UnqualifyIntention : ElmAtCaretIntentionActionBase<UnqualifyIntention.Cont
                 // Un-qualifying Union Variants is not supported because it could introduce conflicts so would need to check for conflicts first
                 null
             } else {
-                Context(parent, definition)
+                    val foundConflict = ModuleScope.getVisibleValues(parent.elmFile).all.plus(ModuleScope.getVisibleTypes(parent.elmFile).all).any {
+                        it.name == parent.refName
+                    }
+
+                if (foundConflict) {
+                    null
+                } else {
+                    Context(parent, definition)
+                }
             }
         } else {
             null
