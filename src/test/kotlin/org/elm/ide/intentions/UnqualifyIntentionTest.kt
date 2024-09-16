@@ -89,4 +89,23 @@ example2 = E.value
 
 """)
 
+    fun `test unqualifying is not available for variants since it could cause conflicts`() = doUnavailableTestWithFileTree(
+        """
+--@ Foo.elm
+module Foo exposing (..)
+
+import Example
+
+example : Example.Example
+example = Example.Var{-caret-}iant1
+--@ Example.elm
+
+module Example exposing (..)
+
+type Example = Variant1 | Variant2
+
+value : Example
+value = Variant1
+""")
+
 }

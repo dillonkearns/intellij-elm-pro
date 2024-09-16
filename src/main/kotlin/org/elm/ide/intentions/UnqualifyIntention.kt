@@ -8,11 +8,13 @@ import com.intellij.psi.search.searches.ReferencesSearch
 import org.elm.ide.refactoring.move.common.ImportInfo
 import org.elm.lang.core.imports.ImportAdder
 import org.elm.lang.core.psi.ElmPsiFactory
+import org.elm.lang.core.psi.elements.ElmUnionVariant
 import org.elm.lang.core.psi.elements.ElmUpperCaseQID
 
 class UnqualifyIntention : ElmAtCaretIntentionActionBase<UnqualifyIntention.Context>() {
     data class Context(
         val expression: ElmUpperCaseQID,
+        val definition: PsiElement
     )
 
     override fun getText() = "Unqualify"
@@ -25,7 +27,13 @@ class UnqualifyIntention : ElmAtCaretIntentionActionBase<UnqualifyIntention.Cont
     override fun findApplicableContext(project: Project, editor: Editor, element: PsiElement): Context? {
         val parent = element.parent
         return if ((parent is ElmUpperCaseQID) && parent.isQualified) {
-            Context(parent)
+            val definition = parent.parent.reference?.resolve()
+            if (definition == null || definition is ElmUnionVariant) {
+                // Un-qualifying Union Variants is not supported because it could introduce conflicts so would need to check for conflicts first
+                null
+            } else {
+                Context(parent, definition)
+            }
         } else {
             null
         }
@@ -35,7 +43,7 @@ class UnqualifyIntention : ElmAtCaretIntentionActionBase<UnqualifyIntention.Cont
         val factory = ElmPsiFactory(project)
         val file = context.expression.elmFile
         val unqualifiedName: String = context.expression.text.replaceFirst(context.expression.qualifierPrefix + ".", "")
-        val usages = ReferencesSearch.search(context.expression.parent.reference?.resolve()!!, GlobalSearchScope.fileScope(context.expression.containingFile)).findAll()
+        val usages = ReferencesSearch.search(context.definition, GlobalSearchScope.fileScope(context.expression.containingFile)).findAll()
         usages.forEach {
             val element = it.element.firstChild
             if (element is ElmUpperCaseQID && element.isQualified) {
