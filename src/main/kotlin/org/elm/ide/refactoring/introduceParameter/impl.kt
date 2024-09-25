@@ -157,7 +157,16 @@ private class ParamIntroducer(
             // TODO add new param to FRONT of param list here
             psiFactory.createTopLevelFunction("$fnName $name$withoutFunctionName = ()").functionDeclarationLeft!!
         (func.parent as ElmValueDeclaration).typeAnnotation?.let { annotation ->
-            val newAnnotationText = annotation.text.replace(":", ": ${typeRef.renderedText()} ->")
+            val newDefPart = typeRef.renderedText().replace("→", "->").let {
+                if (it.contains("->")) {
+                    "($it)"
+                } else {
+                    it
+                }
+            }
+            val newAnnotationText = annotation.text.replace(":", ": $newDefPart ->")
+
+
             val createTopLevelFunctionWithAnnotation =
             psiFactory.createTopLevelFunctionWithAnnotation(newAnnotationText, "foo = ()")
             val newAnnotation = createTopLevelFunctionWithAnnotation.toList()[1]

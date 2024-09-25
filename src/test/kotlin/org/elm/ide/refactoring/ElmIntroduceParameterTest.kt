@@ -150,6 +150,31 @@ getIntendedCodeItem x markerStartPos listMarker markerEndPos ( bodyStartPos, ite
         ( listMarker, markerEndPos - markerStartPos + 1, intendedCodeItem )
 """)
 
+    fun `test function parameter`() = doTest("""
+type Result error value = Ok value | Err error
+
+lookupLink : String -> Result String String
+lookupLink key =
+    case key of
+        "elm-lang" ->
+            {-selection-}Ok{-selection--} "https://elm-lang.org"
+
+        _ ->
+            Err <| "Couldn't find key " ++ key
+""", listOf("Ok"), 0, 0, """
+type Result error value = Ok value | Err error
+
+lookupLink : (String -> Result unknown String) -> String -> Result String String
+lookupLink f key =
+    case key of
+        "elm-lang" ->
+            f "https://elm-lang.org"
+
+        _ ->
+            Err <| "Couldn't find key " ++ key
+""")
+
+
 
     private fun doTest(
         @Language("Elm") before: String,
