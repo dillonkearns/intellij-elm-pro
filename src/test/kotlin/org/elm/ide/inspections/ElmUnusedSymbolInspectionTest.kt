@@ -117,6 +117,27 @@ class ElmUnusedSymbolInspectionTest : ElmInspectionsTestBase(ElmUnusedSymbolInsp
         main = f 
         """.trimIndent())
 
+    fun `test remove wildcard param`() = checkFixByText("Remove parameter", """
+        f : Int -> ()
+        f <warning descr="Wildcard can be removed">_{-caret-}</warning> = ()
+        main = f 123
+        """.trimIndent(),"""
+        f : ()
+        f = ()
+        main = f 
+        """.trimIndent())
+
+    fun `test no wildcard fix for pattern match in case expression`() = checkFixIsUnavailable("Remove parameter", """
+        type Foo = Bar
+
+        example = Bar
+
+        main : ()
+        main =
+            case example of
+                _ -> ()
+        """.trimIndent())
+
     fun `test remove param with annotation`() = checkFixByText("Remove parameter", """
         f : Int -> ()
         f <warning descr="'x' is never used">x{-caret-}</warning> = ()

@@ -18,6 +18,15 @@ import org.elm.lang.core.psi.elements.*
 class ElmUnusedSymbolInspection : ElmLocalInspection() {
 
     override fun visitElement(element: ElmPsiElement, holder: ProblemsHolder, isOnTheFly: Boolean) {
+        if (element is ElmAnythingPattern && element.containingTopLevelDefinition() is ElmFunctionDeclarationLeft && element.parent !is ElmPattern) {
+            holder.registerProblem(
+                element,
+                "Wildcard can be removed",
+                ProblemHighlightType.LIKE_UNUSED_SYMBOL,
+                RemoveUnusedParameterFix()
+            )
+            return
+        }
         if (element !is ElmNameIdentifierOwner) return
         val project = element.project
         val scope = element.useScope
@@ -91,10 +100,12 @@ private class RenameToWildcardFix : NamedQuickFix("Rename to _") {
 
 private class RemoveUnusedParameterFix : NamedQuickFix("Remove parameter") {
     override fun applyFix(element: PsiElement, project: Project) {
-        val refs = ReferencesSearch.search(element.parent.parent).findAll().toList().mapNotNull { (it.element.parent as? ElmFunctionCallExpr) }
-        val arguments = ((element.parent as ElmLowerPattern).parent as ElmFunctionDeclarationLeft).patterns.toList()
-        val argumentIndex = arguments.indexOf(element.parent)
-        val maybeAnnotation: ElmTypeAnnotation? = ReferencesSearch.search(element.parent.parent).findAll().toList()
+        val targetElement = if (element is ElmAnythingPattern) { element } else { element.parent } as ElmPsiElement
+        val containingDefinition = targetElement.containingTopLevelDefinition() as ElmFunctionDeclarationLeft
+        val refs = ReferencesSearch.search(containingDefinition).findAll().toList().mapNotNull { (it.element.parent as? ElmFunctionCallExpr) }
+        val arguments = (containingDefinition).patterns.toList()
+        val argumentIndex = arguments.indexOf(targetElement)
+        val maybeAnnotation: ElmTypeAnnotation? = ReferencesSearch.search(containingDefinition).findAll().toList()
             .firstNotNullOfOrNull { (it.element as? ElmTypeAnnotation) }
 
         maybeAnnotation?.let { annotation ->
@@ -106,7 +117,7 @@ private class RemoveUnusedParameterFix : NamedQuickFix("Remove parameter") {
         refs.forEach { ref ->
             ref.arguments.elementAt(argumentIndex).delete()
         }
-        (element.parent as? ElmLowerPattern)?.delete()
+        targetElement.delete()
     }
 }
 
