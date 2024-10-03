@@ -10,8 +10,10 @@ package org.elm.ide.notifications
 import com.intellij.notification.*
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.AnActionResult
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.ex.ActionManagerEx
+import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.project.Project
 
 private val pluginNotifications = NotificationGroup.balloonGroup("Elm Plugin")
@@ -76,9 +78,6 @@ fun executeAction(action: AnAction, place: String, dataContext: DataContext) {
     action.update(event)
 
     if (event.presentation.isEnabled && event.presentation.isVisible) {
-        val actionManager = ActionManagerEx.getInstanceEx()
-        actionManager.fireBeforeActionPerformed(action, event)
-        action.actionPerformed(event)
-        actionManager.fireBeforeActionPerformed(action, event)
+        ActionUtil.invokeAction(action, event.dataContext, "ElmPlugin", null, null)
     }
 }
