@@ -3,7 +3,7 @@
     <name>Elm Pro</name>
     <vendor url="https://incrementalelm.com/">Incremental Elm Consulting</vendor>
 
-    <description>Editing and refactoring support for Elm projects.</description>
+    <description>Editing and advanced refactoring support for Elm projects.</description>
 
     <!-- please see https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
          on how to target different products -->
@@ -259,6 +259,7 @@
         <projectConfigurable instance="org.elm.workspace.ui.ElmWorkspaceConfigurable" displayName="Elm"
                              id="language.elm"
                              groupId="language"/>
+
         <editorNotificationProvider implementation="org.elm.ide.notifications.ElmNeedsConfigNotificationProvider"/>
         <statusBarWidgetFactory id="elmReviewWidget"
                                 implementation="org.elm.ide.status.ElmReviewWidgetFactory"
@@ -292,6 +293,9 @@
         <programRunner implementation="org.elm.ide.test.run.ElmTestProgramRunner"/>
         <runConfigurationProducer implementation="org.elm.ide.test.run.ElmTestRunConfigurationProducer"/>
         <projectService serviceImplementation="org.elm.ide.test.run.ElmTestAutoTestManager"/>
+        <notificationGroup id="ElmNotification"
+                           displayType="BALLOON"
+                           key="notification.group.name"/>
     </extensions>
     <extensions defaultExtensionNs="JavaScript">
         <JsonSchema.ProviderFactory implementation="org.elm.json.ElmJsonSchemaProviderFactory"/>

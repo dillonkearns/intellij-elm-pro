@@ -7,16 +7,17 @@
 
 package org.elm.ide.notifications
 
-import com.intellij.notification.*
+import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
+import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.AnActionResult
 import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.actionSystem.ex.ActionManagerEx
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.project.Project
 
-private val pluginNotifications = NotificationGroup.balloonGroup("Elm Plugin")
+private val pluginNotifications = NotificationGroupManager.getInstance().getNotificationGroup("ElmNotification")
 
 
 /**
