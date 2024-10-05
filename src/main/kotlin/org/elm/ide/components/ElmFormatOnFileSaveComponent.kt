@@ -1,6 +1,5 @@
 package org.elm.ide.components
 
-import com.intellij.AppTopics
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.components.service
 import com.intellij.openapi.components.serviceIfCreated
@@ -37,7 +36,7 @@ class ElmFormatOnFileSaveComponent(val project: Project) {
         init {
         with(project.messageBus.connect()) {
             subscribe(
-                AppTopics.FILE_DOCUMENT_SYNC,
+                FileDocumentManagerListener.TOPIC,
                 object : FileDocumentManagerListener {
                     override fun beforeDocumentSaving(document: Document) {
                         val isSuppressed = getInstanceIfCreated()?.isSuppressed == true
