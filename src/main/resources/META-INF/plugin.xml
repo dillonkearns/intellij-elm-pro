@@ -5,7 +5,7 @@
 
     <description>Editing and advanced refactoring support for Elm projects.</description>
     <description><![CDATA[
-Provides editing and refactoring support for the <a href="http://elm-lang.org">Elm programming language</a>.<br/>
+Provides editing and refactoring support for the <a href="https://elm-lang.org">Elm programming language</a>.<br/>
 
 Compared to the Elm, Elm Pro adds refactoring support and new integrations and features, and more up-to-date platform support.
 
