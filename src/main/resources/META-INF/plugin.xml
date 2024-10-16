@@ -49,6 +49,7 @@ Features and Integrations:<br/>
     <!-- please see https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.json</depends>
 
     <extensions defaultExtensionNs="com.intellij">
     <additionalTextAttributes scheme="Default" file="colorSchemes/ElmDefault.xml"/>
