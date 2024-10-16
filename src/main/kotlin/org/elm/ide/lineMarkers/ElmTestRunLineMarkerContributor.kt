@@ -8,9 +8,6 @@ package org.elm.ide.lineMarkers
 import com.intellij.execution.TestStateStorage
 import com.intellij.execution.lineMarker.ExecutorAction
 import com.intellij.execution.lineMarker.RunLineMarkerContributor
-import com.intellij.execution.testframework.TestIconMapper
-import com.intellij.execution.testframework.sm.runner.states.TestStateInfo.Magnitude
-import com.intellij.icons.AllIcons
 import com.intellij.psi.PsiElement
 import org.elm.ide.test.core.LabelUtils
 import org.elm.ide.test.core.LabelUtils.toPath
@@ -105,20 +102,9 @@ class ElmTestRunLineMarkerContributor : RunLineMarkerContributor() {
         }
     }
 
-    private fun getTestStateIcon(element: PsiElement, testUrl: String?): Icon? {
+    private fun getTestStateIcon(element: PsiElement, testUrl: String?): Icon {
         val instance = TestStateStorage.getInstance(element.project)
         val state = instance.getState(testUrl)
-
-        return when (state.let { it?.let { it1 -> TestIconMapper.getMagnitude(it1.magnitude) } }) {
-            Magnitude.PASSED_INDEX,
-            Magnitude.COMPLETE_INDEX ->
-                AllIcons.RunConfigurations.TestState.Green2
-
-            Magnitude.ERROR_INDEX,
-            Magnitude.FAILED_INDEX ->
-                AllIcons.RunConfigurations.TestState.Red2
-
-            else -> AllIcons.RunConfigurations.TestState.Run
-        }
+        return getTestStateIcon(state, false)
     }
 }
