@@ -23,14 +23,12 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
-import com.intellij.openapi.vfs.ex.temp.TempFileSystem
 import com.intellij.psi.*
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.stubs.StubIndex
 import com.intellij.psi.stubs.StubIndexKey
 import org.elm.ide.components.ElmFormatOnFileSaveComponent
 import org.jdom.Element
-import org.jdom.input.SAXBuilder
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
@@ -119,7 +117,7 @@ fun Element.toXmlString() =
         JDOMUtil.writeElement(this)
 
 fun elementFromXmlString(xml: String): org.jdom.Element =
-        SAXBuilder().build(xml.byteInputStream()).rootElement
+    JDOMUtil.load(xml.byteInputStream())
 
 
 class CachedVirtualFile(private val url: String?) {
@@ -159,7 +157,7 @@ fun LocalFileSystem.findFileByPath(path: Path): VirtualFile? {
  */
 fun findFileByPathTestAware(path: Path): VirtualFile? {
     if (isUnitTestMode) {
-        val vFile = TempFileSystem.getInstance().findFileByPath(path)
+        val vFile = TempFileSystem().findFileByPath(path)
         if (vFile != null) {
             return vFile
         }
@@ -177,7 +175,7 @@ fun findFileByPathTestAware(path: Path): VirtualFile? {
 
 fun refreshAndFindFileByPathTestAware(path: Path): VirtualFile? {
     if (isUnitTestMode) {
-        val vFile = TempFileSystem.getInstance().refreshAndFindFileByPath(path.toString())
+        val vFile = TempFileSystem().refreshAndFindFileByPath(path.toString())
         if (vFile != null) {
             return vFile
         }
