@@ -75,8 +75,6 @@ fun Project.showBalloon(
 
 fun executeAction(action: AnAction, place: String, dataContext: DataContext) {
     val event = AnActionEvent.createFromAnAction(action, null, place, dataContext)
-    action.beforeActionPerformedUpdate(event)
-    action.update(event)
 
     if (event.presentation.isEnabled && event.presentation.isVisible) {
         ActionUtil.invokeAction(action, event.dataContext, "ElmPlugin", null, null)
