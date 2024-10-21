@@ -15,6 +15,7 @@ import com.intellij.usageView.UsageInfo
 import com.intellij.usageView.UsageViewBundle
 import com.intellij.usageView.UsageViewDescriptor
 import com.intellij.util.containers.MultiMap
+import org.elm.ElmBundle
 import org.elm.ide.refactoring.ElmImportOptimizer
 import org.elm.lang.core.psi.ElmPsiFactory
 import org.elm.lang.core.psi.ancestors
@@ -22,9 +23,6 @@ import org.elm.lang.core.psi.elements.*
 import org.elm.lang.core.psi.prevSiblings
 import org.elm.lang.core.psi.withoutWsOrComments
 import org.elm.lang.core.resolve.reference.ElmReference
-import org.elm.openapiext.isUnitTestMode
-import org.elm.workspace.commandLineTools.ElmFormatCLI
-import org.elm.workspace.elmToolchain
 import kotlin.math.absoluteValue
 
 class ElmInlineFunctionProcessor(
@@ -123,8 +121,8 @@ class ElmInlineFunctionProcessor(
                 )
 
             override fun getCodeReferencesText(usagesCount: Int, filesCount: Int) =
-                RefactoringBundle.message(
-                    "invocations.to.be.inlined",
+                ElmBundle.message(
+                    "refactor.invocations.to.be.inlined",
                     UsageViewBundle.getReferencesString(usagesCount, filesCount)
                 )
 
