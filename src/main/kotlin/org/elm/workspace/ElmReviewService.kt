@@ -56,6 +56,7 @@ class ElmReviewService(val project: Project) {
     fun isElmProject(projectBasePath: Path) = projectBasePath.resolve("elm.json").exists()
 
     fun start(projectBasePath: Path) {
+        @Suppress("SENSELESS_COMPARISON")
         if (this.watchers == null) {
             this.watchers = hashMapOf()
         }
