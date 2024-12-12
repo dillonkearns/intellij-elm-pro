@@ -90,6 +90,11 @@ class ElmWorkspaceConfigurable(
                 val nvmUrl = "https://github.com/nvm-sh/nvm"
                 val docsUrl = "https://github.com/klazuka/intellij-elm/blob/master/docs/nvm.md"
                 noteRow("""Using <a href="$nvmUrl">nvm</a>? Please read <a href="$docsUrl">our troubleshooting tips</a>.""")
+                val intellijElmUrl = "https://github.com/intellij-elm/intellij-elm/blob/999c5a5ee09b73b79d6765428b1bad7cde770d90/LICENSE.txt"
+                val intellijRustUrl = "https://github.com/intellij-rust/intellij-rust/blob/c6657c02bb62075bf7b7ceb84d000f93dda34dc1/LICENSE"
+                val allLicenses = "https://github.com/dillonkearns/intellij-elm-pro-roadmap/blob/main/licenses/README.md"
+                noteRow("""Thank you to Keith Lazuka and all of the contributors to <a href="$intellijElmUrl">intellij-elm</a>, as well as <a href="$intellijRustUrl">intellij-rust</a> for the MIT Open Source work that makes this plugin possible.""")
+                noteRow("""See the complete list of <a href="$allLicenses">Open Source projects this project is powered by and their licenses</a>.""")
             }
         }
 
