@@ -190,6 +190,11 @@ Protocol = [a-zA-Z]+ ":"
           yybegin(IN_DOC_COMMENT);
           return DOC_CONTENT;
     }
+    // need to short-circuit out and treat the rest of the line as doc content if we see markdown heading links, which look like `#markdown-heading` (contain `-` after a `#`)
+    "(#" [^-)\n]*"-" [^)]* ")" {
+          yybegin(IN_DOC_COMMENT);
+          return DOC_CONTENT;
+    }
     "(" {
           yybegin(IN_MARKDOWN_DESTINATION_ELM_REF);
           return LEFT_PARENTHESIS;

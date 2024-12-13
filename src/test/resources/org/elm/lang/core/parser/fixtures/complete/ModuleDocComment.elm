@@ -18,6 +18,11 @@ This is NOT an annotation @docs because it is not at the start of the line.
 - [Qualified Operator `(++)`](Basics#++)
 - [No hash character is not a reference](notAnElmReference).
 
+
+- [Markdown Heading](#markdown-heading)
+
+## Markdown Heading
+
 This is a vanilla URL [GitHub](https://github.com/dillonkearns).
 
 [the URI spec](https://tools.ietf.org/html/rfc3986)
