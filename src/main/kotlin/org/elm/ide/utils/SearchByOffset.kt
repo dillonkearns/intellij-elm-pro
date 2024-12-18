@@ -32,6 +32,7 @@ import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilCore
 import org.elm.lang.core.psi.*
+import org.elm.lang.core.psi.elements.ElmPattern
 
 /**
  * Find an [ElmExpressionTag] element at [offset], being smart about whether
@@ -40,11 +41,19 @@ import org.elm.lang.core.psi.*
 fun findExpressionAtCaret(file: ElmFile, offset: Int): ElmExpressionTag? {
     val expr = file.expressionAtOffset(offset)
     val exprBefore = file.expressionAtOffset(offset - 1)
-    return when {
+    val expressionAtCaret = when {
         expr == null -> exprBefore
         exprBefore == null -> expr
         PsiTreeUtil.isAncestor(expr, exprBefore, false) -> exprBefore
         else -> expr
+    }
+
+    return if (expressionAtCaret != null && expressionAtCaret.parentOfType<ElmPattern>() != null) {
+        // ElmPattern nodes can contain ElmExpressionTag nodes, but they are expression-like but not actually expressions
+        // and should not be offered as expression candidates
+        null
+    } else {
+        expressionAtCaret
     }
 }
 
@@ -64,7 +73,13 @@ fun findExpressionInRange(file: PsiFile, startOffset: Int, endOffset: Int): ElmE
     // If our parent's deepest first child is element1 and deepest last - element 2,
     // then it is completely within selection, so this is our sought expression.
     if (element1 == PsiTreeUtil.getDeepestFirst(parent) && element2 == PsiTreeUtil.getDeepestLast(element2)) {
-        return parent
+        return if (parent.parentOfType<ElmPattern>() != null) {
+            // ElmPattern nodes can contain ElmExpressionTag nodes, but they are expression-like but not actually expressions
+            // and should not be offered as expression candidates
+            null
+        } else {
+            parent
+        }
     }
 
     return null
