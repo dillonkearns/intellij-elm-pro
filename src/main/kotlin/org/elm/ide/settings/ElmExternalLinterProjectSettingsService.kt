@@ -22,7 +22,6 @@ class ElmExternalLinterProjectSettingsService(
 ) : ElmProjectSettingsServiceBase<ElmExternalLinterProjectSettingsService.ElmExternalLinterProjectSettings>(project, ElmExternalLinterProjectSettings()) {
     val additionalArguments: String get() = state.additionalArguments
     val debugIntentionEnabled: Boolean get() = state.enableDebugIntention
-    val extractVariableEnabled: Boolean get() = state.enableExtractVariable
     val elmReviewOnTheFlyEnabled: Boolean get() = state.enableElmReviewOnTheFly
     val wipFeaturesEnabled: Boolean get() = state.enableWipFeatures
 
@@ -40,7 +39,6 @@ class ElmExternalLinterProjectSettingsService(
         @AffectsHighlighting
         var enableElmReviewOnTheFly by property(true)
         var enableDebugIntention by property(false)
-        var enableExtractVariable by property(false)
         var enableWipFeatures by property(false)
 
         override fun copy(): ElmExternalLinterProjectSettings {
