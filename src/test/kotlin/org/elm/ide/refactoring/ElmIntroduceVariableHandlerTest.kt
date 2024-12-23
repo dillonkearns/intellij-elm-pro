@@ -498,6 +498,16 @@ f number =
     number1
 """)
 
+    fun `test function body with no indentation`() = doTest("""
+value = {-caret-}()
+""", listOf("()"), 0, """
+value = let
+        x =
+            ()
+    in
+    x
+""")
+
     // CODE STYLE
 
     fun `test creates let-in with custom code style`() = checkByText("""

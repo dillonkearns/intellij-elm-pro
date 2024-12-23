@@ -106,7 +106,10 @@ private class ExpressionReplacer(
      * Wrap the existing function body in a `let` expression
      */
     fun introduceLet(elementToReplace: PsiElement) {
-        val existingIndent = DocumentUtil.getIndent(editor.document, elementToReplace.startOffset).toString()
+        val existingIndent = DocumentUtil.getIndent(editor.document, elementToReplace.startOffset).toString().let {
+            if (it.isEmpty()) "    " else it
+        }
+
         val indent = elementToReplace.indentStyle.oneLevelOfIndentation
         val newDeclBodyText = chosenExpr.textWithNormalizedIndents
         val newIdentifierElement = project.runWriteCommandAction {
