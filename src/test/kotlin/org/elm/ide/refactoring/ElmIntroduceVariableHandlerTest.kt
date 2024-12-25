@@ -522,6 +522,17 @@ example10 =
     in x
 """)
 
+    fun `test single-line existing let expression 2`() = doTest("""
+example10 =
+    let x = 1 in {-caret-}x
+""", listOf("x"), 0, """
+example10 =
+    let x = 1
+
+        number =
+            x in number
+""")
+
     fun `test let on same line as expression`() = doTest("""
 example10 =
     let          x =                   {-caret-}1      

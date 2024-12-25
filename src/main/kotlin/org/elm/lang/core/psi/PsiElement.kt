@@ -28,6 +28,7 @@ package org.elm.lang.core.psi
 
 import com.intellij.application.options.CodeStyle
 import com.intellij.extapi.psi.StubBasedPsiElementBase
+import com.intellij.openapi.editor.Document
 import com.intellij.psi.*
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import com.intellij.psi.impl.source.PsiFileImpl
@@ -246,3 +247,11 @@ fun PsiElement.outermostDeclaration(strict: Boolean): ElmValueDeclaration? =
  */
 val ElmPsiElement.moduleName: String
     get() = elmFile.getModuleDecl()?.name ?: ""
+
+fun PsiElement.column(document: Document): Int {
+        val offset: Int = this.textOffset
+        val line = document.getLineNumber(offset)
+        val lineStartOffset = document.getLineStartOffset(line)
+        val column = offset - lineStartOffset
+        return column
+    }

@@ -113,7 +113,6 @@ private class ExpressionReplacer(
 
         val indent = elementToReplace.indentStyle.oneLevelOfIndentation
         val newDeclBodyText = chosenExpr.textWithNormalizedIndents
-        val doc = PsiDocumentManager.getInstance(elementToReplace.project).getDocument(elementToReplace.containingFile)
         val letThing: ElmLetInExpr? = elementToReplace.ancestorOrSelf<ElmLetInExpr>()
         val document = PsiDocumentManager.getInstance(project).getDocument(elementToReplace.containingFile) ?: return
         val letEqIndent: String? = elementToReplace.ancestorOrSelf<ElmLetInExpr>()?.let {
@@ -146,7 +145,7 @@ private class ExpressionReplacer(
                 " ".repeat(letI - inI)
             }
         }
-        val inSingleLineLet = letThing != null && doc!!.getLineNumber(letThing.letKeyword.startOffset) == doc.getLineNumber(elementToReplace.startOffset) && elementToReplace != letThing
+        val inSingleLineLet = letThing != null && document.getLineNumber(letThing.letKeyword.startOffset) == document.getLineNumber(elementToReplace.startOffset) && elementToReplace != letThing
         val newIdentifierElement = project.runWriteCommandAction {
             val nextIndent = if (inSingleLineLet) { letEqIndent ?: existingIndent } else { existingIndent }
             val newLetExpr = if (elementToReplace !== chosenExpr) {
@@ -181,7 +180,10 @@ private class ExpressionReplacer(
     fun extendExistingLet(letExpr: ElmLetInExpr) {
         val file = letExpr.elmFile
         val anchor = letExpr.valueDeclarationList.last()
-        val existingIndent = DocumentUtil.getIndent(editor.document, anchor.startOffset)
+
+        val document = PsiDocumentManager.getInstance(project).getDocument(letExpr.containingFile) ?: return
+        val existingIndentStartOffset = letExpr.valueDeclarationList.last().assignee!!.column(document)
+        val existingIndent = " ".repeat(existingIndentStartOffset)
         val indent = file.indentStyle.oneLevelOfIndentation
         val indentedDeclExpr = chosenExpr.textWithNormalizedIndents.lines()
                 .joinToString("\n") { "$existingIndent$indent$it" }
