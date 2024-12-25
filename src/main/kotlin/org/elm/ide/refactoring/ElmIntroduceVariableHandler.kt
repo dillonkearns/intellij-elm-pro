@@ -22,6 +22,7 @@ import org.elm.lang.core.textWithNormalizedIndents
 import org.elm.openapiext.isUnitTestMode
 import org.elm.openapiext.runWriteCommandAction
 
+
 class ElmIntroduceVariableHandler : RefactoringActionHandler {
 
     override fun invoke(project: Project, editor: Editor, file: PsiFile, dataContext: DataContext?) {
@@ -112,15 +113,60 @@ private class ExpressionReplacer(
 
         val indent = elementToReplace.indentStyle.oneLevelOfIndentation
         val newDeclBodyText = chosenExpr.textWithNormalizedIndents
+        val doc = PsiDocumentManager.getInstance(elementToReplace.project).getDocument(elementToReplace.containingFile)
+        val letThing: ElmLetInExpr? = elementToReplace.ancestorOrSelf<ElmLetInExpr>()
+        val document = PsiDocumentManager.getInstance(project).getDocument(elementToReplace.containingFile) ?: return
+        val letEqIndent: String? = elementToReplace.ancestorOrSelf<ElmLetInExpr>()?.let {
+            if (it.valueDeclarationList.size == 1) {
+                val eqElement = it.valueDeclarationList.first().eqElement
+
+                val offset: Int = eqElement!!.textOffset
+                val line = document.getLineNumber(offset)
+                val lineStartOffset = document.getLineStartOffset(line)
+                val column = offset - lineStartOffset
+                " ".repeat(column)
+            } else {
+                null
+            }
+        }
+        val letIndent: Int? = elementToReplace.ancestorOrSelf<ElmLetInExpr>()?.let {
+            if (it.valueDeclarationList.size == 1) {
+                val letElement = it.letKeyword
+                val offset: Int = letElement.textOffset
+                val line = document.getLineNumber(offset)
+                val lineStartOffset = document.getLineStartOffset(line)
+                offset - lineStartOffset
+            } else {
+                null
+            }
+        }
+        val spacesAfterIn: Int? = elementToReplace.ancestorOrSelf<ElmLetInExpr>()?.inKeyword?.prevSiblings?.firstOrNull()?.text?.length
+        val newInIndent: String? = letIndent?.let { letI ->
+            spacesAfterIn?.let { inI ->
+                " ".repeat(letI - inI)
+            }
+        }
+        val inSingleLineLet = letThing != null && doc!!.getLineNumber(letThing.letKeyword.startOffset) == doc.getLineNumber(elementToReplace.startOffset) && elementToReplace != letThing
         val newIdentifierElement = project.runWriteCommandAction {
+            val nextIndent = if (inSingleLineLet) { letEqIndent ?: existingIndent } else { existingIndent }
             val newLetExpr = if (elementToReplace !== chosenExpr) {
                 chosenExpr.replace(identifier)
-                psiFactory.createLetInWrapper(existingIndent, indent, identifier.text, newDeclBodyText, elementToReplace.text)
+                psiFactory.createLetInWrapper(nextIndent, indent, identifier.text, newDeclBodyText, elementToReplace.text)
             } else {
-                psiFactory.createLetInWrapper(existingIndent, indent, identifier.text, newDeclBodyText, identifier.text)
+                psiFactory.createLetInWrapper(nextIndent, indent, identifier.text, newDeclBodyText, identifier.text)
             }
             val newLetElement = elementToReplace.replace(newLetExpr) as ElmLetInExpr
-            moveEditorToNameElement(editor, newLetElement.valueDeclarationList.first())
+            val movedElement = moveEditorToNameElement(editor, newLetElement.valueDeclarationList.first())
+
+            if (inSingleLineLet) {
+                newLetElement.addBefore(
+                    psiFactory.createWhitespace("\n$letEqIndent"),
+                    newLetElement.firstChild
+                )
+                newLetElement.addAfter(psiFactory.createWhitespace("\n$newInIndent"), newLetElement.lastChild)
+            }
+            movedElement
+
         }
 
         if (newIdentifierElement != null) {

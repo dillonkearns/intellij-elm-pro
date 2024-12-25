@@ -508,6 +508,39 @@ value = let
     x
 """)
 
+    fun `test single-line existing let expression`() = doTest("""
+example10 =
+    let x = {-caret-}1 in x
+""", listOf("1"), 0, """
+example10 =
+    let x =
+          let
+              number =
+                  1
+          in
+          number
+    in x
+""")
+
+    fun `test let on same line as expression`() = doTest("""
+example10 =
+    let          x =                   {-caret-}1      
+    in
+    x
+""", listOf("1"), 0, """
+example10 =
+    let          x =
+                   let
+                       number =
+                           1
+                   in
+                   number
+      
+    in
+    x
+""")
+
+
     // CODE STYLE
 
     fun `test creates let-in with custom code style`() = checkByText("""
